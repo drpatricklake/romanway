@@ -212,6 +212,94 @@ service cloud.firestore {
           && getAfter(/databases/$(database)/documents/classes/pilot/circusResults/$(request.resource.data.lastResult)).data.eligible == true;
       }
 
+      // Shared tutoring and Arena services are restricted to the approved class.
+      match /socialSettings/{name} {
+        allow read: if participant();
+        allow write: if teacher() && name in ['atrium','arena','leaderboard']
+          && request.resource.data.size() <= 3;
+      }
+      match /atriumProfiles/{uid} {
+        allow read: if participant();
+        allow create, update: if participant() && self(uid)
+          && request.resource.data.keys().hasOnly(['name','furthest','mastered','done','patron','client','clients','declined'])
+          && request.resource.data.name is string && request.resource.data.name.size() <= 60
+          && request.resource.data.furthest is int && request.resource.data.furthest >= 0 && request.resource.data.furthest <= 57
+          && request.resource.data.mastered is int && request.resource.data.mastered >= 0 && request.resource.data.mastered <= 57
+          && request.resource.data.done is map && request.resource.data.done.size() <= 57
+          && request.resource.data.clients is list && request.resource.data.clients.size() <= 1;
+      }
+      function pairApproved(client,patron) {
+        let c=get(/databases/$(database)/documents/classes/pilot/atriumProfiles/$(client)).data;
+        let p=get(/databases/$(database)/documents/classes/pilot/atriumProfiles/$(patron)).data;
+        let s=get(/databases/$(database)/documents/classes/pilot/socialSettings/atrium).data;
+        return c.client.patron == patron && !('ended' in c.client) && client in p.clients
+          && (s.approve == false || s.ok[client] == patron);
+      }
+      function visibleQuestion(q) {
+        return participant() && (teacher() || q.owner == request.auth.uid ||
+          q.readers.hasAny(['all',request.auth.uid]));
+      }
+      function validReaders(q) {return q.readers == ((q.hidden || q.deleted) ? [] : [q.audience]);}
+      match /atriumQuestions/{id} {
+        allow get: if participant() && !exists(/databases/$(database)/documents/classes/pilot/atriumQuestions/$(id));
+        allow read: if visibleQuestion(resource.data);
+        allow create: if participant() && self(request.resource.data.owner)
+          && id == request.auth.uid+'_'+request.resource.data.value.id
+          && request.resource.data.keys().hasOnly(['owner','audience','hidden','deleted','readers','value','thanks'])
+          && request.resource.data.hidden == false && request.resource.data.deleted == false && validReaders(request.resource.data)
+          && (request.resource.data.audience == 'all' || pairApproved(request.auth.uid,request.resource.data.audience))
+          && request.resource.data.value.lesson is int && request.resource.data.value.lesson >= 1 && request.resource.data.value.lesson <= 57
+          && request.resource.data.value.q is string && request.resource.data.value.q.size() > 0 && request.resource.data.value.q.size() <= 300
+          && request.resource.data.thanks is list && request.resource.data.thanks.size() == 0;
+        allow update: if (teacher() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden','readers']) && validReaders(request.resource.data)) ||
+          (participant() && self(resource.data.owner)
+           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['value','thanks','deleted','readers']) && validReaders(request.resource.data)
+           && request.resource.data.deleted == ('deleted' in request.resource.data.value)
+           && request.resource.data.value.id == resource.data.value.id
+           && request.resource.data.value.lesson == resource.data.value.lesson
+           && request.resource.data.value.to == resource.data.value.to
+           && request.resource.data.value.q == resource.data.value.q
+           && request.resource.data.thanks is list && request.resource.data.thanks.size() <= 60);
+        match /replies/{replyId} {
+          function parent(){return get(/databases/$(database)/documents/classes/pilot/atriumQuestions/$(id)).data;}
+          allow read: if visibleQuestion(parent()) && (teacher() || resource.data.hidden == false);
+          allow create: if visibleQuestion(parent()) && request.auth.uid != parent().owner
+            && parent().deleted == false && parent().value.open == true && parent().hidden == false
+            && (teacher() || (get(/databases/$(database)/documents/classes/pilot/atriumProfiles/$(request.auth.uid)).data.mastered >= parent().value.lesson
+            && get(/databases/$(database)/documents/classes/pilot/atriumProfiles/$(request.auth.uid)).data.done.keys().hasAny([string(parent().value.lesson)])))
+            && request.resource.data.keys().hasOnly(['author','hidden','value'])
+            && self(request.resource.data.author) && replyId == request.auth.uid+'_'+request.resource.data.value.id
+            && request.resource.data.hidden == false
+            && request.resource.data.value.to == parent().owner && request.resource.data.value.ask == parent().value.id
+            && request.resource.data.value.kind in ['hint','rule','check']
+            && request.resource.data.value.text is string && request.resource.data.value.text.size() >= 10 && request.resource.data.value.text.size() <= 1200;
+          allow update: if teacher() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden']);
+        }
+      }
+
+      match /socialScores/{uid} {
+        allow read: if participant();
+        allow create, update: if participant() && self(uid)
+          && request.resource.data.keys().hasOnly(['laurels','lessons','at','t'])
+          && request.resource.data.laurels is number && request.resource.data.laurels >= 0
+          && request.resource.data.lessons is map && request.resource.data.lessons.size() <= 57;
+        allow delete: if owner();
+      }
+      match /arenaGhosts/{uid} {
+        allow read: if participant();
+        allow create, update: if participant() && self(uid)
+          && request.resource.data.keys().hasOnly(['name','rating','t','practice','ranked'])
+          && request.resource.data.name is string && request.resource.data.name.size() <= 60
+          && request.resource.data.rating is number && request.resource.data.rating >= 0 && request.resource.data.rating <= 100000
+          && (!('practice' in request.resource.data) || (request.resource.data.practice.ids is list
+            && request.resource.data.practice.ids.size() >= 4 && request.resource.data.practice.ids.size() <= 10
+            && request.resource.data.practice.res is list && request.resource.data.practice.res.size() == request.resource.data.practice.ids.size()))
+          && (!('ranked' in request.resource.data) || (request.resource.data.ranked.ids is list
+            && request.resource.data.ranked.ids.size() >= 4 && request.resource.data.ranked.ids.size() <= 10
+            && request.resource.data.ranked.res is list && request.resource.data.ranked.res.size() == request.resource.data.ranked.ids.size()));
+        allow delete: if participant() && self(uid);
+      }
+
       match /staff/{uid} {
         allow get: if self(uid) || teacher();
         allow list: if teacher();
@@ -250,6 +338,10 @@ service cloud.firestore {
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.displayName is string && request.resource.data.displayName.size() <= 200
         && request.resource.data.summary is map && request.resource.data.updatedAt == request.time;
+      match /social/{kind} {
+        allow get: if canRead(uid) && kind in ['atrium','arena'];
+        allow create, update: if self(uid) && kind in ['atrium','arena'];
+      }
       match /progress/current {
         allow get: if canRead(uid);
         allow create, update: if self(uid)

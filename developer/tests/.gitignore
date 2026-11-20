@@ -3,3 +3,4 @@ node_modules/
 *-debug.log
 *-test.log
 .firebase/
+node_modules

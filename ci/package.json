@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "firebase emulators:exec --config ../firebase.json --project demo-romanway --only firestore \"node rules.test.mjs\"",
+    "test": "firebase emulators:exec --config ../firebase.json --project demo-romanway --only firestore \"node rules.test.mjs && node ../developer/tests/social.test.mjs\"",
     "deploy:rules": "firebase deploy --config ../firebase.json --project latinrw --only firestore:rules --non-interactive"
   },
   "devDependencies": {
