@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import {harness,action} from './harness.mjs';
+const p=harness(process.argv[2]),app=p.context.RomanWayAuthApp;
+const pack=Array.from({length:8},(_,i)=>({id:'q'+i,lesson:1,q:'Question '+i,options:['Correct','Incorrect'],answer:0,explanation:'Reason'}));
+const callbacks={};let writes=0,fail=false;
+const watch=(key,value)=>cb=>{callbacks[key]=cb;Promise.resolve().then(()=>cb(value));return ()=>{}};
+const backend={now:()=>p.context.Date.now(),async syncClock(){},watchAssignments:watch('assignments',[]),watchClassmates:watch('classmates',[]),watchRooms:watch('rooms',[]),watchGhosts:watch('ghosts',[{id:'g',uid:'friend',alias:'Nauta',event:'mixed',questions:pack,answers:pack.map(()=>({choice:0,ms:9000})),points:88,correct:8}]),watchResults:watch('results',[]),async profile(){},async publishGhost(){},async result(kind,source,answers){writes++;if(fail)throw new Error('Test network failure');return {id:'student_'+kind+'_'+source,answers,points:120,correct:8,eligible:true}},stop(){}};
+p.context.RomanWayData={classroom:backend,queue(){},async flush(){},stop(){}};
+app.setUser({uid:'student',name:'Student',email:'s@example.test'});app.databaseHooks.access({teacher:false,member:{status:'active'},classInfo:{threshold:80}});app.databaseReady();await new Promise(r=>setImmediate(r));
+for(const tab of p.context.__circusAPI.drillTabs(1))p.model.state.attempts.push({kind:'exercise',ref:tab[0],correct:1,total:1,t:p.context.Date.now()});
+action(p,'open-circus');assert.ok(p.markup().includes('Race this ghost'));
+action(p,'pilot-ghost-start',{id:'g'});assert.ok(p.markup().includes('Ghost race'));
+for(let i=0;i<8;i++){action(p,'pilot-race-answer',{choice:'0'});assert.ok(p.markup().includes('Correct.'));p.tick(15001);await new Promise(r=>setImmediate(r));}
+assert.ok(p.markup().includes('Race finished'));assert.equal(writes,1);assert.equal(p.model.state.pilot.sharedRuns,1);
+p.tick(5000);await new Promise(r=>setImmediate(r));assert.equal(writes,1,'Finished races must not resubmit results');
+action(p,'pilot-circus-menu');action(p,'pilot-ghost-start',{id:'g'});fail=true;
+for(let i=0;i<8;i++){action(p,'pilot-race-answer',{choice:'0'});p.tick(15001);await new Promise(r=>setImmediate(r));}
+assert.ok(p.markup().includes('Test network failure'));assert.ok(p.markup().includes('Save results'));
+const failedWrites=writes;p.tick(10000);await new Promise(r=>setImmediate(r));assert.equal(writes,failedWrites,'A failed final save must wait for explicit retry');
+fail=false;await action(p,'pilot-finish-retry');assert.ok(p.markup().includes('Race finished'));assert.equal(p.model.state.pilot.sharedRuns,1,'Local reward ledger prevents duplicate credit');
+action(p,'pilot-circus-menu');
+const tiedAnswers=pack.map(()=>({choice:0,ms:3000}));
+backend.ownAnswers=async()=>tiedAnswers;
+backend.roomScores=async()=>[{uid:'friend',alias:'Friend',points:112,correct:8},{uid:'student',alias:'Student',points:112,correct:8}];
+backend.watchRoom=(id,cb)=>{cb({id,title:'Tied round',status:'running',questions:pack,startsAt:{toMillis:()=>p.context.Date.now()-121000}});return ()=>{}};
+backend.watchParticipants=(id,cb)=>{cb([{uid:'friend',alias:'Friend',faction:'blue'},{uid:'student',alias:'Student',faction:'green'}]);return ()=>{}};
+await action(p,'pilot-room-open',{id:'live-tie'});p.tick(200);await new Promise(r=>setImmediate(r));
+assert.equal(p.model.state.circus.stats.d,1,'All tied first-place finishers receive a draw, regardless of ordering');
+console.log('PASS tied live scoreboard and draw handling.');
+console.log('PASS eight-round ghost race, answer lock, timed transitions, finish save, no duplicate reward, bounded failure handling, and manual retry.');

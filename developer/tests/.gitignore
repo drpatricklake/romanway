@@ -1,0 +1,5 @@
+node_modules/
+*-under-test.mjs
+*-debug.log
+*-test.log
+.firebase/
