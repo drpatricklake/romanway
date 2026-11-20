@@ -1,0 +1,93 @@
+name: Firestore rules
+
+on:
+  pull_request:
+    paths:
+      - 'firestore.rules'
+      - 'firebase.json'
+      - 'ci/**'
+      - '.github/workflows/firestore-rules.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'firestore.rules'
+      - 'firebase.json'
+      - 'ci/**'
+      - '.github/workflows/firestore-rules.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test Firestore permissions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: ci/package-lock.json
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --ignore-scripts
+        working-directory: ci
+      - run: npm test
+        working-directory: ci
+
+  deploy:
+    name: Deploy production rules
+    needs: test
+    if: github.repository == 'drpatricklake/romanway' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: firestore-rules-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: ci/package-lock.json
+      - run: npm ci --ignore-scripts
+        working-directory: ci
+      # A queued older run must not overwrite rules from a newer main commit.
+      - name: Check this is still the main branch head
+        id: current
+        shell: bash
+        run: |
+          remote_sha=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [ "$remote_sha" = "$GITHUB_SHA" ]; then
+            echo 'deploy=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'deploy=false' >> "$GITHUB_OUTPUT"
+            echo 'Skipped superseded commit.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Authenticate to Google without a stored key
+        if: steps.current.outputs.deploy == 'true'
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: latinrw
+          workload_identity_provider: projects/203865387786/locations/global/workloadIdentityPools/romanway-github/providers/romanway
+          service_account: romanway-rules-deployer@latinrw.iam.gserviceaccount.com
+      - name: Deploy only Firestore rules
+        if: steps.current.outputs.deploy == 'true'
+        working-directory: ci
+        run: npm run deploy:rules
+      - name: Record deployment
+        if: steps.current.outputs.deploy == 'true'
+        run: echo "Deployed Firestore rules for latinrw from commit $GITHUB_SHA." >> "$GITHUB_STEP_SUMMARY"

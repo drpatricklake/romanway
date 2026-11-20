@@ -1,0 +1,271 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+    function owner() { return signedIn() && request.auth.uid == 'ZU5goPmM28X40rVridJLtZ9JcBu2'; }
+    function teacher() {
+      return owner() || (signedIn()
+        && exists(/databases/$(database)/documents/classes/pilot/staff/$(request.auth.uid))
+        && get(/databases/$(database)/documents/classes/pilot/staff/$(request.auth.uid)).data.active == true);
+    }
+    function self(uid) { return signedIn() && request.auth.uid == uid; }
+    function canRead(uid) {
+      return self(uid) || (teacher()
+        && exists(/databases/$(database)/documents/classes/pilot/members/$(uid))
+        && get(/databases/$(database)/documents/classes/pilot/members/$(uid)).data.status == 'active');
+    }
+    function validLearning(l) {
+      return l.keys().hasOnly(['threshold','macrons','practiceLen','vocabRule','dailyGoal','classGoal','newPerDay','models','aiFeedback','autoAddLooked','readingU','showDrafts','lab','labLock','forumMode'])
+        && l.threshold is int && l.threshold >= 0 && l.threshold <= 100
+        && l.macrons in ['lenient','strict'] && l.practiceLen in [5,10,15]
+        && l.vocabRule is bool && l.dailyGoal is int && l.dailyGoal >= 1 && l.dailyGoal <= 100
+        && l.classGoal is int && l.classGoal >= 1 && l.classGoal <= 100000
+        && l.newPerDay is int && l.newPerDay >= 1 && l.newPerDay <= 100
+        && l.models in ['off','after','always'] && l.aiFeedback == false
+        && l.autoAddLooked is bool && l.readingU is bool && l.showDrafts is bool
+        && l.lab in ['full','anchors','light','off'] && l.labLock is bool && l.forumMode in ['coins','merit'];
+    }
+    function validCircus(c) {
+      return c.keys().hasOnly(['assign','stakes','paidRounds','liveEnabled','ghostEnabled'])
+        && c.assign in ['calling','even'] && c.stakes is bool
+        && c.paidRounds is int && c.paidRounds >= 0 && c.paidRounds <= 50
+        && c.liveEnabled is bool && c.ghostEnabled is bool;
+    }
+    function validLibrary(b) {
+      return b.keys().hasOnly(['mode','through','task','paid']) && b.mode in ['sequence','through','all']
+        && b.through is int && b.through >= 0 && b.through <= 57 && (b.mode != 'through' || b.through >= 1)
+        && b.task in ['mc','tr','both'] && b.paid is int && b.paid >= 0 && b.paid <= 50;
+    }
+    function validClass(data) {
+      return (!('learning' in data) || validLearning(data.learning))
+        && (!('circus' in data) || validCircus(data.circus))
+        && (!('biblioteca' in data) || validLibrary(data.biblioteca));
+    }
+
+    match /classes/pilot {
+      allow get: if signedIn();
+      allow create, update: if teacher()
+        && request.resource.data.threshold is int
+        && request.resource.data.threshold >= 0 && request.resource.data.threshold <= 100 && validClass(request.resource.data);
+      function active() {
+        return signedIn() && exists(/databases/$(database)/documents/classes/pilot/members/$(request.auth.uid))
+          && get(/databases/$(database)/documents/classes/pilot/members/$(request.auth.uid)).data.status == 'active';
+      }
+      function participant() { return active() || teacher(); }
+      function safePack(q) {
+        return q is list && q.size() == 8
+          && safeQuestion(q[0]) && safeQuestion(q[1]) && safeQuestion(q[2]) && safeQuestion(q[3])
+          && safeQuestion(q[4]) && safeQuestion(q[5]) && safeQuestion(q[6]) && safeQuestion(q[7]);
+      }
+      function safeQuestion(q) {
+        return q.q is string && q.options is list && q.options.size() >= 2 && q.options.size() <= 6
+          && q.answer is int && q.answer >= 0 && q.answer < q.options.size();
+      }
+      function safeAnswer(a) {
+        return a.choice is int && a.ms is int && a.ms >= 0 && a.ms <= 12000;
+      }
+      function safeAnswers(a) {
+        return a is list && a.size() == 8 && safeAnswer(a[0]) && safeAnswer(a[1]) && safeAnswer(a[2]) && safeAnswer(a[3])
+          && safeAnswer(a[4]) && safeAnswer(a[5]) && safeAnswer(a[6]) && safeAnswer(a[7]);
+      }
+      function correct(q,a) { return q.answer == a.choice ? 1 : 0; }
+      function points(q,a) { return q.answer == a.choice ? 10 + int(math.round(5.0 * (1.0 - a.ms / 12000.0))) : 0; }
+      function totalCorrect(q,a) {
+        return correct(q[0],a[0])+correct(q[1],a[1])+correct(q[2],a[2])+correct(q[3],a[3])
+          +correct(q[4],a[4])+correct(q[5],a[5])+correct(q[6],a[6])+correct(q[7],a[7]);
+      }
+      function totalPoints(q,a) {
+        return points(q[0],a[0])+points(q[1],a[1])+points(q[2],a[2])+points(q[3],a[3])
+          +points(q[4],a[4])+points(q[5],a[5])+points(q[6],a[6])+points(q[7],a[7]);
+      }
+      match /clocks/{uid} {
+        allow get: if self(uid) && participant();
+        allow create, update: if self(uid) && participant() && request.resource.data.keys().hasOnly(['at']) && request.resource.data.at == request.time;
+      }
+      match /assignments/{assignmentId} {
+        allow read: if participant();
+        allow create, update: if teacher()
+          && request.resource.data.keys().hasOnly(['id','title','kind','targetId','source','lesson','due','audience','author','updatedAt'])
+          && request.resource.data.id == assignmentId
+          && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 200
+          && request.resource.data.kind in ['worksheet','project','reading','circus','exercise']
+          && request.resource.data.targetId is string && request.resource.data.targetId.size() <= 100
+          && request.resource.data.source is string && request.resource.data.lesson is int && request.resource.data.lesson >= 0 && request.resource.data.lesson <= 57
+          && request.resource.data.due is string && request.resource.data.due.size() <= 10
+          && request.resource.data.audience is list && request.resource.data.audience.size() <= 100
+          && request.resource.data.author == request.auth.uid && request.resource.data.updatedAt == request.time;
+        allow delete: if teacher();
+      }
+      match /classmates/{uid} {
+        allow read: if participant();
+        allow create, update: if self(uid) && participant()
+          && request.resource.data.keys().hasOnly(['uid','alias','calling','eligible','week','weekPractice','updatedAt'])
+          && request.resource.data.uid == uid && request.resource.data.alias is string
+          && request.resource.data.alias.size() > 0 && request.resource.data.alias.size() <= 60
+          && request.resource.data.calling is string && request.resource.data.calling.size() <= 40
+          && request.resource.data.eligible is list && request.resource.data.eligible.size() <= 57
+          && request.resource.data.week is string && request.resource.data.weekPractice is number && request.resource.data.weekPractice >= 0 && request.resource.data.weekPractice <= 210
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if self(uid) || teacher();
+      }
+      match /circusRooms/{roomId} {
+        allow read: if participant();
+        allow create: if teacher()
+          && request.resource.data.keys().hasOnly(['title','event','questions','host','status','createdAt','startsAt'])
+          && request.resource.data.host == request.auth.uid && request.resource.data.status == 'lobby'
+          && request.resource.data.startsAt == null && request.resource.data.createdAt == request.time
+          && request.resource.data.title is string && request.resource.data.title.size() <= 100
+          && request.resource.data.event in ['mixed','cursus','quad','formae'] && request.resource.data.questions is list && request.resource.data.questions.size() == 8;
+        allow update: if teacher()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','startsAt'])
+          && (request.resource.data.status == 'cancelled' ||
+            resource.data.status == 'lobby' && request.resource.data.status == 'running'
+            && request.resource.data.startsAt >= request.time && request.resource.data.startsAt <= request.time + duration.value(30,'s'));
+        function room() { return get(/databases/$(database)/documents/classes/pilot/circusRooms/$(roomId)).data; }
+        match /participants/{uid} {
+          allow read: if participant();
+          allow create: if self(uid) && participant() && room().status == 'lobby'
+            && request.resource.data.keys().hasOnly(['uid','alias','faction','joinedAt']) && request.resource.data.uid == uid
+            && request.resource.data.alias is string && request.resource.data.alias.size() > 0 && request.resource.data.alias.size() <= 60
+            && request.resource.data.faction in ['blue','green','red','white'] && request.resource.data.joinedAt == request.time;
+        }
+        match /rounds/{round}/answers/{uid} {
+          allow get: if participant() && (self(uid) || teacher() || request.time >= room().startsAt + duration.value((int(round)+1)*15,'s'));
+          allow list: if participant() && (teacher() || request.time >= room().startsAt + duration.value((int(round)+1)*15,'s'));
+          allow create: if self(uid) && participant() && round.matches('[0-7]')
+            && exists(/databases/$(database)/documents/classes/pilot/circusRooms/$(roomId)/participants/$(uid))
+            && room().status == 'running'
+            && request.time >= room().startsAt + duration.value(int(round)*15,'s')
+            && request.time <= room().startsAt + duration.value(int(round)*15+14,'s')
+            && request.resource.data.keys().hasOnly(['uid','choice','ms','submittedAt']) && request.resource.data.uid == uid
+            && request.resource.data.choice is int && request.resource.data.choice >= -1 && request.resource.data.choice <= 5
+            && request.resource.data.ms is int && request.resource.data.ms >= 0 && request.resource.data.ms <= 12000
+            && request.resource.data.submittedAt == request.time;
+        }
+      }
+      match /circusGhosts/{ghostId} {
+        allow read: if participant();
+        function valid(r) {
+          return r.keys().hasOnly(['uid','alias','event','questions','answers','points','correct','createdAt'])
+            && r.uid == request.auth.uid && r.alias is string && r.alias.size() <= 60
+            && r.event in ['mixed','cursus','quad','formae']
+            && safePack(r.questions) && safeAnswers(r.answers)
+            && r.correct == totalCorrect(r.questions,r.answers)
+            && r.points is int && r.points >= r.correct*10 && r.points <= r.correct*15
+            && r.createdAt == request.time;
+        }
+        allow create: if participant() && valid(request.resource.data);
+      }
+      function source(r) {
+        return r.kind == 'live' ? get(/databases/$(database)/documents/classes/pilot/circusRooms/$(r.sourceId)).data
+          : get(/databases/$(database)/documents/classes/pilot/circusGhosts/$(r.sourceId)).data;
+      }
+      function previousCount(uid,day) {
+        return exists(/databases/$(database)/documents/classes/pilot/circusDays/$(uid+'_'+day))
+          ? get(/databases/$(database)/documents/classes/pilot/circusDays/$(uid+'_'+day)).data.count : 0;
+      }
+      function withinDay(day) {
+        return request.time >= timestamp.date(int(day.split('-')[0]),int(day.split('-')[1]),int(day.split('-')[2]))
+          && request.time < timestamp.date(int(day.split('-')[0]),int(day.split('-')[1]),int(day.split('-')[2])) + duration.value(1,'d');
+      }
+      function permittedFaction(r) {
+        let member = get(/databases/$(database)/documents/classes/pilot/members/$(request.auth.uid)).data;
+        return !('faction' in member) || member.faction == 'auto' || member.faction == r.faction;
+      }
+      match /circusResults/{resultId} {
+        allow read: if participant();
+        function valid(r) {
+          let uid = request.auth.uid;
+          let src = source(r);
+          let count = previousCount(uid,r.competitionDay);
+          let after = getAfter(/databases/$(database)/documents/classes/pilot/circusDays/$(uid+'_'+r.competitionDay)).data;
+          return r.keys().hasOnly(['uid','kind','sourceId','alias','faction','answers','points','correct','competitionDay','eligible','createdAt'])
+            && r.uid == uid && r.kind in ['live','ghost'] && r.sourceId.matches('[A-Za-z0-9_-]{1,120}')
+            && resultId == uid+'_'+r.kind+'_'+r.sourceId
+            && r.alias is string && r.alias.size() <= 60
+            && r.faction in ['blue','green','red','white'] && permittedFaction(r)
+            && safeAnswers(r.answers)
+            && r.competitionDay.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}') && withinDay(r.competitionDay)
+            && r.correct == totalCorrect(src.questions,r.answers) && r.points is int && r.points >= r.correct*10 && r.points <= r.correct*15
+            && (r.kind == 'ghost' && src.uid != uid || r.kind == 'live' && src.status == 'running'
+              && request.time >= src.startsAt+duration.value(120,'s')
+              && exists(/databases/$(database)/documents/classes/pilot/circusRooms/$(r.sourceId)/participants/$(uid)))
+            && r.eligible == (count<5)
+            && (!r.eligible || after.lastResult == resultId && after.count == count+1)
+            && r.createdAt == request.time;
+        }
+        allow create: if active() && valid(request.resource.data);
+      }
+      match /circusDays/{capId} {
+        allow get: if participant();
+        allow create, update: if active()
+          && request.resource.data.keys().hasOnly(['uid','day','count','lastResult'])
+          && request.resource.data.uid == request.auth.uid && capId == request.auth.uid+'_'+request.resource.data.day
+          && withinDay(request.resource.data.day)
+          && request.resource.data.count == previousCount(request.auth.uid,request.resource.data.day)+1 && request.resource.data.count <= 5
+          && !exists(/databases/$(database)/documents/classes/pilot/circusResults/$(request.resource.data.lastResult))
+          && getAfter(/databases/$(database)/documents/classes/pilot/circusResults/$(request.resource.data.lastResult)).data.uid == request.auth.uid
+          && getAfter(/databases/$(database)/documents/classes/pilot/circusResults/$(request.resource.data.lastResult)).data.competitionDay == request.resource.data.day
+          && getAfter(/databases/$(database)/documents/classes/pilot/circusResults/$(request.resource.data.lastResult)).data.eligible == true;
+      }
+
+      match /staff/{uid} {
+        allow get: if self(uid) || teacher();
+        allow list: if teacher();
+        allow write: if owner();
+      }
+      match /admin/{id} { allow read, write: if teacher(); }
+      match /invites/{code} {
+        allow get: if signedIn();
+        allow list, write: if teacher();
+      }
+      match /members/{uid} {
+        allow get: if self(uid) || teacher();
+        allow list: if teacher();
+        allow create: if self(uid)
+          && request.resource.data.keys().hasOnly(['uid','displayName','email','status','inviteCode','requestedAt'])
+          && request.resource.data.uid == uid
+          && request.resource.data.email == request.auth.token.email
+          && request.resource.data.displayName is string && request.resource.data.displayName.size() <= 200
+          && request.resource.data.status == 'pending'
+          && request.resource.data.requestedAt == request.time
+          && request.resource.data.inviteCode is string
+          && request.resource.data.inviteCode.matches('ROMA-[A-Z2-9]{10}')
+          && get(/databases/$(database)/documents/classes/pilot/invites/$(request.resource.data.inviteCode)).data.active == true;
+        allow update: if teacher()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','faction'])
+          && request.resource.data.status in ['pending','active','declined']
+          && (!('faction' in request.resource.data) || request.resource.data.faction in ['auto','blue','green','red','white']);
+        allow delete: if teacher();
+      }
+    }
+    match /users/{uid} {
+      allow get: if canRead(uid);
+      allow create, update: if self(uid)
+        && request.resource.data.keys().hasOnly(['uid','displayName','email','summary','updatedAt'])
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.displayName is string && request.resource.data.displayName.size() <= 200
+        && request.resource.data.summary is map && request.resource.data.updatedAt == request.time;
+      match /progress/current {
+        allow get: if canRead(uid);
+        allow create, update: if self(uid)
+          && request.resource.data.keys().hasOnly(['revision','count','updatedAt'])
+          && request.resource.data.revision is int && request.resource.data.revision > 0
+          && request.resource.data.count is int && request.resource.data.count > 0 && request.resource.data.count <= 100
+          && request.resource.data.updatedAt == request.time;
+      }
+      match /chunks/{chunk} {
+        allow get: if canRead(uid);
+        allow create, update: if self(uid)
+          && request.resource.data.keys().hasOnly(['text'])
+          && request.resource.data.text is string && request.resource.data.text.size() <= 600000;
+        allow delete: if self(uid);
+      }
+    }
+    // All paths not explicitly granted above remain closed.
+  }
+}
