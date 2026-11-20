@@ -4,6 +4,8 @@ import {
   runTransaction, onSnapshot, serverTimestamp, query, orderBy,
 } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
 
+import {createClassroom} from './firebase-classroom.js';
+
 export const OWNER_UID = 'ZU5goPmM28X40rVridJLtZ9JcBu2';
 const CLASS = 'pilot';
 const CHUNK_SIZE = 120000;
@@ -13,6 +15,7 @@ const conflict = () => Object.assign(new Error('Another device saved newer work.
 export function createStore(firebaseApp, identity, hooks, runtime = {localStorage, window, crypto}) {
   const {localStorage, window, crypto}=runtime;
   const db = runtime.db || getFirestore(firebaseApp);
+  const classroom=createClassroom(db,identity);
   const uid = identity.uid;
   const base = `users/${uid}`;
   const metaKey = `romanway-cloud:${uid}`;
@@ -119,12 +122,15 @@ export function createStore(firebaseApp, identity, hooks, runtime = {localStorag
     } else {
       queue(localState);
       await flush();
+      if(!pending){remember(false);status('saved','Saved online');}
     }
   }
 
   function queue(state) {
     if (!ready || stopped) return;
-    pending = {text:encode(state),summary:hooks.summary()};
+    const summary=hooks.summary(),text=encode(state);
+    if(pending?.text===text || !pending && chunks.join('')===text)return;
+    pending = {text,summary};
     try { remember(true); } catch { status('error','This browser cannot retain an offline copy. Keep this page open until it saves online.'); }
     status('saving', 'Saving…');
     clearTimeout(timer);
@@ -221,13 +227,13 @@ export function createStore(firebaseApp, identity, hooks, runtime = {localStorag
   const onOnline=() => { if (ready) flush().catch(() => {}); };
   window.addEventListener('online',onOnline);
   return {
-    initialize,queue,flush,resolve,join,roster,rotateCode,classCode,
+    initialize,queue,flush,resolve,join,roster,rotateCode,classCode,classroom,
     async membership(student, state) { await updateDoc(ref(`classes/${CLASS}/members/${student}`),{status:state}); },
     async threshold(value) {
       if (!Number.isInteger(value)||value<0||value>100) throw new Error('Use a percentage between 0 and 100.');
       await updateDoc(ref(`classes/${CLASS}`),{threshold:value});
     },
     async student(student) { return (await readState(student)).state; },
-    stop() {stopped=true;clearTimeout(timer);stops.forEach(stop=>stop());window.removeEventListener('online',onOnline);},
+    stop() {classroom.stop();stopped=true;clearTimeout(timer);stops.forEach(stop=>stop());window.removeEventListener('online',onOnline);},
   };
 }

@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node core.test.mjs && node auth.test.mjs ../../index.html ../../firebase-auth.js && node ui.test.mjs ../../index.html ./fixtures/baseline-index.html && node race-ui.test.mjs ../../index.html && firebase emulators:exec --config ../../firebase.json --project demo-romanway --only firestore \"node rules.test.mjs && node data.test.mjs && node classroom.test.mjs\"",
+    "test:browser": "node browser.test.mjs"
+  },
+  "devDependencies": {
+    "firebase": "13.4.0",
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase-tools": "15.37.0",
+    "playwright": "1.56.1"
+  }
+}
