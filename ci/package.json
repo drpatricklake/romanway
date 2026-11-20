@@ -1,0 +1,14 @@
+{
+  "name": "roman-way-rules-ci",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --config ../firebase.json --project demo-romanway --only firestore \"node rules.test.mjs\"",
+    "deploy:rules": "firebase deploy --config ../firebase.json --project latinrw --only firestore:rules --non-interactive"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase": "13.4.0",
+    "firebase-tools": "15.37.0"
+  }
+}
