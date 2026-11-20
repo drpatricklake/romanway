@@ -11448,8 +11448,8 @@ var screenSignin;
  var B={loaded:false,busy:false,rows:[],settings:null,names:{},me:null,writable:null,canEdit:false,isOwner:false,err:null,syncedAt:0,lastSent:'',view:'overall',lesson:1,msg:''};
  window.__board=B;
  var dbP=null,userP=null;
- function getDb(){if(!dbP)dbP=Promise.resolve(window.claude&&window.claude.use?window.claude.use('db'):null);return dbP}
- function getUser(){if(!userP)userP=Promise.resolve(window.claude&&window.claude.use?window.claude.use('user'):null);return userP}
+ function getDb(){return Promise.resolve(window.RomanWayData&&window.RomanWayData.social?window.RomanWayData.social.db:null)}
+ function getUser(){return Promise.resolve(window.RomanWayData&&window.RomanWayData.social?window.RomanWayData.social.user:null)}
  function code(e){return e&&e.code?e.code:'error'}
  /* laurels: this version counts completed parts (2 each) and closed gates (10). First-try accuracy, streaks, and improvement are added when the quiz engine reports them. */
  function lessonLaurels(n){if(window.__xpLesson)return window.__xpLesson(n);var i;try{i=window.__rinfo(n)}catch(e){return 0}if(!i||!i.live||!i.total)return 0;var v=i.done*2;if(window.__hasGate&&window.__hasGate(n)&&window.__gateCleared(n))v+=10;return v}
@@ -12020,9 +12020,9 @@ window.__arenaAssets={"aurelia.webp": "data:image/webp;base64,UklGRtR2AABXRUJQVl
  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
  function code(e){return e&&e.code?e.code:'error'}
  var dbP=null,userP=null,idP=null;
- function getDb(){if(!dbP)dbP=Promise.resolve(window.claude&&window.claude.use?window.claude.use('db'):null);return dbP}
- function getUser(){if(!userP)userP=Promise.resolve(window.claude&&window.claude.use?window.claude.use('user'):null);return userP}
- function myId(){if(!idP)idP=getUser().then(function(u){return u?u.id():null});return idP}
+ function getDb(){return Promise.resolve(window.RomanWayData&&window.RomanWayData.social?window.RomanWayData.social.db:null)}
+ function getUser(){return Promise.resolve(window.RomanWayData&&window.RomanWayData.social?window.RomanWayData.social.user:null)}
+ function myId(){return getUser().then(function(u){return u?u.id():null})}
  function assetUrl(f){return (window.__arenaAssets||{})[f]||''}
  function clamp(v){return Math.max(0,Math.min(100,v))}
  function furthest(){var b=1;for(var n=1;n<=57;n++){try{var i=window.__rinfo(n);if(i.live&&i.done>0)b=n}catch(e){}}return b}
@@ -12315,7 +12315,7 @@ window.__arenaAssets={"aurelia.webp": "data:image/webp;base64,UklGRtR2AABXRUJQVl
  }
  function saveShared(){
   var a=st();if(!a.share)return Promise.resolve();
-  return Promise.all([getDb(),myId()]).then(function(r){var db=r[0],id=r[1];if(!db||!id)return;var d={name:myName(),rating:a.rating,t:Date.now()};if(a.last.practice)d.practice=a.last.practice;if(a.last.ranked)d.ranked=a.last.ranked;return db.doc('arena/'+id).set(d).then(function(){AR.writable=true},function(){AR.writable=false})}).catch(function(){});
+  return Promise.all([getDb(),myId()]).then(function(r){var db=r[0],id=r[1];if(!db||!id)return;var d={name:myName(),rating:a.rating,t:Date.now()};if(a.last.practice)d.practice=a.last.practice;if(a.last.ranked)d.ranked=a.last.ranked;return db.doc('arena/'+id).set(d).then(function(){AR.writable=true},function(e){AR.writable=false;AR.msg='Your ghost could not be shared ('+code(e)+'). Use Share my saved match to retry.';render(true)})}).catch(function(e){AR.msg='Your ghost could not be shared ('+code(e)+').';render(true)});
  }
  function unshare(){return Promise.all([getDb(),myId()]).then(function(r){var db=r[0],id=r[1];if(!db||!id)return;return db.doc('arena/'+id).delete().then(function(){},function(){})}).catch(function(){})}
  function defaultCp(){var r=nlePrng(hash('checkpoint-1'));return {id:'cp1',name:'Checkpoint 1',upto:3,ids:drawIds('hoplomachus',3,ROUNDS,r),default:true}}
@@ -12333,7 +12333,7 @@ window.__arenaAssets={"aurelia.webp": "data:image/webp;base64,UklGRtR2AABXRUJQVl
   Promise.all([loadCp(),loadPriv()]).then(loadGhosts).catch(function(e){AR.gerr=code(e)}).then(function(){AR.busy=false;render(true)});
  }
  function practiceGhosts(){return (AR.all||[]).filter(function(g){return g.practice&&g.practice.ids&&g.practice.res&&g.practice.ids.length>=4}).sort(function(a,b){return Math.abs(a.rating-st().rating)-Math.abs(b.rating-st().rating)}).slice(0,6)}
- function rankedGhosts(){var cp=AR.cp;return (AR.all||[]).filter(function(g){return cp&&g.ranked&&g.ranked.set===cp.id&&g.ranked.ids&&g.ranked.res&&g.ranked.ids.length>=4&&!g.ranked.baseline}).sort(function(a,b){return Math.abs(a.rating-st().rating)-Math.abs(b.rating-st().rating)})}
+ function rankedGhosts(){var cp=AR.cp;return (AR.all||[]).filter(function(g){return cp&&g.ranked&&g.ranked.set===cp.id&&g.ranked.ids&&g.ranked.res&&g.ranked.ids.length>=4}).sort(function(a,b){return Math.abs(a.rating-st().rating)-Math.abs(b.rating-st().rating)})}
  /* ---------- a match ---------- */
  function targetRes(level,n,r){var k=level.lo+(level.hi>level.lo?Math.floor(r()*(level.hi-level.lo+1)):0),a=[];for(var i=0;i<n;i++)a.push(i<k?1:0);return nleShuf(a,r)}
  function begin(m){
@@ -12431,7 +12431,7 @@ window.__arenaAssets={"aurelia.webp": "data:image/webp;base64,UklGRtR2AABXRUJQVl
   h+=rankedPanel();
   h+='<div class="panel"><h3 style="margin:0 0 .3em">Practice against a ghost of your choice</h3><p class="note" style="margin:0 0 .5em;max-width:70ch">Choose a classmate who has shared a saved match, and answer the very same questions. A practice ghost bout does not change your rating. A win earns '+PAY.ghost.win+' denarii and a draw '+PAY.ghost.draw+', for up to '+GHOST_PAID_MAX+' paid ghost bouts a day, counting ranked ones.</p>';
   if(AR.busy)h+='<p class="note">Looking for ghosts…</p>';
-  else if(AR.gerr)h+='<p class="note">'+(AR.gerr==='no-shared-storage'?'Ghost bouts need shared storage, which this view does not have. Open the page from its claude.ai link, signed in.':'Could not reach the arena ('+AR.gerr+').')+'</p>';
+  else if(AR.gerr)h+='<p class="note">'+(AR.gerr==='no-shared-storage'?'Ghost bouts need shared storage, which this view does not have. Sign in with Google and ask your instructor to approve your class membership.':'Could not reach the arena ('+AR.gerr+').')+'</p>';
   else if(AR.all){var pg=practiceGhosts();h+=pg.length?'<div class="ghostlist">'+pg.map(function(g,i){var c2=CLASSES.filter(function(x){return x.id===g.practice.cls})[0];return '<button class="ghostrow" data-act="ar-ghost" data-i="'+i+'"><b>'+esc(g.name)+'</b> <span class="note">· rating '+g.rating+(c2?' · '+c2.n.split(' ')[0]:'')+' · lessons I to '+ROMAN[Math.min(57,Math.max(1,g.practice.upto||1))-1]+'</span></button>'}).join('')+'</div>':'<p class="note">No classmate has shared a saved match yet.</p>'}
   h+='<p style="margin:.6em 0 0"><button class="btn ghost" data-act="ar-find">'+(AR.all?'Look again':'Find ghosts and the checkpoint')+'</button></p></div>';
   if(s.hist.length)h+='<div class="panel"><h3 style="margin:0 0 .3em">Your recent bouts <span class="note">(private)</span></h3><ul style="margin:0;padding-left:1.1em">'+s.hist.slice(-5).reverse().map(function(x){return '<li>'+(x.r===1?'Won':(x.r===.5?'Drew':'Lost'))+' '+x.me+' to '+x.op+' · '+({ludus:'the Ludus',ghost:'a ghost',ranked:'ranked',baseline:'a trainer, unrated'}[x.mode]||x.mode)+'</li>'}).join('')+'</ul></div>';
@@ -13962,8 +13962,8 @@ var screenDomus;
  /* pilot rewards, set by Dr. Lake */
  var XP_REPLY=5,REPLY_DAILY=3,XP_HELPFUL=10,DAILY_REPLY_XP=30,XP_PATRON_LESSON=15,XP_FOLLOWUP=10;
  var KINDS=[['hint','Hint'],['rule','Explain the rule'],['check','Check my reasoning']];
- function getDb(){return Promise.resolve(window.claude&&window.claude.use?window.claude.use('db'):null)}
- function getUser(){return Promise.resolve(window.claude&&window.claude.use?window.claude.use('user'):null)}
+ function getDb(){return Promise.resolve(window.RomanWayData&&window.RomanWayData.social?window.RomanWayData.social.db:null)}
+ function getUser(){return Promise.resolve(window.RomanWayData&&window.RomanWayData.social?window.RomanWayData.social.user:null)}
  function code(e){return e&&e.code?e.code:'error'}
  function info(n){try{return window.__rinfo(n)}catch(e){return {live:false,done:0,total:0}}}
  function complete(n){var i=info(n);return i.live&&i.total>0&&i.done>=i.total}
@@ -13984,12 +13984,12 @@ var screenDomus;
   REQC={t:Date.now(),v:out};return out}
  function mastered(n){return complete(n)&&!reqs().some(function(r){return r.L===n})}
  function masteredUpTo(){var b=0;for(var n=1;n<=57;n++)if(mastered(n))b=n;return b}
- function myName(){return String((S.av&&S.av.done&&S.av.name)||(S.user&&(S.user.name||S.user.nick))||'A classmate').slice(0,30)}
+ function myName(){return String((S.av&&S.av.done&&S.av.name)||('Classmate '+String(AUTH.uid||'').slice(-4))).slice(0,30)}
  function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
  function dayOf(t){var d=new Date(t);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
  function ago(t){var m=Math.max(0,Math.round((Date.now()-t)/60000));if(m<1)return 'just now';if(m<60)return m+' min ago';var h=Math.round(m/60);if(h<24)return h+' h ago';var d=Math.round(h/24);return d+' day'+(d>1?'s':'')+' ago'}
  function clean(s,n){return String(s||'').replace(/\s+/g,' ').trim().slice(0,n||MAXTXT)}
- function blank(){return {name:myName(),furthest:furthest(),t:Date.now(),asks:[],replies:[],thanks:[],reports:[],earned:[],done:{},hist:[],patron:null,client:null,clients:[],claim:null}}
+ function blank(){return {name:myName(),furthest:furthest(),t:Date.now(),asks:[],replies:[],thanks:[],reports:[],earned:['lib','con'].map(function(v){var xp=S.xp&&S.xp.atr&&+S.xp.atr[v]||0;return xp>0?{k:'legacy:'+v,v:v,xp:xp,why:'legacy',day:dayOf(Date.now()),t:Date.now()}:null}).filter(Boolean),done:{},hist:[],patron:null,client:null,clients:[],claim:null}}
  function mine(){return AT.docs[AT.me]||blank()}
  function nameOf(id){var d=AT.docs[id];return d&&d.name?String(d.name).slice(0,30):'A classmate'}
  function who(id){var r=AT.real&&AT.real[id];return nameOf(id)+(r&&r!==nameOf(id)?' ('+r+')':'')}
@@ -14084,7 +14084,7 @@ var screenDomus;
  function viewQueue(){var Q=queue();
   var h='<p class="note" style="max-width:70ch;margin:0 0 .6em">Classmates’ questions wait here until someone answers, the way ghost bouts wait in the Arena. You can answer a question once you have <b>mastered its lesson</b>: finished it, with at least '+thr()+'% on its graded work (your teacher’s mastery rule) and no practice still required. Choose how you will help: a hint, an explanation of the rule, or a check of their reasoning. Your teacher can read every reply.</p><p class="note" style="max-width:70ch;margin:0 0 .6em">Rewards: 5 XP of Līberālitās for each substantial reply (a full sentence or more; the first three each day), and 10 more when the student marks your reply helpful (once per question), up to 30 XP a day in all.</p>';
   if(!Q.length)return h+'<div class="panel"><p style="margin:0">No classmate is waiting for help right now. Come back later, or offer to be a patron under <b>Patrons and clients</b>.</p></div>';
-  return h+Q.map(function(x){var a=x.a,can=mastered(+a.lesson),already=(mine().replies||[]).some(function(r){return r.ask===a.id&&r.to===x.uid}),open=AT.reply&&AT.reply.uid===x.uid&&AT.reply.id===a.id,cl=claimsOn(x.uid,a.id);
+  return h+Q.map(function(x){var a=x.a,can=AT.canEdit||mastered(+a.lesson),already=(mine().replies||[]).some(function(r){return r.ask===a.id&&r.to===x.uid}),open=AT.reply&&AT.reply.uid===x.uid&&AT.reply.id===a.id,cl=claimsOn(x.uid,a.id);
    var ex=(cl.length?'<p class="note" style="margin:.3em 0 0"><span class="chip">'+cl.map(function(c){return esc(nameOf(c.uid))}).join(', ')+' '+(cl.length>1?'are':'is')+' helping with this</span> (started '+ago(cl[0].t)+'). You can still add a reply, or choose another question.</p>':'')+
     '<details class="atd"><summary>'+(x.n?x.n+' repl'+(x.n>1?'ies':'y')+' so far':'No replies yet')+'</summary>'+repliesHtml(x.uid,a,false)+'</details>';
    if(!can)ex+='<p class="note" style="margin:.4em 0 0">This opens to you once you have mastered Lesson '+R(a.lesson)+'.</p>';
@@ -14159,7 +14159,7 @@ var screenDomus;
  window.__atriumView=function(art){
   if(!AT.loaded&&!AT.busy&&!AT.err)setTimeout(load,0);
   var h=art+'<div class="panel"><h2 style="margin:0 0 .3em;font-size:1.3rem">The Atrium</h2><p style="margin:0;max-width:72ch">In the atrium a Roman <i>patrōnus</i> received his <i>clientēs</i> each morning. Here classmates help one another: send a question you are stuck on, answer one you have mastered, or pair up as patron and client.</p></div>';
-  if(AT.err==='no-shared-storage')return h+'<div class="panel"><p style="margin:0"><span class="chip">Needs the class page</span> The Atrium works when everyone opens the class’s hosted page and signs in, so that questions and replies can be shared. In this copy nothing can be sent.</p></div>';
+  if(AT.err==='no-shared-storage')return h+'<div class="panel"><p style="margin:0"><span class="chip">Needs the class page</span> The Atrium works when everyone opens the class’s hosted page and signs in, so that questions and replies can be shared. Sign in with Google and ask your instructor to approve your membership, then select Refresh.</p></div>';
   if(AT.err)return h+'<div class="panel"><p class="fb-no" style="margin:0">The Atrium could not be loaded ('+esc(AT.err)+'). <button class="link" data-act="at-refresh">Try again</button></p></div>';
   if(!AT.loaded)return h+'<p class="note">Opening the Atrium…</p>';
   h+=tabs()+'<p class="note" style="margin:-.4em 0 .6em"><button class="link" data-act="at-refresh">Refresh</button> to see new questions and replies.</p>';
@@ -14203,7 +14203,7 @@ var screenDomus;
   A['at-send']=function(t){var e=document.getElementById('at-rtext'),txt=clean(e?e.value:'',MAXTXT);if(AT.reply)AT.reply.text=txt;
    if(!AT.reply||!AT.reply.kind){AT.msg='Choose how you are helping: a hint, an explanation of the rule, or a check of their reasoning.';render();return}
    if(txt.length<10){AT.msg='Write your reply in the box.';render();return}
-   var asker=t.dataset.u,ask=t.dataset.a,a=((AT.docs[asker]||{}).asks||[]).filter(function(x){return x.id===ask})[0];if(!a||!mastered(+a.lesson))return;
+   var asker=t.dataset.u,ask=t.dataset.a,a=((AT.docs[asker]||{}).asks||[]).filter(function(x){return x.id===ask})[0];if(!a||(!AT.canEdit&&!mastered(+a.lesson)))return;
    var kind=AT.reply.kind;save(function(d){d.replies=d.replies.concat([{id:uid(),t:Date.now(),ask:ask,to:asker,text:txt,kind:kind}]);d.claim=null}).then(function(){AT.reply=null;AT.msg='';return sync()}).then(function(){render(true)})};
   A['at-thank']=function(t){var r=t.dataset.r,h=t.dataset.h,a=t.dataset.a;save(function(d){if(!d.thanks.some(function(x){return x.ask===a&&x.helper===h}))d.thanks=d.thanks.concat([{reply:r,helper:h,ask:a,t:Date.now()}])})};
   A['at-report']=function(t){var r=t.dataset.r,h=t.dataset.h,a=t.dataset.a;save(function(d){if(!d.reports.some(function(x){return x.reply===r}))d.reports=d.reports.concat([{reply:r,helper:h,ask:a,t:Date.now()}])})};
@@ -16118,6 +16118,18 @@ var approvedAction=ACT['teacher-approve'];ACT['teacher-approve']=async function(
 var pilotStyle=document.createElement('style');pilotStyle.textContent='.top-in,.top-r{flex-wrap:wrap}.top-r{justify-content:flex-end}.pilot-table{overflow-x:auto;margin:.8rem 0}.pilot-table table{width:100%;border-collapse:collapse}.pilot-table th,.pilot-table td{text-align:left;padding:.65rem;border-bottom:1px solid #d7dfe6;vertical-align:top}.pilot-table th{background:#eef2f6;color:#253e59;font-size:.86rem}.pilot-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:1rem 0}.pilot-fields label{display:grid;gap:6px}.pilot-fields select,.pilot-fields input{max-width:100%;width:100%}.pilot-check{display:flex;gap:9px;align-items:center;margin:.6rem 0}.pilot-lane{display:grid;grid-template-columns:minmax(90px,160px) 1fr 40px;gap:12px;align-items:center;margin:14px 0}.pilot-track{height:16px;border-radius:20px;background:#e0e7ed;overflow:hidden}.pilot-track span{display:block;height:100%;transition:width .5s ease}.pilot-answers{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}.pilot-picked{outline:3px solid #547889}.pilot-time{height:6px;background:#dfe6ed;margin-bottom:20px}.pilot-time span{display:block;background:#385d82;height:100%}@media(prefers-reduced-motion:reduce){.pilot-track span{transition:none}}';document.head.appendChild(pilotStyle);
 
 classTotals=function(){var g=goalStats(),week=String(weekStart(todayIdx())),others=CP.classmates.filter(function(p){return p.uid!==AUTH.uid&&p.uid!=='ZU5goPmM28X40rVridJLtZ9JcBu2'&&p.week===week}).reduce(function(total,p){return total+num(p.weekPractice)},0);return {total:others+(CLOUD.teacher?0:g.classMine),mine:g.classMine,goal:S.settings.classGoal}};
+
+
+var socialOldSetUser=window.RomanWayAuthApp.setUser;
+window.RomanWayAuthApp.setUser=function(user){
+ window.RomanWaySocialUid=user&&user.uid||null;
+ if((user&&user.uid)!==AUTH.uid){
+  var board=window.__board;if(board){board.rows=[];board.names={};board.me=null;board.loaded=false;board.busy=false;board.canEdit=false;board.isOwner=false;board.settings=null;board.lastSent='';board.err=null;}
+  var at=window.__atriumState;if(at){at.docs={};at.real={};at.me=null;at.loaded=false;at.busy=false;at.err=null;at.canEdit=false;at.reply=null;at.draft=null;at.form=null;at.fu=null;at.set={approve:true,ok:{},hidden:{}};}
+  var ar=window.__arena&&window.__arena.state();if(ar){ar.all=null;ar.priv=null;ar.cp=null;ar.m=null;ar.canEdit=false;ar.writable=false;ar.view='menu';ar.gerr=null;}
+ }
+ return socialOldSetUser(user);
+};
 
 render();
 })();

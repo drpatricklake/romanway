@@ -25,3 +25,7 @@ replace_once("for(var i=0;i<n;i++)if(B[i]==='V'||B[i]==='INF')A.verbs.push(i);",
 replace_once(" You may also tap other participles.", " Include the other participles identified in this sentence’s answer key.")
 replace_once('\nrender();\n})();\n</script>\n<script type="module" src="/firebase-auth.js"', '\n'+(root/'pilot-ui.js').read_text()+'\nrender();\n})();\n</script>\n<script type="module" src="/firebase-auth.js"')
 (repo/'index.html').write_text(s)
+
+# Apply the Firebase social integration to the rebuilt pilot baseline.
+import runpy
+runpy.run_path(str(root/"apply-social.py"),run_name="__main__")
