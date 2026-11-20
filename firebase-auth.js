@@ -1,4 +1,4 @@
-/* Public Firebase web configuration. This module handles Google identity only. */
+/* Public Firebase web configuration. Google identity with private Firestore progress and pilot class access. */
 const firebaseConfig = {
   apiKey: 'AIzaSyBN4RTbuNrMKL0DKhXTPTgJOEc2CtSq-mo',
   authDomain: 'latinrw.firebaseapp.com',
@@ -74,10 +74,22 @@ try {
   firebaseSignOut = authSdk.signOut;
   GoogleAuthProvider = authSdk.GoogleAuthProvider;
   await authSdk.setPersistence(auth, authSdk.browserSessionPersistence);
-  authSdk.onAuthStateChanged(auth, user => {
+  authSdk.onAuthStateChanged(auth, async user => {
     settled = true;
     window.clearTimeout(startupTimeout);
-    app.setUser(user ? {uid:user.uid, name:user.displayName || 'Student', email:user.email || ''} : null);
+    const identity=user ? {uid:user.uid, name:user.displayName || 'Student', email:user.email || ''} : null;
+    app.setUser(identity);
+    if (identity && !window.RomanWayData) {
+      const databaseTimeout=window.setTimeout(()=>app.databaseSlow(),20000);
+      try {
+        const {createStore}=await import('./firebase-data.js');
+        const store=createStore(firebaseApp,identity,app.databaseHooks);
+        window.RomanWayData=store;
+        await store.initialize(app.snapshot(),app.hasLocalWork());
+        app.databaseReady();
+      } catch (error) { app.databaseError(error); }
+      finally {window.clearTimeout(databaseTimeout);}
+    }
   }, error => {
     settled = true;
     window.clearTimeout(startupTimeout);

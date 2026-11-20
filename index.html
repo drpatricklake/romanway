@@ -920,9 +920,11 @@ function load(){try{var r=localStorage.getItem(LS);if(!r)return null;var o=JSON.
 var S=fresh(); /* Load account-specific work after Firebase verifies the user. */
 function persist(){
   if(!AUTH.uid)return false;
+  if(CLOUD&&CLOUD.ready)S.settings.threshold=CLOUD.classInfo.threshold;
   var warning=document.getElementById('save-warning');
   try{
     localStorage.setItem(LS,JSON.stringify(S));
+    if(window.RomanWayData&&CLOUD.ready)window.RomanWayData.queue(S);
     if(warning)warning.remove();
     return true;
   }catch(e){
@@ -934,6 +936,7 @@ function persist(){
       retry.addEventListener('click',persist);warning.appendChild(retry);
       document.body.insertBefore(warning,$app);
     }
+    if(window.RomanWayData&&CLOUD.ready)window.RomanWayData.queue(S);
     return false;
   }
 }
@@ -1178,13 +1181,14 @@ function header(){
   if(u){
     right=(V.screen==='lesson'?'<button class="btn ghost sm" data-act="charts-toggle" aria-expanded="'+(!!V.charts)+'">Charts</button>':'')+'<button class="btn ghost sm" data-act="open-signin">Account</button><button class="btn ghost sm" data-act="signout"'+(AUTH.phase==='busy'?' disabled':'')+'>Sign out</button>';
   }
-  return '<header class="top"><div class="band" aria-hidden="true"></div><div class="top-in"><button class="brand" data-act="home" aria-label="Home"><span class="brand-t">Latin</span><span class="brand-s">Volume I</span></button><div class="top-r">'+right+'</div></div></header>';
+  return '<header class="top"><div class="band" aria-hidden="true"></div><div class="top-in"><button class="brand" data-act="home" aria-label="Home"><span class="brand-t">Latin</span><span class="brand-s">Volume I</span></button><div class="top-r">'+(u?'<span id="cloud-status" role="status" aria-live="polite" style="font-size:.8rem;max-width:260px">'+esc(CLOUD.message)+'</span>'+(CLOUD.teacher?'<button class="btn ghost sm" data-act="login-instructor">Teacher</button>':''):'')+right+'</div></div></header>';
 }
 function render(nav){
   if(V.timer){clearInterval(V.timer);V.timer=null}
   var body;
   if(V.screen==='login'||!S.user)body=screenLogin();
-  else if(V.screen==='instructor')body=screenSignin();
+  else if(!CLOUD.ready||CLOUD.phase==='conflict')body=screenCloud();
+  else if(V.screen==='instructor')body=screenTeacherCloud();
   else if(V.screen==='road')body=screenRoad();else if(V.screen==='forum')body=screenForum();else if(V.screen==='avatar')body=screenAvatar();else if(V.screen==='signin')body=screenSignin();else if(V.screen==='board')body=screenBoard();else if(V.screen==='arena')body=screenArena();else if(V.screen==='biblioteca')body=screenBiblioteca();else if(V.screen==='circus')body=screenCircus();else if(V.screen==='spectacula')body=screenSpectacula();else if(V.screen==='virtutes')body=screenVirtutes();else if(V.screen==='domus')body=screenDomus();else if(V.screen==='appendix')body=screenAppendix();else if(V.screen==='readings')body=screenReadings();
   else if(V.screen==='review')body=screenReview();
   else if(V.screen==='lesson')body=screenLesson();
@@ -1208,7 +1212,7 @@ function screenLogin(){
   var busy=AUTH.phase==='loading'||AUTH.phase==='busy';
   var failed=AUTH.phase==='failed';
   var label=AUTH.phase==='loading'?'Checking sign-in…':AUTH.phase==='busy'?'Opening Google…':failed?'Retry connection':'Continue with Google';
-  return '<main class="wrap narrow"><h1 class="display">Latin: The Roman Way</h1><p class="lede">Latin language and Roman civilization</p><section class="panel"><h2>Welcome</h2><p>Sign in with your Google account to begin or resume your lessons.</p><p><button class="btn" data-act="'+(failed?'auth-retry':'auth-google')+'"'+(busy?' disabled':'')+'>'+label+'</button></p><p class="note" role="status" aria-live="polite">'+esc(AUTH.error)+'</p></section><p class="fine">This preview saves your progress in this browser for your account. Saving across devices and shared classroom features are being connected.</p></main>';
+  return '<main class="wrap narrow"><h1 class="display">Latin: The Roman Way</h1><p class="lede">Latin language and Roman civilization</p><section class="panel"><h2>Welcome</h2><p>Sign in with your Google account to begin or resume your lessons.</p><p><button class="btn" data-act="'+(failed?'auth-retry':'auth-google')+'"'+(busy?' disabled':'')+'>'+label+'</button></p><p class="note" role="status" aria-live="polite">'+esc(AUTH.error)+'</p></section><p class="fine">Signed-in progress is saved online with a browser backup. Join your instructor’s class from Account to share your progress with them.</p></main>';
 }
 
 /* ================= rendering: lesson ================= */
@@ -15636,104 +15640,170 @@ function endDrag(ev,cancel){
 window.addEventListener('pointerup',function(ev){endDrag(ev,false)});
 window.addEventListener('pointercancel',function(ev){endDrag(ev,true)});
 
-/* Firebase identity is separate from lesson state and future class permissions. */
-function authUser(user) {
-  var previousId = AUTH.uid;
-  if (previousId && (!user || user.uid !== previousId)) {
-    window.location.reload();
-    return;
+/* Firebase identity and database access are independent of saved lesson roles. */
+var CLOUD={phase:'loading',message:'Connecting to your saved work…',ready:false,teacher:false,member:null,classInfo:{threshold:80},code:'',rows:[],selected:null,student:null,error:'',conflict:null,busy:false};
+function cloudStatus(phase,message){
+  CLOUD.phase=phase;CLOUD.message=message||'';
+  var el=document.getElementById('cloud-status');
+  if(el)el.textContent=CLOUD.message;
+  if(!CLOUD.ready||phase==='conflict')render();
+}
+function cloudError(error){
+  CLOUD.error=(error&&error.code==='permission-denied')?'Database access was denied. Publish the supplied Firestore rules in the latinrw project.':(error&&error.message)||'The database could not connect. Please retry.';
+  render();
+}
+function cloudSnapshot(){var o=JSON.parse(JSON.stringify(S));delete o.user;return o}
+function cloudApply(data){
+  var identity=S.user,next=fresh();
+  Object.keys(data||{}).forEach(function(k){if(k!=='user'&&k!=='__proto__'&&k!=='constructor'&&k!=='prototype')next[k]=data[k]});
+  next.settings=Object.assign(fresh().settings,next.settings||{}, {threshold:CLOUD.classInfo.threshold});
+  next.user=identity;S=next;window.__S=S;
+  localStorage.setItem(LS,JSON.stringify(S));
+}
+function cloudSummary(){
+  var lessons=[],correct=0,total=0;
+  for(var n=1;n<=57;n++){
+    try{var r=window.__rinfo(n);lessons.push({lesson:n,done:r.done||0,total:r.total||0})}catch(e){lessons.push({lesson:n,done:0,total:0})}
   }
-  AUTH.phase = 'ready';
-  AUTH.error = '';
-  if (!user) {
-    AUTH.uid = null;
-    AUTH.identity = null;
-    S = fresh();
-    window.__S = S;
-    V.screen = 'login';
-    render(true);
-    return;
-  }
-  if (!previousId) {
-    AUTH.uid = user.uid;
-    LS = AUTH.baseKey + ':firebase:' + user.uid;
-    S = load() || fresh();
-    AUTH.identity = {uid:user.uid, name:user.name || 'Student', email:user.email || ''};
-    S.user = {role:'student', name:AUTH.identity.name, code:(S.user && S.user.code) || '', start:'student', uid:user.uid};
-    window.__S = S;
-    V.screen = 'home';
-    V.practice = null;
-    V.game = null;
-    persist();
+  S.attempts.forEach(function(a){if(Number.isFinite(a.correct)&&Number.isFinite(a.total)&&a.total>0){correct+=a.correct;total+=a.total}});
+  return {persona:(S.av&&S.av.name)||'',lessons:lessons,completed:lessons.filter(function(r){return r.total>0&&r.done>=r.total}).length,correct:correct,total:total,attempts:S.attempts.length,accuracy:total?Math.round(correct/total*100):null};
+}
+function screenCloud(){
+  var h='<main class="wrap narrow"><h1>Your saved work</h1><section class="panel"><p role="status">'+esc(CLOUD.message)+'</p>';
+  if(CLOUD.error)h+='<p role="alert">'+esc(CLOUD.error)+'</p>';
+  if(CLOUD.phase==='conflict')h+='<p>Both copies are retained until you choose. This choice replaces the work you continue with. Download this device’s copy first if you want to keep both.</p><button class="btn ghost" data-act="cloud-backup">Download this device’s copy</button> <button class="btn" data-act="cloud-online">Use online copy</button> <button class="btn ghost" data-act="cloud-local">Use this device’s copy</button>';
+  else h+='<button class="btn" data-act="auth-retry">Retry connection</button> <button class="btn ghost" data-act="cloud-local-signout">Sign out</button>';
+  return h+'</section></main>';
+}
+function authUser(user){
+  var previous=AUTH.uid;
+  if(previous&&(!user||user.uid!==previous)){if(window.RomanWayData)window.RomanWayData.stop();window.location.reload();return}
+  AUTH.phase='ready';AUTH.error='';
+  if(!user){AUTH.uid=null;AUTH.identity=null;S=fresh();window.__S=S;V.screen='login';render(true);return}
+  if(!previous){
+    AUTH.uid=user.uid;AUTH.identity={uid:user.uid,name:user.name||'Student',email:user.email||''};
+    LS=AUTH.baseKey+':firebase:'+user.uid;
+    S=load()||fresh();S.user={role:'student',name:AUTH.identity.name,start:'student',uid:user.uid};window.__S=S;
+    V.screen='home';V.practice=null;V.game=null;
   }
   render(true);
 }
-function authStatus(phase, message) {
-  AUTH.phase = phase;
-  AUTH.error = message || '';
-  render();
+function authStatus(phase,message){AUTH.phase=phase;AUTH.error=message||'';render()}
+function authLogin(){if(AUTH.phase==='busy'||AUTH.phase==='loading')return;if(window.RomanWayAuth)return window.RomanWayAuth.signIn();window.location.reload()}
+function legacyWork(){try{var old=JSON.parse(localStorage.getItem(AUTH.baseKey)||'null');return old&&typeof old==='object'&&!Array.isArray(old)?old:null}catch(e){return null}}
+async function importLegacy(){
+  if(!AUTH.uid||!AUTH.importConfirm||S.authImport||!CLOUD.ready)return;
+  var old=legacyWork();if(!old)return;
+  old=JSON.parse(JSON.stringify(old));delete old.user;
+  old.authImport={source:AUTH.baseKey,at:Date.now()};
+  cloudApply(old);persist();
+  try{await window.RomanWayData.flush();window.location.reload()}catch(e){cloudError(e)}
 }
-function authLogin() {
-  if (AUTH.phase === 'busy' || AUTH.phase === 'loading') return;
-  if (window.RomanWayAuth && window.RomanWayAuth.signIn) return window.RomanWayAuth.signIn();
-  else window.location.reload();
+function hasLocalWork(){
+  if(!localStorage.getItem(LS))return false;
+  var empty=fresh(),current=cloudSnapshot();delete empty.user;
+  delete current.settings;delete empty.settings;
+  return JSON.stringify(current)!==JSON.stringify(empty);
 }
-function legacyWork() {
-  try {
-    var raw = localStorage.getItem(AUTH.baseKey);
-    if (!raw) return null;
-    var old = JSON.parse(raw);
-    return old && typeof old === 'object' && !Array.isArray(old) ? old : null;
-  } catch (error) { return null; }
+function cloudAccess(access){
+  CLOUD.teacher=access.teacher;CLOUD.member=access.member;CLOUD.classInfo=access.classInfo;
+  S.settings.threshold=access.classInfo.threshold;
 }
-function importLegacy() {
-  if (!AUTH.uid || !AUTH.importConfirm || S.authImport) return;
-  var old = legacyWork();
-  if (!old) return;
-  var imported = fresh(), identity = S.user;
-  Object.keys(old).forEach(function(key) {
-    if (key !== 'user' && key !== 'authImport') imported[key] = old[key];
-  });
-  imported.settings = Object.assign(fresh().settings, old.settings || {});
-  imported.user = identity;
-  imported.authImport = {source:AUTH.baseKey, at:Date.now()};
-  S = imported;
-  window.__S = S;
-  if (persist()) window.location.reload();
-  else render();
-}
-window.RomanWayAuthApp = {setUser:authUser, setStatus:authStatus};
-ACT['login-student'] = authLogin;
-ACT['auth-google'] = authLogin;
-ACT['auth-retry'] = function() {window.location.reload()};
-ACT['login-instructor'] = function() {V.screen = 'signin'; render(true)};
-ACT['toggle-view'] = function() {V.screen = 'signin'; render(true)};
-ACT.signout = function() {
-  if (!AUTH.uid || AUTH.phase === 'busy') return;
-  if (window.RomanWayAuth && window.RomanWayAuth.signOut) {
-    if (persist()) window.RomanWayAuth.signOut();
-  }
+window.RomanWayAuthApp={
+  setUser:authUser,setStatus:authStatus,snapshot:cloudSnapshot,hasLocalWork:hasLocalWork,
+  databaseHooks:{
+    status:cloudStatus,error:cloudError,snapshot:cloudSnapshot,summary:cloudSummary,apply:cloudApply,access:cloudAccess,
+    conflict:function(data){CLOUD.conflict=data;CLOUD.ready=false;render()},
+    member:function(data){CLOUD.member=data;if(V.screen==='signin')render()},
+    classInfo:function(data){CLOUD.classInfo=data;S.settings.threshold=data.threshold;if(CLOUD.ready){persist();if(V.screen==='instructor'||V.screen==='signin')render()}},
+    teacher:function(yes){CLOUD.teacher=yes;if(!yes){CLOUD.rows=[];CLOUD.selected=null;CLOUD.student=null;if(V.screen==='instructor')V.screen='signin'}render()},
+    code:function(code){CLOUD.code=code;if(V.screen==='instructor')render()}
+  },
+  databaseSlow:function(){CLOUD.message='Still connecting to the database. Check your connection and confirm that the supplied Firestore rules are published.';if(!CLOUD.ready)render()},
+  databaseReady:function(){if(CLOUD.phase==='conflict')return;CLOUD.ready=true;CLOUD.error='';render(true)},
+  databaseError:function(error){CLOUD.ready=false;CLOUD.phase='error';CLOUD.message='Your work is still saved on this browser. The database connection needs attention.';cloudError(error)}
 };
-ACT['auth-import-open'] = function() {AUTH.importConfirm = true; render()};
-ACT['auth-import-cancel'] = function() {AUTH.importConfirm = false; render()};
-ACT['auth-import-confirm'] = importLegacy;
-screenSignin = function() {
-  var user = AUTH.identity;
-  var h = '<main class="wrap narrow"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1>Account status</h1>';
-  h += '<section class="panel"><h2>Google sign-in</h2><p>' + (user ? 'Signed in as <b>' + esc(user.name) + '</b>.' : 'Please sign in to continue.') + '</p>';
-  if (user && user.email) h += '<p class="note">' + esc(user.email) + '</p>';
-  h += '<p>Your progress is saved on this browser for your Google account. Saving across devices and classroom features will open when the database connection is added.</p></section>';
-  h += '<section class="panel"><h2>Instructor access</h2><p>Verified instructor access and the class roster will open with the database connection.</p></section>';
-  if (user && !S.authImport && legacyWork()) {
-    h += '<section class="panel"><h2>Earlier work on this browser</h2>';
-    if (AUTH.importConfirm) {
-      h += '<p>Import the earlier local work into this Google account? Confirm that this work belongs to you. This replaces this account’s current local progress with the earlier work. The original local copy is retained.</p><button class="btn" data-act="auth-import-confirm">This is my work — import</button> <button class="btn ghost" data-act="auth-import-cancel">Cancel</button>';
-    } else {
-      h += '<p>Earlier work from the version without Google sign-in is available on this browser. You can import it if it belongs to you.</p><button class="btn ghost" data-act="auth-import-open">Review import</button>';
-    }
-    h += '</section>';
+async function cloudTask(fn){
+  if(CLOUD.busy)return;CLOUD.busy=true;CLOUD.error='';
+  try{await fn()}catch(e){cloudError(e)}finally{CLOUD.busy=false;render()}
+}
+async function loadRoster(){CLOUD.rows=await window.RomanWayData.roster();await window.RomanWayData.classCode()}
+function downloadFile(name,text,type){var a=document.createElement('a'),url=URL.createObjectURL(new Blob([text],{type:type}));a.href=url;a.download=name;a.click();setTimeout(function(){URL.revokeObjectURL(url)},1000)}
+ACT.home=function(){V.practice=null;V.game=null;V.warn=false;V.screen=S.user?'home':'login';render(true)};
+ACT['login-student']=authLogin;ACT['auth-google']=authLogin;
+ACT['auth-retry']=function(){window.location.reload()};
+ACT['login-instructor']=ACT['toggle-view']=function(){if(CLOUD.teacher){V.screen='instructor';return cloudTask(loadRoster)}else{V.screen='signin';render(true)}};
+ACT['cloud-retry']=function(){return cloudTask(function(){return window.RomanWayData.flush()})};
+ACT['cloud-backup']=function(){downloadFile('Roman-Way-device-backup.json',JSON.stringify(cloudSnapshot(),null,2),'application/json')};
+function resolveCloud(choice){return cloudTask(async function(){await window.RomanWayData.resolve(choice);CLOUD.ready=true;CLOUD.conflict=null;CLOUD.error='';window.location.reload()})}
+ACT['cloud-online']=function(){resolveCloud('online')};ACT['cloud-local']=function(){resolveCloud('local')};
+ACT.signout=function(){return cloudTask(async function(){persist();await window.RomanWayData.flush();await window.RomanWayAuth.signOut()})};
+ACT['cloud-local-signout']=function(){if(window.confirm('Any work not saved online will remain only on this browser. Sign out?'))window.RomanWayAuth.signOut()};
+ACT['class-join']=function(){var code=document.getElementById('class-code').value;cloudTask(async function(){await window.RomanWayData.join(code)})};
+ACT['teacher-refresh']=function(){return cloudTask(loadRoster)};
+ACT['teacher-approve']=function(el){return cloudTask(async function(){await window.RomanWayData.membership(el.dataset.uid,'active');await loadRoster()})};
+ACT['teacher-decline']=function(el){return cloudTask(async function(){await window.RomanWayData.membership(el.dataset.uid,'declined');CLOUD.selected=null;CLOUD.student=null;await loadRoster()})};
+ACT['teacher-student']=function(el){return cloudTask(async function(){CLOUD.student=await window.RomanWayData.student(el.dataset.uid);CLOUD.selected=el.dataset.uid})};
+ACT['teacher-threshold']=function(){var value=Number(document.getElementById('class-threshold').value);cloudTask(function(){return window.RomanWayData.threshold(value)})};
+ACT['teacher-new-code']=function(){return cloudTask(function(){return window.RomanWayData.rotateCode()})};
+ACT['teacher-csv']=function(){
+  var lines=[['Student','Email','Roman name','Status','Completed lessons','Recorded accuracy (%)','Recorded attempts','Last saved'].map(csvField).join(',')];
+  CLOUD.rows.forEach(function(r){var p=r.profile||{},s=p.summary||{};lines.push([r.displayName,r.email,s.persona,r.status,s.completed,s.accuracy,s.attempts,p.updatedAt?new Date(p.updatedAt.toMillis()).toISOString():''].map(csvField).join(','))});
+  downloadFile('Roman-Way-class-progress.csv',lines.join('\n'),'text/csv;charset=utf-8');
+};
+ACT['auth-import-open']=function(){AUTH.importConfirm=true;render()};
+ACT['auth-import-cancel']=function(){AUTH.importConfirm=false;render()};ACT['auth-import-confirm']=importLegacy;
+function teacherStudentHtml(){
+  if(!CLOUD.student)return '';
+  var row=CLOUD.rows.find(function(r){return r.uid===CLOUD.selected}),old=S,oldExposed=window.__S,h='';
+  try{
+    var clean=fresh();Object.keys(CLOUD.student).forEach(function(k){if(k!=='user'&&k!=='__proto__'&&k!=='constructor'&&k!=='prototype')clean[k]=CLOUD.student[k]});
+    clean.settings=Object.assign(fresh().settings,clean.settings||{},{threshold:CLOUD.classInfo.threshold});clean.user={name:row?row.displayName:'Student',role:'student'};
+    S=clean;window.__S=S;
+    h='<section class="panel"><h2>'+esc(clean.user.name)+' — saved work</h2><p>Read-only view of the latest online copy. Recorded accuracy includes practice and repeated attempts.</p><details><summary>Lesson completion</summary><table><thead><tr><th>Lesson</th><th>Parts completed</th></tr></thead><tbody>';
+    cloudSummary().lessons.forEach(function(r){if(r.done)h+='<tr><td>'+ROMAN[r.lesson-1]+'</td><td>'+r.done+' / '+r.total+'</td></tr>'});
+    h+='</tbody></table></details>';
+    [wsSubmissionsHtml,notesWritesHtml,readingsInstructorHtml,setsInstructorHtml,pronInstructorHtml,labInstructorHtml].forEach(function(fn){
+      h+='<fieldset disabled style="border:0;padding:0;min-width:0">'+fn().replace(/<button\b[^>]*>[\s\S]*?<\/button>/gi,'').replace(/in this browser/g,'in this saved record')+'</fieldset>';
+    });
+    h+='<details><summary>Recorded exercise attempts ('+S.attempts.length+')</summary>';
+    S.attempts.slice().reverse().forEach(function(a){h+='<details><summary>'+esc(a.ref||a.kind||'Exercise')+' — '+esc(a.correct==null?'':a.correct)+' / '+esc(a.total==null?'':a.total)+'</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(JSON.stringify(a,null,2))+'</pre></details>'});
+    h+='</details></section>';
+  }catch(error){h='<section class="panel"><h2>Saved work</h2><p>This saved record could not be displayed. Your own work has not been changed. Ask your developer to check the student record.</p></section>'}
+  finally{S=old;window.__S=oldExposed}
+  return h;
+}
+function screenTeacherCloud(){
+  if(!CLOUD.teacher)return screenSignin();
+  var h='<main class="wrap"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1>Your class</h1><p>Real student records from the pilot class. Approving a student grants you access to their saved work.</p>';
+  if(CLOUD.error)h+='<p class="alert" role="alert">'+esc(CLOUD.error)+'</p>';
+  h+='<section class="panel"><h2>Class setup</h2><p>Give students this code after they sign in. They enter it under Account → Join your class.</p><p><b style="font-size:1.3em">'+esc(CLOUD.code||'Loading code…')+'</b></p><button class="btn ghost sm" data-act="teacher-new-code">Replace class code</button><p>Replacing the code closes the old code to new requests. Existing students keep their membership.</p><label>Required-practice threshold (%) <input id="class-threshold" type="number" min="0" max="100" step="1" value="'+CLOUD.classInfo.threshold+'"></label> <button class="btn sm" data-act="teacher-threshold">Save class threshold</button></section>';
+  h+='<section class="panel"><h2>Students</h2><button class="btn ghost sm" data-act="teacher-refresh">Refresh records</button> <button class="btn ghost sm" data-act="teacher-csv">Download CSV</button><div style="overflow-x:auto"><table><thead><tr><th>Student</th><th>Status</th><th>Lessons complete</th><th>Recorded accuracy</th><th>Last saved</th><th>Actions</th></tr></thead><tbody>';
+  CLOUD.rows.forEach(function(r){var p=r.profile||{},s=p.summary||{};h+='<tr><td><b>'+esc(r.displayName)+'</b><br>'+esc(r.email)+(s.persona?'<br>Roman name: '+esc(s.persona):'')+'</td><td>'+esc(r.status)+'</td><td>'+esc(s.completed==null?'—':s.completed)+'</td><td>'+(s.accuracy==null?'—':esc(s.accuracy)+'%')+'</td><td>'+esc(p.updatedAt?new Date(p.updatedAt.toMillis()).toLocaleString():'—')+'</td><td>';
+    if(r.status==='active')h+='<button class="btn ghost sm" data-act="teacher-student" data-uid="'+esc(r.uid)+'">View work</button> <button class="btn ghost sm" data-act="teacher-decline" data-uid="'+esc(r.uid)+'">Remove access</button>';
+    else h+='<button class="btn sm" data-act="teacher-approve" data-uid="'+esc(r.uid)+'">Approve</button>'+(r.status==='pending'?' <button class="btn ghost sm" data-act="teacher-decline" data-uid="'+esc(r.uid)+'">Decline</button>':'');
+    h+='</td></tr>';
+  });
+  if(!CLOUD.rows.length)h+='<tr><td colspan="6">No class requests yet.</td></tr>';
+  return h+'</tbody></table></div><p class="note">Accuracy is calculated from saved exercise attempts, including repeats. It is not an official grade. Use View work for submitted written responses.</p></section>'+teacherStudentHtml()+'</main>';
+}
+screenSignin=function(){
+  var u=AUTH.identity,h='<main class="wrap narrow"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1>Account</h1><section class="panel"><h2>Google sign-in</h2><p>'+esc(u?u.name:'')+'<br>'+esc(u?u.email:'')+'</p><p>Progress is saved to your Google-linked app account. Check the saving status above before closing the page.</p><button class="btn ghost" data-act="cloud-retry">Retry online save</button> <button class="btn ghost" data-act="cloud-backup">Download device backup</button>';
+  if(CLOUD.phase==='error')h+=' <button class="btn ghost" data-act="cloud-local-signout">Sign out with device copy only</button>';
+  h+='</section>';
+  if(CLOUD.error)h+='<p class="alert" role="alert">'+esc(CLOUD.error)+'</p>';
+  if(CLOUD.teacher)h+='<section class="panel"><h2>Instructor access</h2><p>Your Google account is authorized as an instructor.</p><button class="btn" data-act="login-instructor">Open your class</button></section>';
+  else{
+    h+='<section class="panel"><h2>Join your class</h2>';
+    if(CLOUD.member)h+='<p>Class membership: <b>'+esc(CLOUD.member.status)+'</b>.</p>';
+    if(CLOUD.member&&CLOUD.member.status==='active')h+='<p>Your instructor can view your saved progress and written submissions.</p>';
+    else if(CLOUD.member&&CLOUD.member.status==='pending')h+='<p>Your request is waiting for your instructor’s approval. You can continue studying and saving your work.</p>';
+    else if(CLOUD.member&&CLOUD.member.status==='declined')h+='<p>Contact your instructor to request access again. They can approve your existing record.</p>';
+    else h+='<p>Enter the code from your instructor to request membership. Once approved, your instructor can view your saved work.</p><label>Class code <input id="class-code" autocomplete="off" placeholder="ROMA-XXXXXXXXXX" maxlength="15"></label> <button class="btn" data-act="class-join">Request to join</button>';
+    h+='</section>';
   }
-  return h + '</main>';
+  if(u&&!S.authImport&&legacyWork())h+='<section class="panel"><h2>Earlier work on this browser</h2>'+(AUTH.importConfirm?'<p>This replaces your current account’s progress with the earlier browser work. Confirm that it belongs to you. Download a backup first if needed.</p><button class="btn" data-act="auth-import-confirm">This is my work — import</button> <button class="btn ghost" data-act="auth-import-cancel">Cancel</button>':'<p>You can import earlier work if it belongs to you.</p><button class="btn ghost" data-act="auth-import-open">Review import</button>')+'</section>';
+  return h+'</main>';
 };
 
 render();
