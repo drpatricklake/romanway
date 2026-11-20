@@ -1,0 +1,47 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+import {initializeTestEnvironment,assertFails} from '@firebase/rules-unit-testing';
+import {doc,getDoc,setDoc,updateDoc} from 'firebase/firestore';
+writeFileSync(new URL('./social-under-test.mjs',import.meta.url),readFileSync(new URL('../../firebase-social.js',import.meta.url),'utf8').replace("'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js'","'firebase/firestore'"));
+const {createSocial}=await import('./social-under-test.mjs');
+const env=await initializeTestEnvironment({projectId:'demo-romanway',firestore:{host:'127.0.0.1',port:8180,rules:readFileSync(new URL('../../firestore.rules',import.meta.url),'utf8')}});
+const root='ZU5goPmM28X40rVridJLtZ9JcBu2',db=uid=>env.authenticatedContext(uid,{email:uid+'@example.test',email_verified:true,firebase:{sign_in_provider:'google.com'}}).firestore();
+const t=db(root),a=db('alice'),b=db('bob'),c=db('carol');
+const T=createSocial(t,{uid:root}),A=createSocial(a,{uid:'alice'}),B=createSocial(b,{uid:'bob'}),C=createSocial(c,{uid:'carol'}),P=createSocial(db('pending'),{uid:'pending'});
+const rec=(name,L=0)=>({name,furthest:L,mastered:L,done:L?{'1':1,'2':2}:{},clients:[],asks:[],replies:[],thanks:[],reports:[],earned:[],hist:[],client:null,patron:null});
+const ask=(id,to='all')=>({id,lesson:1,q:'Why is this accusative?',to,open:true,tried:'I tried the dative',dont:'I do not understand the preposition.',t:1});
+const record=(records,id)=>records.docs.find(d=>d.id===id)?.data();
+try{
+ await env.clearFirestore();await env.withSecurityRulesDisabled(async x=>{for(const uid of ['alice','bob','carol'])await setDoc(doc(x.firestore(),`classes/pilot/members/${uid}`),{status:'active',uid,displayName:uid});});
+ const ar=rec('Agricola'),br=rec('Nauta',2),cr=rec('Scriba');await T.db.doc('settings/atrium').get();
+ await A.db.doc('atrium/alice').set(ar);await B.db.doc('atrium/bob').set(br);await C.db.doc('atrium/carol').set(cr);
+ ar.asks.push(ask('public'));await A.db.doc('atrium/alice').set(ar);assert.equal(record(await B.db.collection('atrium').get(),'alice').asks.length,1);
+ const reply={id:'r1',ask:'public',to:'alice',kind:'hint',text:'Look at the case required after this preposition.',t:2};
+ br.replies.push(reply);await B.db.doc('atrium/bob').set(br);assert.equal(record(await A.db.collection('atrium').get(),'bob').replies.length,1);
+ cr.replies.push({...reply,id:'unqualified'});await assertFails(C.db.doc('atrium/carol').set(cr));cr.replies=[];
+ ar.thanks.push({ask:'public',reply:'r1',helper:'bob',t:3});await A.db.doc('atrium/alice').set(ar);assert.equal(record(await B.db.collection('atrium').get(),'alice').thanks.length,1);
+ ar.client={patron:'bob',t:4};br.clients=['alice'];br.patron={on:true,t:4};await A.db.doc('atrium/alice').set(ar);await B.db.doc('atrium/bob').set(br);
+ ar.asks.push(ask('private','bob'));await assertFails(A.db.doc('atrium/alice').set(ar));await T.db.doc('settings/atrium').set({approve:true,ok:{alice:'bob'},hidden:{}});await A.db.doc('atrium/alice').set(ar);
+ assert.equal(record(await B.db.collection('atrium').get(),'alice').asks.length,2);assert.equal(record(await C.db.collection('atrium').get(),'alice').asks.length,1);await assertFails(getDoc(doc(c,'classes/pilot/atriumQuestions/alice_private')));
+ br.replies.push({...reply,id:'r2',ask:'private'});await B.db.doc('atrium/bob').set(br);await assertFails(getDoc(doc(c,'classes/pilot/atriumQuestions/alice_private/replies/bob_r2')));assert.equal(record(await T.db.collection('atrium').get(),'alice').asks.length,2);
+ await assertFails(C.db.doc('settings/atrium').set({approve:false,ok:{},hidden:{}}));await T.db.doc('settings/atrium').set({approve:true,ok:{alice:'bob'},hidden:{'a:public':true,'r:r2':true}});
+ assert.equal(record(await C.db.collection('atrium').get(),'alice').asks.length,0);await assertFails(getDoc(doc(c,'classes/pilot/atriumQuestions/alice_public')));await assertFails(getDoc(doc(b,'classes/pilot/atriumQuestions/alice_private/replies/bob_r2')));
+ ar.reports=[{reply:'r1',helper:'bob',ask:'public',t:5}];await A.db.doc('atrium/alice').set(ar);assert.equal(record(await T.db.collection('atrium').get(),'alice').reports.length,1);assert.equal(record(await B.db.collection('atrium').get(),'alice').reports.length,0);
+ await assertFails(P.db.collection('atrium').get());await assert.rejects(B.db.doc('atrium/alice').set(ar),/Only your own/);
+ await assertFails(setDoc(doc(b,'users/alice/social/atrium'),ar));
+ const run={ids:['q1','q2','q3','q4'],res:[1,0,1,1],cls:'hoplomachus',upto:1,t:1};await A.db.doc('arena/alice').set({name:'Agricola',rating:1000,t:1,practice:run});assert.deepEqual((await B.db.collection('arena').get()).docs[0].data().practice.ids,run.ids);
+ await assertFails(B.db.doc('arena/alice').set({name:'Fake',rating:9000,t:1}));await A.db.doc('data/users/alice/arena').set({rating:1020,ranked:{cp1:{res:run.res}}});assert.equal((await A.db.doc('data/users/alice/arena').get()).data().rating,1020);await assertFails(B.db.doc('data/users/alice/arena').get());
+ await assertFails(B.db.doc('settings/arena').set({cp:{id:'fake'}}));await T.db.doc('settings/arena').set({cp:{id:'cp1',ids:run.ids,upto:1}});assert.equal((await B.db.doc('settings/arena').get()).data().cp.id,'cp1');await A.db.doc('arena/alice').delete();assert.equal((await B.db.collection('arena').get()).docs.length,0);
+
+ await A.db.doc('scores/alice').set({laurels:50,lessons:{1:50},at:1,t:1});
+ assert.equal((await B.db.collection('scores').get()).docs[0].data().laurels,50);
+ await assertFails(B.db.doc('scores/alice').set({laurels:900,lessons:{},at:1,t:1}));
+ await assertFails(B.db.doc('settings/leaderboard').set({mode:'all'}));
+ await T.db.doc('settings/leaderboard').set({mode:'all'});
+ ar.asks[1].deleted=99;ar.asks[1].open=false;await A.db.doc('atrium/alice').set(ar);
+ await assertFails(getDoc(doc(b,'classes/pilot/atriumQuestions/alice_private')));
+ assert.equal(record(await T.db.collection('atrium').get(),'alice').asks[1].q,'Why is this accusative?');
+ globalThis.RomanWaySocialUid='carol';await assert.rejects(A.db.doc('settings/arena').get(),/Account changed/);delete globalThis.RomanWaySocialUid;
+ await updateDoc(doc(t,'classes/pilot/members/bob'),{status:'declined'});await assertFails(B.db.collection('arena').get());await assertFails(B.db.collection('atrium').get());
+ console.log('PASS Firebase Atrium questions, qualified replies, thanks, approved patron privacy, moderation, reports, revocation, Arena ghosts, opt-out, private records, and checkpoints.');
+}finally{await env.cleanup()}

@@ -39,6 +39,7 @@ jobs:
           java-version: '21'
       - run: npm ci --ignore-scripts
         working-directory: ci
+      - run: npm ci --ignore-scripts --prefix developer/tests
       - run: npm test
         working-directory: ci
 

@@ -4,6 +4,7 @@ import {
   runTransaction, onSnapshot, serverTimestamp, query, orderBy,
 } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
 
+import {createSocial} from './firebase-social.js';
 import {createClassroom} from './firebase-classroom.js';
 
 export const OWNER_UID = 'ZU5goPmM28X40rVridJLtZ9JcBu2';
@@ -16,6 +17,7 @@ export function createStore(firebaseApp, identity, hooks, runtime = {localStorag
   const {localStorage, window, crypto}=runtime;
   const db = runtime.db || getFirestore(firebaseApp);
   const classroom=createClassroom(db,identity);
+  const social=createSocial(db,identity);
   const uid = identity.uid;
   const base = `users/${uid}`;
   const metaKey = `romanway-cloud:${uid}`;
@@ -227,7 +229,7 @@ export function createStore(firebaseApp, identity, hooks, runtime = {localStorag
   const onOnline=() => { if (ready) flush().catch(() => {}); };
   window.addEventListener('online',onOnline);
   return {
-    initialize,queue,flush,resolve,join,roster,rotateCode,classCode,classroom,
+    initialize,queue,flush,resolve,join,roster,rotateCode,classCode,classroom,social,
     async membership(student, state) { await updateDoc(ref(`classes/${CLASS}/members/${student}`),{status:state}); },
     async threshold(value) {
       if (!Number.isInteger(value)||value<0||value>100) throw new Error('Use a percentage between 0 and 100.');
