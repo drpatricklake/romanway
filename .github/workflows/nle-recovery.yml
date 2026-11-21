@@ -38,7 +38,7 @@ jobs:
         run: node core.test.mjs
       - name: Authentication regressions
         working-directory: developer/tests
-        run: node auth.test.mjs ../../index.html ../../firebase-auth.js
+        run: timeout -s INT 45s node --trace-sigint auth.test.mjs ../../index.html ../../firebase-auth.js
       - name: Classroom UI and 601 lesson tabs
         timeout-minutes: 5
         working-directory: developer/tests
@@ -52,7 +52,7 @@ jobs:
       - name: Firestore permissions and classroom regressions
         timeout-minutes: 5
         working-directory: developer/tests
-        run: firebase emulators:exec --config ../../firebase.json --project demo-romanway --only firestore "node rules.test.mjs && node data.test.mjs && node classroom.test.mjs && node social.test.mjs"
+        run: ./node_modules/.bin/firebase emulators:exec --config ../../firebase.json --project demo-romanway --only firestore "node rules.test.mjs && node data.test.mjs && node classroom.test.mjs && node social.test.mjs"
       - name: Check deterministic rebuild
         run: |
           cp index.html /tmp/nle-built-index.html
