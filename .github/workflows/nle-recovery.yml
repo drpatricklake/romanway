@@ -33,9 +33,26 @@ jobs:
       - name: NLE regressions
         working-directory: developer/tests
         run: npm run test:nle
-      - name: Full classroom regressions
+      - name: Core data and word-form regressions
         working-directory: developer/tests
-        run: npm test
+        run: node core.test.mjs
+      - name: Authentication regressions
+        working-directory: developer/tests
+        run: node auth.test.mjs ../../index.html ../../firebase-auth.js
+      - name: Classroom UI and 601 lesson tabs
+        timeout-minutes: 5
+        working-directory: developer/tests
+        run: node ui.test.mjs ../../index.html ./fixtures/baseline-index.html
+      - name: Circus UI regressions
+        working-directory: developer/tests
+        run: node race-ui.test.mjs ../../index.html
+      - name: Atrium and Arena UI regressions
+        working-directory: developer/tests
+        run: node social-ui.test.mjs ../../index.html
+      - name: Firestore permissions and classroom regressions
+        timeout-minutes: 5
+        working-directory: developer/tests
+        run: firebase emulators:exec --config ../../firebase.json --project demo-romanway --only firestore "node rules.test.mjs && node data.test.mjs && node classroom.test.mjs && node social.test.mjs"
       - name: Check deterministic rebuild
         run: |
           cp index.html /tmp/nle-built-index.html
