@@ -1,0 +1,252 @@
+function nleItems
+function nleItems(set){if(set.rotate&&!set._r){var n=0;set.parts.forEach(function(p){p.items.forEach(function(it){var PM=[[1,3,0,2],[2,0,3,1],[3,1,2,0],[0,2,1,3]],tg=PM[(n>>2)%4][n%4],k=(it.a-tg+4)%4;n++;it.o=it.o.slice(k).concat(it.o.slice(0,k));it.a=(it.a-k+4)%4})});set._r=true}var a=[];set.parts.forEach(function(p){p.items.forEach(function(it){a.push(it)})});return a}
+function nleScore(id){var set=NLESETS[id],st=nleState(id),cats={},ok=0,tot=0;nleItems(set).forEach(function(it,i){var c=cats[it.c]||(cats[it.c]=[0,0]);c[1]++;tot++;if(st.ans[i]===it.a){c[0]++;ok++}});return {ok:ok,tot:tot,cats:cats}}
+function nlePassage(p){
+  var gl={};(p.gloss||[]).forEach(function(g){gl[g[0]]=g[1]});
+  var rows=p.lines.map(function(l,i){return '<tr><td class="note" style="width:2em;vertical-align:top">'+(i+1)+'</td><td class="lat" style="vertical-align:top">'+esc(l)+'</td><td class="note" style="vertical-align:top;font-size:.85em">'+(gl[i+1]||'')+'</td></tr>'}).join('');
+  return '<div class="panel"><p style="margin:0"><b>'+esc(p.title)+'</b></p>'+(p.sub?'<p class="note" style="margin:.1em 0 .5em"><i>'+esc(p.sub)+'</i></p>':'')+'<div class="tablewrap"><table class="para"><tbody>'+rows+'</tbody></table></div></div>';
+}
+function nleView(id,np){
+  var set=NLESETS[id],st=nleState(id),n=0,L='ABCD';
+  var h='<div class="sec"><h2 style="margin-bottom:.2em">'+esc(set.title)+'</h2><p class="note" style="max-width:70ch">'+set.intro+'</p></div>';
+  set.parts.forEach(function(part){
+    h+='<div class="sec"><h3>'+esc(part.h)+'</h3>'+(part.intro?'<p class="note">'+part.intro+'</p>':'');
+    if(part.passage&&!np)h+=nlePassage(part.passage,st,id);
+    part.items.forEach(function(it){var i=n++;
+      h+='<div class="nleq" style="margin:.9em 0"><p id="nq-'+id+'-'+i+'" style="margin:0 0 .3em"><b>'+(i+1)+'.</b> '+it.q+'</p><div role="radiogroup" aria-labelledby="nq-'+id+'-'+i+'" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start">';
+      it.o.forEach(function(o,k){var cls='btn ghost nleopt'+(st.ans[i]===k?' on':'')+(st.done&&k===it.a?' ok':'')+(st.done&&st.ans[i]===k&&k!==it
+
+function nleCopy
+function nleCopy(b){return {c:b.c,q:b.q,o:b.o.slice(),a:b.a,e:b.e}}
+function nleWarmItems(n){return NLEBANK.filter(function(b){return b.L===n})}
+function nleWarmSet(n){var id='nle'+n;if(!NLESETS[id]){NLESETS[id]={title:'NLE warm-up: Lesson '+ROMAN[n-1],intro:'A few National Latin Exam–style questions on what you learned in this lesson. Check your answers when you finish; your results by category feed your review map.',parts:[{h:'Warm-up questions',items:nleWarmItems(n).slice(0,8).map(nleCopy)}]}}return id}
+/* dynamic sets for the Part Two hub */
+function nleDynBuild(sp){
+  var rnd=nlePrng(sp.seed),gen=!!sp.gen,pool,parts=[],title='',intro='';
+  if(sp.kind==='cat'){pool=nleShuf(nleElig(sp.n,gen,sp.cat),rnd).slice(0,12);title='Category drill: '+(NLE_CATS[sp.cat]||sp.cat);parts=[{h:'Questions',items:pool.map(nleCopy)}]}
+  else if(sp.kind==='exam'){pool=nleShuf(nleElig(sp.n,gen),rnd).slice(0,24);title='Mini exam';var ps=nleLadderFor(sp.n);var pr=ps.length?ps[Math.floor(rnd()*ps.length)]:null;parts=[{h:'Part 1: Language and culture',items:pool.map(nleCopy)}];if(pr)parts.push({h:'Part 2: Reading',passage:NLESETS[pr].parts[0].passage,items:NLESETS[pr].parts[0].items.map(function(x){return {c:x.c,q:x.q,o:x.o.slice(),a:x.a,e:x.e}})})}
+  else{pool=nleShuf(nleElig(sp.n,gen),rnd).slice(0,20);title='Mixed practice';parts=[{h:'Questions',items:pool.map(nleCopy)}]}
+  intro='These questions are drawn from the bank at random'+(gen?', including general NLE topics that your book has not yet covered':' and cover only what your lessons have taught so far')+'. The real exam gives you 45 minutes for 40 questions.';
+  return {title:title,intro:intro,parts:parts};
+}
+function nleEnsureDyn(n){var sp=S.nleSpec;if(sp&&sp.n===n){var id='nle'+n;if(!NLESETS[id]||NLESETS[id]._seed!==sp.seed+sp.kind+(sp.cat||'')){var d=nleDynBuild(sp);d._seed=sp.seed+sp.kind+(sp.cat||'');NLESETS[id]=d}return id}return null}
+function nleHub(n){
+  var sp=S.nleSpec,h='';
+  if(sp&&sp.n===n&&sp.run){var id=nleEnsureDyn(n);return '<div class="sec"><button class="btn ghost" data-act="nle-menu" data-n="'+n+'">Back to the 
+
+function nleState
+function nleState(id){S.nle=S.nle||{};return S.nle[id]||(S.nle[id]={ans:{},done:false})}
+function nleItems(set){if(set.rotate&&!set._r){var n=0;set.parts.forEach(function(p){p.items.forEach(function(it){var PM=[[1,3,0,2],[2,0,3,1],[3,1,2,0],[0,2,1,3]],tg=PM[(n>>2)%4][n%4],k=(it.a-tg+4)%4;n++;it.o=it.o.slice(k).concat(it.o.slice(0,k));it.a=(it.a-k+4)%4})});set._r=true}var a=[];set.parts.forEach(function(p){p.items.forEach(function(it){a.push(it)})});return a}
+function nleScore(id){var set=NLESETS[id],st=nleState(id),cats={},ok=0,tot=0;nleItems(set).forEach(function(it,i){var c=cats[it.c]||(cats[it.c]=[0,0]);c[1]++;tot++;if(st.ans[i]===it.a){c[0]++;ok++}});return {ok:ok,tot:tot,cats:cats}}
+function nlePassage(p){
+  var gl={};(p.gloss||[]).forEach(function(g){gl[g[0]]=g[1]});
+  var rows=p.lines.map(function(l,i){return '<tr><td class="note" style="width:2em;vertical-align:top">'+(i+1)+'</td><td class="lat" style="vertical-align:top">'+esc(l)+'</td><td class="note" style="vertical-align:top;font-size:.85em">'+(gl[i+1]||'')+'</td></tr>'}).join('');
+  return '<div class="panel"><p style="margin:0"><b>'+esc(p.title)+'</b></p>'+(p.sub?'<p class="note" style="margin:.1em 0 .5em"><i>'+esc(p.sub)+'</i></p>':'')+'<div class="tablewrap"><table class="para"><tbody>'+rows+'</tbody></table></div></div>';
+}
+function nleView(id,np){
+  var set=NLESETS[id],st=nleState(id),n=0,L='ABCD';
+  var h='<div class="sec"><h2 style="margin-bottom:.2em">'+esc(set.title)+'</h2><p class="note" style="max-width:70ch">'+set.intro+'</p></div>';
+  set.parts.forEach(function(part){
+    h+='<div class="sec"><h3>'+esc(part.h)+'</h3>'+(part.intro?'<p class="note">'+part.intro+'</p>':'');
+    if(part.passage&&!np)h+=nlePassage(part.passage,st,id);
+    part.items.forEach(function(it){var i=n++;
+      h+='<div class="nleq" style="margin:.9em 0"><p id="nq-'+id+'-'+i+'" style="margin:0 0 .3em"><b>'+(i+1)+'.</b> '+it.q+'</p><div role="radiogroup" aria-labelledby="nq-'+id+'-'+i+'" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start">';
+      it.o.forEach(function(o,k){var cls='btn ghost nleo
+
+function nleView
+function nleView(id,np){
+  var set=NLESETS[id],st=nleState(id),n=0,L='ABCD';
+  var h='<div class="sec"><h2 style="margin-bottom:.2em">'+esc(set.title)+'</h2><p class="note" style="max-width:70ch">'+set.intro+'</p></div>';
+  set.parts.forEach(function(part){
+    h+='<div class="sec"><h3>'+esc(part.h)+'</h3>'+(part.intro?'<p class="note">'+part.intro+'</p>':'');
+    if(part.passage&&!np)h+=nlePassage(part.passage,st,id);
+    part.items.forEach(function(it){var i=n++;
+      h+='<div class="nleq" style="margin:.9em 0"><p id="nq-'+id+'-'+i+'" style="margin:0 0 .3em"><b>'+(i+1)+'.</b> '+it.q+'</p><div role="radiogroup" aria-labelledby="nq-'+id+'-'+i+'" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start">';
+      it.o.forEach(function(o,k){var cls='btn ghost nleopt'+(st.ans[i]===k?' on':'')+(st.done&&k===it.a?' ok':'')+(st.done&&st.ans[i]===k&&k!==it.a?' no':'');
+        h+='<button class="'+cls+'" role="radio" aria-checked="'+(st.ans[i]===k)+'" data-act="nle-pick" data-s="'+id+'" data-i="'+i+'" data-v="'+k+'"'+(st.done?' disabled':'')+'>'+L[k]+') '+o+'</button>'});
+      h+='</div>'+(st.done?'<p class="note" style="margin:.3em 0 0">'+(st.ans[i]===it.a?'<b>Correct.</b> ':'<b>The answer is '+L[it.a]+'.</b> ')+(it.e||'')+' <span class="chip">'+esc(NLE_CATS[it.c]||it.c)+'</span></p>':'')+'</div>'});
+    h+='</div>'});
+  var tot=n,answered=Object.keys(st.ans).length;
+  if(!st.done)h+='<div class="sec"><p class="note">'+answered+' of '+tot+' answered. You can check your answers at any time; unanswered questions count as missed.</p><p><button class="btn" data-act="nle-check" data-s="'+id+'">Check my answers</button></p></div>';
+  else{var sc=nleScore(id);h+='<div class="sec"><div class="callout ok" role="status"><b>You answered '+sc.ok+' of '+sc.tot+' correctly ('+Math.round(100*sc.ok/sc.tot)+'%).</b>'+(st.secs?'<br><span class="note">Time used: '+Math.floor(st.secs/60)+' min '+(st.secs%60)+' s. The real exam allows 45 minutes for 40 questions, about 67 seconds per question.</span>':'')+'</div><table class="para" style="margin-top:.6em"><thead><tr><th>NLE
+
+function nleScore
+function nleScore(id){var set=NLESETS[id],st=nleState(id),cats={},ok=0,tot=0;nleItems(set).forEach(function(it,i){var c=cats[it.c]||(cats[it.c]=[0,0]);c[1]++;tot++;if(st.ans[i]===it.a){c[0]++;ok++}});return {ok:ok,tot:tot,cats:cats}}
+function nlePassage(p){
+  var gl={};(p.gloss||[]).forEach(function(g){gl[g[0]]=g[1]});
+  var rows=p.lines.map(function(l,i){return '<tr><td class="note" style="width:2em;vertical-align:top">'+(i+1)+'</td><td class="lat" style="vertical-align:top">'+esc(l)+'</td><td class="note" style="vertical-align:top;font-size:.85em">'+(gl[i+1]||'')+'</td></tr>'}).join('');
+  return '<div class="panel"><p style="margin:0"><b>'+esc(p.title)+'</b></p>'+(p.sub?'<p class="note" style="margin:.1em 0 .5em"><i>'+esc(p.sub)+'</i></p>':'')+'<div class="tablewrap"><table class="para"><tbody>'+rows+'</tbody></table></div></div>';
+}
+function nleView(id,np){
+  var set=NLESETS[id],st=nleState(id),n=0,L='ABCD';
+  var h='<div class="sec"><h2 style="margin-bottom:.2em">'+esc(set.title)+'</h2><p class="note" style="max-width:70ch">'+set.intro+'</p></div>';
+  set.parts.forEach(function(part){
+    h+='<div class="sec"><h3>'+esc(part.h)+'</h3>'+(part.intro?'<p class="note">'+part.intro+'</p>':'');
+    if(part.passage&&!np)h+=nlePassage(part.passage,st,id);
+    part.items.forEach(function(it){var i=n++;
+      h+='<div class="nleq" style="margin:.9em 0"><p id="nq-'+id+'-'+i+'" style="margin:0 0 .3em"><b>'+(i+1)+'.</b> '+it.q+'</p><div role="radiogroup" aria-labelledby="nq-'+id+'-'+i+'" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start">';
+      it.o.forEach(function(o,k){var cls='btn ghost nleopt'+(st.ans[i]===k?' on':'')+(st.done&&k===it.a?' ok':'')+(st.done&&st.ans[i]===k&&k!==it.a?' no':'');
+        h+='<button class="'+cls+'" role="radio" aria-checked="'+(st.ans[i]===k)+'" data-act="nle-pick" data-s="'+id+'" data-i="'+i+'" data-v="'+k+'"'+(st.done?' disabled':'')+'>'+L[k]+') '+o+'</button>'});
+      h+='</div>'+(st.done?'<p class="note" style="margin:.3em 0 0">'+(st.ans[i]===it.a?'<b>Correct.</b> ':'<b>The answer is '+L[it.a]+'.</b> ')+(it.e||'
+
+function nlePassage
+function nlePassage(p){
+  var gl={};(p.gloss||[]).forEach(function(g){gl[g[0]]=g[1]});
+  var rows=p.lines.map(function(l,i){return '<tr><td class="note" style="width:2em;vertical-align:top">'+(i+1)+'</td><td class="lat" style="vertical-align:top">'+esc(l)+'</td><td class="note" style="vertical-align:top;font-size:.85em">'+(gl[i+1]||'')+'</td></tr>'}).join('');
+  return '<div class="panel"><p style="margin:0"><b>'+esc(p.title)+'</b></p>'+(p.sub?'<p class="note" style="margin:.1em 0 .5em"><i>'+esc(p.sub)+'</i></p>':'')+'<div class="tablewrap"><table class="para"><tbody>'+rows+'</tbody></table></div></div>';
+}
+function nleView(id,np){
+  var set=NLESETS[id],st=nleState(id),n=0,L='ABCD';
+  var h='<div class="sec"><h2 style="margin-bottom:.2em">'+esc(set.title)+'</h2><p class="note" style="max-width:70ch">'+set.intro+'</p></div>';
+  set.parts.forEach(function(part){
+    h+='<div class="sec"><h3>'+esc(part.h)+'</h3>'+(part.intro?'<p class="note">'+part.intro+'</p>':'');
+    if(part.passage&&!np)h+=nlePassage(part.passage,st,id);
+    part.items.forEach(function(it){var i=n++;
+      h+='<div class="nleq" style="margin:.9em 0"><p id="nq-'+id+'-'+i+'" style="margin:0 0 .3em"><b>'+(i+1)+'.</b> '+it.q+'</p><div role="radiogroup" aria-labelledby="nq-'+id+'-'+i+'" style="display:flex;flex-direction:column;gap:4px;align-items:flex-start">';
+      it.o.forEach(function(o,k){var cls='btn ghost nleopt'+(st.ans[i]===k?' on':'')+(st.done&&k===it.a?' ok':'')+(st.done&&st.ans[i]===k&&k!==it.a?' no':'');
+        h+='<button class="'+cls+'" role="radio" aria-checked="'+(st.ans[i]===k)+'" data-act="nle-pick" data-s="'+id+'" data-i="'+i+'" data-v="'+k+'"'+(st.done?' disabled':'')+'>'+L[k]+') '+o+'</button>'});
+      h+='</div>'+(st.done?'<p class="note" style="margin:.3em 0 0">'+(st.ans[i]===it.a?'<b>Correct.</b> ':'<b>The answer is '+L[it.a]+'.</b> ')+(it.e||'')+' <span class="chip">'+esc(NLE_CATS[it.c]||it.c)+'</span></p>':'')+'</div>'});
+    h+='</div>'});
+  var tot=n,answered=Object.keys(st.ans).length;
+  if(!st.done)h+='<div class="sec"><p class="note">'+answered+' of '+tot+' answered.
+
+ACT['nle-check']
+NOT FOUND
+
+function readerHead
+function readerHead(rd){
+  var st=rdState();
+  return '<div class="sec"><div class="score"><div>'+(rd.kind==='long'?'<h2 style="margin:0">'+esc(rd.title)+'</h2>':'<h3 style="margin:0">'+esc(AUTHORS[rd.author].name)+', in Lesson '+esc(rd.lesson)+'</h3>')+'</div><button class="btn ghost sm" data-act="help-toggle" aria-pressed="'+st.help+'">'+(st.help?'Help is on':'Read without help')+'</button></div></div>';
+}
+function contextBox(rd){return '<div class="callout ctx"><p class="note" style="margin:0 0 3px"><b>Where this comes from</b></p><p style="margin:0">'+esc(rd.context)+'</p></div>'}
+function readingCard(rd){
+  return '<section class="rcard" id="rd-'+rd.id+'">'+attribution(rd)+(rd.noIntro?'':(rd.intro?introBox(rd):contextBox(rd)))+readerHead(rd)+latinText(rd)+lookedList(rd)+translateBox(rd)+'</section>';
+}
+function screenReadings(){
+  var h='<main class="wrap"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1 style="font-size:2.2rem;margin-bottom:.2em">Readings <span class="chip">Prototype</span></h1><p class="lede" style="margin:0 0 .8em">A preview of how a lesson’s Readings tab could work, using passages from your Volumes I and II.</p>';
+  if(V.read){
+    var rd=readingById(V.read);
+    h+='<div class="crumb"><button class="link" data-act="read-back">Back to the readings list</button></div>'+readingCard(rd);
+  }else{
+    var lg=READINGS.filter(function(r){return r.kind==='long'}),sh=READINGS.filter(function(r){return r.kind==='short'});
+    h+='<div class="sec"><h2>Longer reading</h2><div class="cards">'+lg.map(function(r){return '<div class="panel"><b class="lat">Lesson '+esc(r.lesson)+'</b><h3 style="margin:.2em 0 .3em">'+esc(r.title)+'</h3><p class="note" style="margin:0 0 .6em">'+esc(AUTHORS[r.author].name)+', <i>'+esc(WORKS[r.work].title)+'</i> '+esc(r.cite)+'. '+(r.adapted?'Adapted.':'Original Latin.')+'</p><button class="btn sm" data-act="read-open" data-rd="'+r.id+'">Open the reader</button></div>'}).join('')+'</div></div>';
+    h+='<div class="sec"><h2>Shorter readings</h2><p class="note">One-sentence and short passa
+
+function nleDynBuild
+function nleDynBuild(sp){
+  var rnd=nlePrng(sp.seed),gen=!!sp.gen,pool,parts=[],title='',intro='';
+  if(sp.kind==='cat'){pool=nleShuf(nleElig(sp.n,gen,sp.cat),rnd).slice(0,12);title='Category drill: '+(NLE_CATS[sp.cat]||sp.cat);parts=[{h:'Questions',items:pool.map(nleCopy)}]}
+  else if(sp.kind==='exam'){pool=nleShuf(nleElig(sp.n,gen),rnd).slice(0,24);title='Mini exam';var ps=nleLadderFor(sp.n);var pr=ps.length?ps[Math.floor(rnd()*ps.length)]:null;parts=[{h:'Part 1: Language and culture',items:pool.map(nleCopy)}];if(pr)parts.push({h:'Part 2: Reading',passage:NLESETS[pr].parts[0].passage,items:NLESETS[pr].parts[0].items.map(function(x){return {c:x.c,q:x.q,o:x.o.slice(),a:x.a,e:x.e}})})}
+  else{pool=nleShuf(nleElig(sp.n,gen),rnd).slice(0,20);title='Mixed practice';parts=[{h:'Questions',items:pool.map(nleCopy)}]}
+  intro='These questions are drawn from the bank at random'+(gen?', including general NLE topics that your book has not yet covered':' and cover only what your lessons have taught so far')+'. The real exam gives you 45 minutes for 40 questions.';
+  return {title:title,intro:intro,parts:parts};
+}
+function nleEnsureDyn(n){var sp=S.nleSpec;if(sp&&sp.n===n){var id='nle'+n;if(!NLESETS[id]||NLESETS[id]._seed!==sp.seed+sp.kind+(sp.cat||'')){var d=nleDynBuild(sp);d._seed=sp.seed+sp.kind+(sp.cat||'');NLESETS[id]=d}return id}return null}
+function nleHub(n){
+  var sp=S.nleSpec,h='';
+  if(sp&&sp.n===n&&sp.run){var id=nleEnsureDyn(n);return '<div class="sec"><button class="btn ghost" data-act="nle-menu" data-n="'+n+'">Back to the practice menu</button></div>'+nleView(id)}
+  var gen=!!(S.nleOpt&&S.nleOpt.gen),elig=nleElig(n,gen),cats={};elig.forEach(function(b){cats[b.c]=(cats[b.c]||0)+1});
+  h+='<div class="sec"><h2>NLE practice</h2><p class="note" style="max-width:70ch">The bank holds '+NLEBANK.length+' original questions in the style of the National Latin Exam, each tagged by category and by the lesson where it first becomes fair. With your settings, <b>'+elig.length+'</b> questions are available. Your results by category appear in your review map.</p>'+
+  '<label class
+
+function nleElig
+function nleElig(n,gen,cat){return NLEBANK.filter(function(b){return ((b.L>=1&&b.L<=n)||(gen&&b.L===0))&&(!cat||b.c===cat)})}
+function nleCopy(b){return {c:b.c,q:b.q,o:b.o.slice(),a:b.a,e:b.e}}
+function nleWarmItems(n){return NLEBANK.filter(function(b){return b.L===n})}
+function nleWarmSet(n){var id='nle'+n;if(!NLESETS[id]){NLESETS[id]={title:'NLE warm-up: Lesson '+ROMAN[n-1],intro:'A few National Latin Exam–style questions on what you learned in this lesson. Check your answers when you finish; your results by category feed your review map.',parts:[{h:'Warm-up questions',items:nleWarmItems(n).slice(0,8).map(nleCopy)}]}}return id}
+/* dynamic sets for the Part Two hub */
+function nleDynBuild(sp){
+  var rnd=nlePrng(sp.seed),gen=!!sp.gen,pool,parts=[],title='',intro='';
+  if(sp.kind==='cat'){pool=nleShuf(nleElig(sp.n,gen,sp.cat),rnd).slice(0,12);title='Category drill: '+(NLE_CATS[sp.cat]||sp.cat);parts=[{h:'Questions',items:pool.map(nleCopy)}]}
+  else if(sp.kind==='exam'){pool=nleShuf(nleElig(sp.n,gen),rnd).slice(0,24);title='Mini exam';var ps=nleLadderFor(sp.n);var pr=ps.length?ps[Math.floor(rnd()*ps.length)]:null;parts=[{h:'Part 1: Language and culture',items:pool.map(nleCopy)}];if(pr)parts.push({h:'Part 2: Reading',passage:NLESETS[pr].parts[0].passage,items:NLESETS[pr].parts[0].items.map(function(x){return {c:x.c,q:x.q,o:x.o.slice(),a:x.a,e:x.e}})})}
+  else{pool=nleShuf(nleElig(sp.n,gen),rnd).slice(0,20);title='Mixed practice';parts=[{h:'Questions',items:pool.map(nleCopy)}]}
+  intro='These questions are drawn from the bank at random'+(gen?', including general NLE topics that your book has not yet covered':' and cover only what your lessons have taught so far')+'. The real exam gives you 45 minutes for 40 questions.';
+  return {title:title,intro:intro,parts:parts};
+}
+function nleEnsureDyn(n){var sp=S.nleSpec;if(sp&&sp.n===n){var id='nle'+n;if(!NLESETS[id]||NLESETS[id]._seed!==sp.seed+sp.kind+(sp.cat||'')){var d=nleDynBuild(sp);d._seed=sp.seed+sp.kind+(sp.cat||'');NLESETS[id]=d}return id}return null}
+function nleHub(n){
+  var sp=S.nleSpec,h='';
+  if(sp&&sp.n===n&&sp.
+
+function readingById
+function readingById(id){for(var i=0;i<READINGS.length;i++)if(READINGS[i].id===id)return READINGS[i]}
+function rdTok(t){return t.replace(/[,.;:?!‘’“”]/g,'')}
+function glossFor(rd,tok){return rd.gloss[tok]||null}
+function allGloss(){var m={};READINGS.forEach(function(r){Object.keys(r.gloss).forEach(function(k){m[r.id+':'+k]={rd:r,w:k,g:r.gloss[k]}})});return m}
+function rdState(){var r=S.reads||(S.reads={help:true,looked:{},tr:{}});if(!r.looked)r.looked={};if(!r.tr)r.tr={};if(!r.peek)r.peek={};if(!r.fb)r.fb={};if(r.help==null)r.help=true;return r}
+function infoCard(kind,id){
+  if(kind==='author'){var a=AUTHORS[id];return '<div class="infocard" role="region" aria-label="About '+esc(a.name)+'"><h4>'+esc(a.full)+' <span class="note">('+esc(a.dates)+')</span>'+draftChip()+'</h4><p class="note" style="margin:0 0 .4em">Born at '+esc(a.place)+'. Genre: '+esc(a.genre)+'.</p><p style="margin:0 0 .4em">'+esc(a.bio)+'</p><p style="margin:0 0 .4em"><b>Why read this author:</b> '+esc(a.why)+'</p><p class="note" style="margin:0">You meet '+esc(a.name)+' again in Lessons '+esc(a.lessons)+'.</p></div>'}
+  var w=WORKS[id];return '<div class="infocard" role="region" aria-label="About '+esc(w.title)+'"><h4><span class="lat">'+esc(w.title)+'</span> <span class="note">“'+esc(w.en)+'”</span>'+draftChip()+'</h4><p class="note" style="margin:0 0 .4em">By '+esc(AUTHORS[w.author].name)+'. Genre: '+esc(w.genre)+'.</p><p style="margin:0">'+esc(w.purpose)+'</p></div>';
+}
+function attribution(rd){
+  var a=AUTHORS[rd.author],w=WORKS[rd.work],open=V.info&&V.info.rd===rd.id?V.info.kind:'';
+  function chip(kind,id,label,tip){return '<button class="achip'+(open===kind?' open':'')+'" data-act="info" data-rd="'+rd.id+'" data-kind="'+kind+'" aria-expanded="'+(open===kind)+'" data-tip="'+esc(tip)+'">'+label+'</button>'}
+  var h='<div class="attr"><span class="note">From</span> '+chip('author',rd.author,esc(a.name),a.dates+'. '+a.genre)+' <span class="note">in</span> '+chip('work',rd.work,'<i>'+esc(w.title)+'</i> '+esc(rd.cite),w.en)+' '+'<span class="badge '+(rd.adapted?'adp':'orig')+'" title="'+(rd.ada
+
+function nleEnsureDyn
+function nleEnsureDyn(n){var sp=S.nleSpec;if(sp&&sp.n===n){var id='nle'+n;if(!NLESETS[id]||NLESETS[id]._seed!==sp.seed+sp.kind+(sp.cat||'')){var d=nleDynBuild(sp);d._seed=sp.seed+sp.kind+(sp.cat||'');NLESETS[id]=d}return id}return null}
+function nleHub(n){
+  var sp=S.nleSpec,h='';
+  if(sp&&sp.n===n&&sp.run){var id=nleEnsureDyn(n);return '<div class="sec"><button class="btn ghost" data-act="nle-menu" data-n="'+n+'">Back to the practice menu</button></div>'+nleView(id)}
+  var gen=!!(S.nleOpt&&S.nleOpt.gen),elig=nleElig(n,gen),cats={};elig.forEach(function(b){cats[b.c]=(cats[b.c]||0)+1});
+  h+='<div class="sec"><h2>NLE practice</h2><p class="note" style="max-width:70ch">The bank holds '+NLEBANK.length+' original questions in the style of the National Latin Exam, each tagged by category and by the lesson where it first becomes fair. With your settings, <b>'+elig.length+'</b> questions are available. Your results by category appear in your review map.</p>'+
+  '<label class="note" style="display:block;margin:.4em 0"><input type="checkbox" data-act="nle-gen" '+(gen?'checked':'')+'> Include general NLE topics (mythology, Roman life, abbreviations) that your book may not have covered yet</label></div>'+
+  '<div class="sec"><h3>Choose a practice set</h3><div style="display:flex;flex-wrap:wrap;gap:8px"><button class="btn" data-act="nle-start" data-n="'+n+'" data-kind="mix">Mixed practice (20 questions)</button><button class="btn" data-act="nle-start" data-n="'+n+'" data-kind="exam">Mini exam (24 questions and a reading)</button></div></div>'+
+  '<div class="sec"><h3>Drill one category</h3><div style="display:flex;flex-wrap:wrap;gap:8px">'+Object.keys(cats).map(function(c){return '<button class="btn ghost" data-act="nle-start" data-n="'+n+'" data-kind="cat" data-cat="'+c+'">'+esc(NLE_CATS[c]||c)+' ('+cats[c]+')</button>'}).join('')+'</div></div>';
+  return h;
+}
+/* warm-up wrapper for earlier lessons */
+(function(){
+  var _la=labActs;labActs=function(A){_la(A);
+    A['nle-gen']=function(t){S.nleOpt=S.nleOpt||{};S.nleOpt.gen=!!t.checked;persist();render()};
+    A['nle-start']=f
+
+function nleWarmSet
+function nleWarmSet(n){var id='nle'+n;if(!NLESETS[id]){NLESETS[id]={title:'NLE warm-up: Lesson '+ROMAN[n-1],intro:'A few National Latin Exam–style questions on what you learned in this lesson. Check your answers when you finish; your results by category feed your review map.',parts:[{h:'Warm-up questions',items:nleWarmItems(n).slice(0,8).map(nleCopy)}]}}return id}
+/* dynamic sets for the Part Two hub */
+function nleDynBuild(sp){
+  var rnd=nlePrng(sp.seed),gen=!!sp.gen,pool,parts=[],title='',intro='';
+  if(sp.kind==='cat'){pool=nleShuf(nleElig(sp.n,gen,sp.cat),rnd).slice(0,12);title='Category drill: '+(NLE_CATS[sp.cat]||sp.cat);parts=[{h:'Questions',items:pool.map(nleCopy)}]}
+  else if(sp.kind==='exam'){pool=nleShuf(nleElig(sp.n,gen),rnd).slice(0,24);title='Mini exam';var ps=nleLadderFor(sp.n);var pr=ps.length?ps[Math.floor(rnd()*ps.length)]:null;parts=[{h:'Part 1: Language and culture',items:pool.map(nleCopy)}];if(pr)parts.push({h:'Part 2: Reading',passage:NLESETS[pr].parts[0].passage,items:NLESETS[pr].parts[0].items.map(function(x){return {c:x.c,q:x.q,o:x.o.slice(),a:x.a,e:x.e}})})}
+  else{pool=nleShuf(nleElig(sp.n,gen),rnd).slice(0,20);title='Mixed practice';parts=[{h:'Questions',items:pool.map(nleCopy)}]}
+  intro='These questions are drawn from the bank at random'+(gen?', including general NLE topics that your book has not yet covered':' and cover only what your lessons have taught so far')+'. The real exam gives you 45 minutes for 40 questions.';
+  return {title:title,intro:intro,parts:parts};
+}
+function nleEnsureDyn(n){var sp=S.nleSpec;if(sp&&sp.n===n){var id='nle'+n;if(!NLESETS[id]||NLESETS[id]._seed!==sp.seed+sp.kind+(sp.cat||'')){var d=nleDynBuild(sp);d._seed=sp.seed+sp.kind+(sp.cat||'');NLESETS[id]=d}return id}return null}
+function nleHub(n){
+  var sp=S.nleSpec,h='';
+  if(sp&&sp.n===n&&sp.run){var id=nleEnsureDyn(n);return '<div class="sec"><button class="btn ghost" data-act="nle-menu" data-n="'+n+'">Back to the practice menu</button></div>'+nleView(id)}
+  var gen=!!(S.nleOpt&&S.nleOpt.gen),elig=nleElig(n,gen),cats={};elig.forEach(function(b){cats[b.c]=(c
+
+function nleLadderFor
+function nleLadderFor(n){return LADDER.filter(function(r){return r.L<=n}).map(function(r){return r.id})}
+function tabLadder(n){
+  var open=S.ladderOpen;
+  if(open&&nleLadderFor(n).indexOf(open)>=0){var r=LADDER.filter(function(x){return x.id===open})[0];
+    return '<div class="sec"><button class="btn ghost" data-act="ld-back">Back to the ladder</button></div><div class="sec prose"><h2>'+esc(r.title)+'</h2><p class="note">Read the story first. Tap a word for help, or switch the help off to read on your own. Then answer the questions.</p></div>'+readingCard(readingById(open))+nleView(open,true)}
+  var rungs=nleLadderFor(n);
+  return '<div class="sec"><h2>Reading ladder</h2><p class="note" style="max-width:70ch">Each rung is a short original story, a little harder than the one before it, with questions in the style of the National Latin Exam. Climb as far as you can this week; reading a lot of easy Latin builds fluency faster than reading a little hard Latin.</p></div><div class="sec">'+
+   rungs.map(function(id,i){var r=LADDER.filter(function(x){return x.id===id})[0],st=nleState(id);var sc=st.done?nleScore(id):null;
+    return '<div class="panel" style="margin:.6em 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>Rung '+(i+1)+': '+esc(r.title)+'</b><br><span class="note">'+r.lines.join(' ').split(/\s+/).length+' words'+(sc?'. Your score: '+sc.ok+' of '+sc.tot:'')+'</span></div><button class="btn'+(st.done?' ghost':'')+'" data-act="ld-open" data-id="'+id+'">'+(st.done?'Read again':'Climb this rung')+'</button></div>'}).join('')+'</div>';
+}
+(function(){var _la=labActs;labActs=function(A){_la(A);
+  A['ld-open']=function(t){S.ladderOpen=t.dataset.id;persist();render()};
+  A['ld-back']=function(){S.ladderOpen=null;persist();render()};
+}})();
+function ladderStatus(n){var r=nleLadderFor(n),d=r.filter(function(id){return nleState(id).done}).length;return {s:d>=r.length?'done':'new'}}
+
+/* ================= NLE item bank (original items), hub, and warm-up tabs ================= */
+/* row = [category, first fair lesson (0 = gene
+
+var LADDER
+var LADDER=[
+ {id:'ld1',L:11,title:'The Farmer’s Son',lines:['Agricola in agrō labōrābat. Fīlius agricolae in silvā ambulābat.','Subitō fīlius lupum vīdit! Lupus magnus erat et fīlium spectābat.','Fīlius clāmāvit: “Auxilium! Auxilium!” Agricola clāmōrem audīvit et ad silvam properāvit.','Lupus agricolam vīdit et ex silvā fūgit. Fīlius laetus erat et patrem laudāvit.'],
+  gloss:{'subitō':['subitō','adverb','suddenly',''],'lupum':['lupus, -ī m.','acc. sing.','wolf',''],'lupus':['lupus, -ī m.','nom. sing.','wolf',''],'auxilium':['auxilium, -ī n.','acc. sing.','help',''],'audīvit':['audiō, audīre, audīvī','perf. act. indic., 3rd sing.','heard','A fourth conjugation verb.'],'fūgit':['fugiō, fugere, fūgī','perf. act. indic., 3rd sing.','fled','A third conjugation -iō verb.']},
+  q:[['read','Where was the farmer working (line 1)?','in the field','in the forest','in the house','at the river','Agricola in agrō labōrābat.'],['read','What did the son see in the forest (line 2)?','a wolf','a bear','a thief','his friend','Fīlius lupum vīdit.'],['read','What did the son shout (line 3)?','“Help!”','“Stop!”','“Farewell!”','“Hello!”','Auxilium means “help.”'],['grammar','In line 3, properāvit is best translated','he hurried','he is hurrying','he will hurry','he was hurrying','The ending -vit marks the perfect.'],['read','Why did the wolf flee (line 4)?','It saw the farmer.','It was afraid of the son.','It was tired.','It heard a noise.','Lupus agricolam vīdit et … fūgit.'],['read','How did the son feel at the end of the story?','happy','angry','sad','afraid','Fīlius laetus erat.']]},
+ {id:'ld2',L:12,title:'The Bridge',lines:['Hiemē hostēs ad urbem vēnērunt. Cīvēs hostēs timēbant.','Dux mīlitum, vir fortis, ad pontem properāvit et clāmāvit:','“Mīlitēs, pontem ignī dēlēte! Hostēs flūmen trānsīre nōn poterunt!”','Mīlitēs pontem celeriter dēlēvērunt. Hostēs in rīpā flūminis stetērunt.','Urbs ā ducis virtūte servāta est. Populus ducem magnō cum gaudiō laudāvit.'],
+  gloss:{'vēnērunt':['veniō, venīre, vēnī','perf. act. indic., 3rd pl.','came','A fourth conjugation verb.'],'fortis':['for
+
+var READINGS
+var READINGS=[
+ {id:'rr',kind:'long',lesson:'XIII',title:'Romulus and Remus',author:'livy',work:'auc',cite:'1.3–7',adapted:true,
+  intro:['After the death of his father, Aeneas, Ascanius founded the city of Alba Longa, which lies about twelve miles southeast of Rome. Alba Longa became the most prominent city in Latium and prospered peacefully until the time of King Procas, the city’s thirteenth king, who ruled sometime in the early 9th c. B.C. It is at this point that the theme of warring brothers comes to dominate the Roman mythological tradition and with it much of Rome’s history. The Republic and Empire would be frequently rocked by civil war and battles over the succession of power.','Upon Procas’ death, his eldest son, Numitor, ascended to the throne but was soon ousted by his younger brother, Amulius. Amulius then killed Numitor’s sons and made Numitor’s only daughter, Rhea Silvia, a Vestal Virgin—committing such acts in an attempt to secure the future stability of his own rule by ending Numitor’s bloodline. Fate would intervene, however: Amulius’ bloody and cruel acts would set in motion his downfall and the founding of Rome.','In obedience to King Amulius, Rhea Silvia is compelled to expose her children to certain death by floating them down the River Tiber in a wicker basket.'],context:'After the death of his father, Aeneas, Ascanius founded the city of Alba Longa, which lies about twelve miles southeast of Rome. This city would come to be the most prominent in all of Latium, and its peaceful prosperity would be uninterrupted until the time of King Procas, the city’s thirteenth king, who ruled sometime in the early 9th c. B.C. It is at this point that the theme of warring brothers comes to dominate the Roman mythological tradition and with it much of Rome’s history. The Republic and Empire would be frequently rocked by civil war and battles over the succession of power. Upon Procas’ death, his eldest son, Numitor, ascended to the throne but was soon ousted by his younger brother, Amulius. Amulius then killed Numitor’s sons and made Numitor’s only daughter
