@@ -29,7 +29,9 @@
   s=String(s||'').replace(/[\u2018\u2019]/g,"'");
   var contractions={dont:'do not',doesnt:'does not',didnt:'did not',isnt:'is not',arent:'are not',wasnt:'was not',werent:'were not',havent:'have not',hasnt:'has not',hadnt:'had not',wont:'will not',cant:'cannot',couldnt:'could not',shouldnt:'should not',wouldnt:'would not'};
   s=s.replace(/\b(?:don't|doesn't|didn't|isn't|aren't|wasn't|weren't|haven't|hasn't|hadn't|won't|can't|couldn't|shouldn't|wouldn't|dont|doesnt|didnt|isnt|arent|wasnt|werent|havent|hasnt|hadnt|wont|cant|couldnt|shouldnt|wouldnt)\b/gi,function(v){return contractions[v.toLowerCase().replace(/'/g,'')]});
-  return priorEnglish(s).replace(/^you (sg|pl)(?=[a-z])/,'you $1 ');
+  s=s.replace(/\byou\s*\(?\s*(?:sing(?:ular)?|sg)\b\.?\s*\)?/gi,'you (sg.) ');
+  s=s.replace(/\byou\s*\(?\s*(?:pl(?:ural)?)\b\.?\s*\)?/gi,'you (pl.) ');
+  return priorEnglish(s);
  };
  var priorGrade=gradeEnglish;
  gradeEnglish=function(given,accepted,spec){

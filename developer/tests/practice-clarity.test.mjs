@@ -38,3 +38,5 @@ for(const v of ['I like','I did not like','I will not like','we do not like','I 
 assert.equal(m.normEn('you all didn’t warn'),m.normEn('you (pl.) did not warn'));
 p.model.state.settings.macrons='strict';assert.equal(m.credit(m.gradeLatin('accipiebantur',['accipiēbantur'])),0,'English normalization loosened Latin');
 console.log(JSON.stringify({listCellsChecked:cells,synopsisFinitePrompts:finite,participlePrompts:participles,numberTenseNegationPreserved:true,contractions:true}));
+
+for(const text of ['you play','you please','you plant'])assert.equal(m.normEn(text),text,'Verb prefix mistaken for a plural marker');
