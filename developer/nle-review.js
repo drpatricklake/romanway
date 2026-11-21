@@ -55,7 +55,15 @@
  Object.keys(NLESETS).forEach(function(id){nleItems(NLESETS[id]).forEach(function(q){finalIds[identity(q)]=q.id})});
  var copy=nleCopy;nleCopy=function(q){var c=copy(q);c.id=q.id||finalIds[identity(q)];return c};
  var items=nleItems;nleItems=function(s){var a=items(s);a.forEach(function(q){if(!q.id)q.id=finalIds[identity(q)]||'question:'+stamp([q.q,q.o,q.a])});return a};
- function revision(set){nleItems(set);return stamp(set.parts.map(function(p){return [p.passage?p.passage.lines:null,p.items.map(function(q){return [q.id,q.c,q.q,q.o,q.a,q.e]})]}))}
+ // Papers are immutable after review; a new seed creates a new set object.
+ // Cache by object so roadmap progress does not rehash every paper for every tile.
+ var revisions=new WeakMap();
+ function revision(set){
+  var cached=revisions.get(set);if(cached)return cached;
+  nleItems(set);
+  var rev=stamp(set.parts.map(function(p){return [p.passage?p.passage.lines:null,p.items.map(function(q){return [q.id,q.c,q.q,q.o,q.a,q.e]})]}));
+  revisions.set(set,rev);return rev;
+ }
  var state=nleState;nleState=function(id){
   var st=state(id),set=NLESETS[id];if(!set)return st;
   var rev=revision(set),hasWork=st.done||Object.keys(st.ans||{}).length>0;
