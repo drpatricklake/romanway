@@ -6117,7 +6117,8 @@ function nlePassage(p){
   return '<div class="panel"><p style="margin:0"><b>'+esc(p.title)+'</b></p>'+(p.sub?'<p class="note" style="margin:.1em 0 .5em"><i>'+esc(p.sub)+'</i></p>':'')+'<div class="tablewrap"><table class="para"><tbody>'+rows+'</tbody></table></div></div>';
 }
 function nleView(id,np){
-  var set=NLESETS[id],st=nleState(id),n=0,L='ABCD';
+  var set=NLESETS[id];nleItems(set);
+  var st=nleState(id),n=0,L='ABCD';
   var h='<div class="sec"><h2 style="margin-bottom:.2em">'+esc(set.title)+'</h2><p class="note" style="max-width:70ch">'+set.intro+'</p></div>';
   set.parts.forEach(function(part){
     h+='<div class="sec"><h3>'+esc(part.h)+'</h3>'+(part.intro?'<p class="note">'+part.intro+'</p>':'');
@@ -16130,6 +16131,475 @@ window.RomanWayAuthApp.setUser=function(user){
  }
  return socialOldSetUser(user);
 };
+
+/* NLE REVIEW START */
+/* Template evaluated inside the application after all banks are defined. */
+var NLE_REVIEW_CATALOG = (function () {
+ var B={}, D={}, changes={}, setChanges={}, passages=[], glosses=[];
+ function cp(v){return JSON.parse(JSON.stringify(v))}
+ NLEBANK.forEach(function(q){B[q.id]=cp(q)});
+ Object.keys(NLESETS).forEach(function(id){
+  var s=NLESETS[id];if(!s)return;
+  D[id]={parts:cp(s.parts),items:cp(nleItems(s))};
+ });
+ function fix(id,reason,patch,kind){
+  if(!B[id])throw Error('Unknown NLE item '+id);
+  var previous=changes[id], after=cp(previous?previous.after:B[id]);
+  patch=patch||{};
+  if(patch.correct!==undefined)after.o[after.a]=patch.correct;
+  if(patch.other){var j=0;after.o=after.o.map(function(v,i){return i===after.a?v:patch.other[j++]})}
+  Object.keys(patch).forEach(function(k){if(k!=='correct'&&k!=='other')after[k]=cp(patch[k])});
+  changes[id]={id:id,kind:previous&&previous.kind!=='style'?previous.kind:kind||'accuracy',
+    reason:(previous?previous.reason+' ':'')+reason,before:cp(B[id]),after:after};
+ }
+ function sty(id,q,correct,other,e){
+  var p={q:q,correct:correct,other:other};if(e)p.e=e;
+  fix(id,'Target a word or phrase in context; choices translate exactly the target.',p,'style');
+ }
+ function sf(sid,i,reason,patch){
+  if(!D[sid])throw Error('Unknown NLE set '+sid);
+  var k=sid+':'+i,b=cp(D[sid].items[i]),a=cp(setChanges[k]?setChanges[k].after:b);
+  if(patch.correct!==undefined)a.o[a.a]=patch.correct;
+  if(patch.other){var j=0;a.o=a.o.map(function(v,n){return n===a.a?v:patch.other[j++]})}
+  Object.keys(patch).forEach(function(x){if(x!=='correct'&&x!=='other')a[x]=cp(patch[x])});
+  setChanges[k]={set:sid,index:i,kind:'accuracy',reason:reason,before:b,after:a};
+ }
+ function line(sid,n,text,reason){
+  var p=D[sid].parts.find(function(x){return x.passage}).passage;
+  passages.push({set:sid,field:'lines',index:n-1,before:p.lines[n-1],after:text,reason:reason});
+ }
+ function sub(sid,text,reason){
+  var p=D[sid].parts.find(function(x){return x.passage}).passage;
+  passages.push({set:sid,field:'sub',before:p.sub,after:text,reason:reason});
+ }
+ /* Definite corrections, ambiguous distractors, scope, and target alignment. */
+fix('x97','Fīliī dominī allowed two readings.',{q:'Iūlia fīliōs <u>dominī</u> videt.',correct:'of the master',other:['to the master','the masters (subject)','by the master'],e:'Dominī is genitive singular, dependent on accusative plural fīliōs: “the master’s sons.”'},'ambiguity');
+fix('x102','Gladius is masculine, not neuter.',{e:'Gladium is masculine accusative singular, the object of portat; magnum agrees with it.'});
+fix('r577','Errō can also mean err, which was a valid distractor.',{q:'Puer per silvam <u>errat</u>.',correct:'wanders',other:['eats','carries','sleeps'],e:'Errō can mean “wander” or “make a mistake.” In this forest context it means “wanders.”'},'ambiguity');
+fix('r476','Include the preposition translated in the answer.',{q:'Agricola <u>in terrā</u> labōrat.'},'target');
+fix('r519','Only fīlius is underlined.',{correct:'the son (in apposition to Mārcus)'},'target');
+fix('r561','The possessive construction needs the dative and sum.',{q:'<u>Tibi sunt</u> multa dōna.'},'target');
+fix('r506','Use a plausible location and a complete target.',{q:'Puella <u>sub mēnsā</u> manet.',correct:'under the table',other:['above the table','through the table','in front of the table'],e:'Sub with the ablative shows position: “under the table.”'});
+fix('x11','Lares should not be categorically equated with dead ancestors.',{q:'Which protective household spirits were commonly honored in a Roman larārium?',e:'The Lares were guardian spirits of the household. They should not simply be equated with the dead ancestors (Manes).'});
+fix('r588','The answer translates the whole duration phrase.',{q:'Mārcus <u>tōtum annum</u> mānsit.'},'target');
+fix('r589','The answer translates the whole time phrase.',{q:'<u>Quārtā hōrā</u> nāvigāvērunt.'},'target');
+fix('b48','The active English alternative conveyed the same event.',{q:'Vīlla ab agricolīs <u>aedificāta est</u>.',correct:'was built',other:['builds','will be built','was building'],e:'Aedificāta est is third person singular perfect passive indicative: “was built” or “has been built.”'},'ambiguity');
+fix('b56','The answer includes cum.',{q:'<u>Cum eīs</u> ambulō.'},'target');
+fix('b62','An isolated amor patriae can be subjective or objective.',{q:'Mīlitēs patriam amant. In their <u>amor patriae</u>, the country receives the love. What use of the genitive is illustrated?',e:'The soldiers are those who love; the country is what they love. Patriae is therefore objective here. Without context amor patriae can be ambiguous.'},'ambiguity');
+fix('r617','The answer includes in.',{q:'Hī puerī <u>in forō</u> sunt.'},'target');
+fix('r631','Impersonal it was cold requires neuter.',{q:'<u>Quamquam</u> frīgidum erat, nautae nāvigābant.'});
+fix('r643','Provide context for an objective reading.',{q:'Mīlitēs patriam amant; amor <u>patriae</u> eōs movet.',e:'The preceding clause identifies the country as the object of the soldiers’ love, so patriae is objective here.'});
+fix('r645','The answer includes in.',{q:'Cīvēs <u>in urbe</u> manent.'},'target');
+fix('r698','Was left can translate an imperfect passive.',{other:['had already been left','is left','will be left']},'ambiguity');
+fix('b422','Free men was a valid substantive-adjective reading.',{q:'The plural noun <u>līberī, līberōrum</u> means',other:['books','soldiers','laws'],e:'As a plural noun līberī means “children.” The adjective līber, lībera, līberum means “free.”'},'ambiguity');
+fix('r706','Foreigners could also be free; ask for the adjective.',{q:'Which Latin adjective means “free,” in contrast to servus, “enslaved”?',e:'Līber, lībera, līberum means “free.” This tests the word, not which groups could be free.'},'ambiguity');
+fix('b446','An atrium was not simply an open-air courtyard.',{q:'The main reception hall near the entrance of a Roman domus was the',e:'The ātrium was a principal reception hall, commonly roofed around a compluvium admitting rain to an impluvium below.'});
+fix('b449','Avoid an unsupported fixed building height.',{e:'Īnsulae were urban apartment buildings, often several storeys high.'});
+fix('b454','The salt etymology does not establish payment in salt.',{e:'Salary comes through Latin salārium, a word related to sāl, “salt.” This does not mean regular Roman soldiers’ pay consisted of salt.'});
+fix('b128','And others can be a loose rendering of et cētera.',{other:['therefore','that is','for example']},'ambiguity');
+fix('r654','The answer includes in.',{q:'Nautae <u>in flūmine</u> nāvigant.'},'target');
+fix('r658','Genus animālium multum est was unidiomatic.',{q:'Multa genera <u>animālium</u> in terrā sunt.'});
+fix('r687','Give pōnet a concrete container as object.',{q:'Puella amphoram in mēnsā <u>pōnet</u>.'});
+fix('b414','The active English distractor was equivalent.',{q:'Epistula ā puellā <u>scrīpta est</u>.',correct:'was written',other:['will be written','was writing','writes'],e:'Scrīpta est is perfect passive indicative; the feminine participle agrees with epistula.'},'ambiguity');
+fix('b144','Both reciprocal English phrasings conveyed the sentence.',{q:'Virī <u>quibuscum</u> ambulō sunt amīcī meī.',correct:'with whom',other:['whose','to whom','whom (direct object)'],e:'Quibuscum is quibus + cum, ablative plural with the preposition.'},'ambiguity');
+fix('b217','Ubi can be spatial or temporal.',{q:'Paucī iūs dēfendunt, <u>ubi</u> perīculum est. Here ubi introduces a time clause. It means',correct:'when',other:['although','because','unless'],e:'Here ubi is temporal, “when”; it can mean “where” in other contexts.'},'ambiguity');
+fix('b175','Specify the temporal reading of ubi.',{q:'<u>Ubi</u> lībertās data est, populus clāmāvit. Here ubi is temporal. It means',correct:'When',other:['Although','Because','Unless'],e:'Temporal ubi means “when.” Spatial ubi can mean “where.”'},'ambiguity');
+fix('r629','A perfect tense does not by itself exclude spatial ubi.',{q:'<u>Ubi</u> Mārcus vēnit, puella clāmāvit. Here ubi introduces a time clause. It means',other:['Although','Because','If'],e:'Ubi introduces a temporal clause here: “When Marcus arrived, the girl shouted.”'},'ambiguity');
+fix('b197','The literal personal-passive reading was not cleanly impossible.',{other:['He has listened.','He ought to listen.','He will listen.']},'ambiguity');
+fix('b227','The inscription is on the cippus beneath the black paving.',{e:'An archaic inscribed stone (cippus) was found beneath the black paving known as the Lapis Niger.'});
+fix('b243','Avoid an unsupported claim of the first equestrian statue.',{e:'Livy 2.13 gives Cloelia the exceptional honor of an equestrian statue on the Via Sacra.'});
+fix('b235','Both perfects end in long ī; distinguish the internal vowel.',{q:'In <u>cecīdī</u>, the vowel in the second syllable is long. This form means',e:'Caedō has cecīdī, with long internal ī. Cadō has cecidī, with short internal i; both end in long ī.'});
+fix('b236','The active English alternative was equivalent.',{q:'Epistula ā puellā <u>accepta est</u>.',correct:'was received',other:['will be received','received (active)','is receiving'],e:'Accepta est is perfect passive, agreeing with epistula.'},'ambiguity');
+fix('b238','Fight with can mean fight against in English.',{other:['We fight alongside the enemy.','We fight for the enemy.','We fight after the enemy.']},'ambiguity');
+fix('r760','Tempestās can also mean a time or season.',{correct:'storm, weather',other:['temple','wall','trumpet'],e:'Tempestās can mean weather or a storm; in some contexts it also means a time or season.'},'ambiguity');
+fix('r761','Cohort strengths varied.',{q:'A standard six-century legionary cohort in the early Empire had a nominal strength of about',e:'Six centuries of eighty men gave about 480. Actual strengths and the first cohort could differ.'});
+fix('b256','Avoid the false universal claim about perfect participles.',{q:'Mīles <u>laudātus</u> discessit.',correct:'having been praised',other:['praising','about to praise','to praise'],e:'Laudātus is the perfect passive participle of ordinary transitive laudō. Deponent perfect participles can have active meaning.'});
+fix('b333','Deponent perfect participles may have active meaning.',{q:'For an ordinary non-deponent verb such as amō, Latin has no',e:'Ordinary amō has no perfect active participle “having loved” or present passive participle “being loved.” Deponent perfect participles can have active meaning.'});
+fix('b293','The old stem reversed the result of the Allia.',{q:'According to traditional Roman chronology, the Romans were defeated by the Gauls at the Battle of the Allia in',e:'The Gauls defeated the Romans before the sack, traditionally 390 B.C.; an alternative chronology gives 387 B.C.'});
+fix('b311','Diēs can be feminine.',{q:'The noun <u>diēs</u> is usually which gender, though it can be feminine when a particular day or period is meant?',e:'Diēs is usually masculine, but feminine uses occur. Merīdiēs is masculine.'});
+fix('b314','Tribunes and praetors could also convene the Senate.',{q:'Which chief annual magistrate of the Republic commonly presided over meetings of the Senate?',e:'A consul commonly presided. Praetors and tribunes also had powers to convene the Senate.'},'ambiguity');
+fix('b355','The Latin did not contain a verb meaning lived to old age.',{q:'<u>Alter</u> puer cecidit, <u>alter</u> fūgit. Translate the sentence, distinguishing the underlined words.',correct:'One boy fell; the other fled.',other:['Both boys fell and fled.','No boy fell or fled.','The boy fell after he fled.'],e:'Alter … alter distinguishes one member of a pair from the other.'});
+fix('b334','Constō also has perfect cōnstitī.',{q:'Which verb has <u>cōnstitī</u> as its perfect principal part?',other:['cōnstituō','cōnspiciō','cōnsulō'],e:'Cōnsistō, cōnsistere, cōnstitī means “halt, take a stand.” Constō also has cōnstitī; cōnstituō has cōnstituī.'},'ambiguity');
+['r807','r852'].forEach(function(id){fix(id,'The answer includes puerī.',{q:'Hic liber <u>ūnīus puerī</u> est.'},'target')});
+fix('r822','Shouting with a hand was an unsuitable example.',{q:'Ōrātor <u>manū</u> signum dedit.',e:'Manū is ablative singular of manus, expressing means: “with his hand.”'});
+fix('r824','Underline the whole time phrase.',{q:'<u>Quīntō diē</u> vēnērunt.'},'target');
+fix('r851','Underline the whole time phrase.',{q:'<u>Quīntō diē</u> vēnit.'},'target');
+fix('r826','Underline the whole prepositional phrase.',{q:'<u>In cornū dextrō</u> pugnāvit.'},'target');
+fix('r827','The key includes bonārum.',{q:'Spēs <u>rērum bonārum</u> magna est.'},'target');
+fix('r825','The e of classical fideī is short.',{e:'Fidēs, fideī f.: “faith, loyalty.” The e of genitive singular fideī is short.'});
+fix('r861','Exercise and exercitus are related through exerceō.',{q:'The English word “exercise” is related to which Latin verb?',correct:'exerceō, “train, exercise”',other:['exeō, “go out”','excellō, “excel”','exspectō, “wait for”'],e:'Exercise derives from exercitium, from exerceō. Exercitus belongs to the same family.'});
+fix('r840','Take a stand overlaps the old alternative.',{other:['lay down','fell','fled']},'ambiguity');
+fix('v84','Caput can also mean chief.',{other:['cape','deed','girl']},'ambiguity');
+fix('r858','Do not equate ancient peninsular Italy with all modern Italy.',{q:'By c. 265 B.C., Rome controlled most of the Italian peninsula south of the Po. This date falls',correct:'after the defeat of Pyrrhus',other:['before Rome’s traditional foundation','during Augustus’ reign','after the fall of the Western Empire'],e:'This concerns peninsular Italy, not every territory within modern Italy.'});
+fix('b287','Use the secure public location without an overprecise monument/material claim.',{correct:'publicly in the Forum',e:'Roman tradition places the published laws in the Forum so citizens could consult them.'});
+fix('b380','Never with a genitive was too broad.',{e:'Here reliquī is an adjective agreeing with mīlitēs, “the remaining soldiers.” This is not a rule that reliquus can never occur in a genitive construction.'});
+fix('r86','Mīlia is neuter.',{q:'<u>Tria mīlia</u> mīlitum vēnērunt.',e:'Mīlia is a neuter plural noun, so use tria mīlia, with partitive genitive mīlitum.'});
+fix('r76','Pedēs means feet; plural foot soldiers is peditēs.',{q:'<u>Peditēs</u> et equitēs pugnant.',other:['Feet','Sailors','Generals'],e:'Peditēs is plural of pedes, peditis, “foot soldier.” Pedēs, with long ē, is plural of pēs, “foot.”'});
+fix('r82','Pedestrian derives through pedester from pēs.',{correct:'pēs, pedis, “foot”',e:'Pedestrian comes through Latin pedester, from pēs, pedis, “foot.”'});
+fix('r5','Minor can refer to size or age; specify years.',{q:'When used of age, as in “Fīlius annīs <u>minor</u> est patre,” minor means',e:'Minor is comparative of parvus; with annīs, “in years,” it means “younger.”'},'ambiguity');
+fix('r65','Est is outside the target.',{correct:'nothing remaining'},'target');
+fix('r87','Est is outside the target.',{correct:'nothing new'},'target');
+fix('r66','The possessive distractor could translate the phrase.',{correct:'Some of the soldiers',other:['All of the soldiers','One soldier','The soldiers’ commander'],e:'Pars mīlitum means “part of the soldiers,” naturally “some of the soldiers.” Mīlitum is partitive.'},'ambiguity');
+fix('r48','The key includes the whole time phrase.',{q:'Mīles <u>septimō diē</u> rediit.',correct:'on the seventh day',other:['for seven days','after seven days','seven times']},'target');
+fix('r49','The key includes the noun.',{q:'Mīles <u>duōbus amīcīs</u> librum dedit.',correct:'to two friends',other:['from two friends','with two friends','of two friends']},'target');
+fix('r53','The key includes in.',{q:'Castra <u>in colle</u> sunt.'},'target');
+fix('r88','The key includes illā.',{q:'Haec rēs est <u>melior illā</u>.'},'target');
+fix('r91','The key includes the whole time phrase.',{q:'Mīles <u>sextō diē</u> vēnit.'},'target');
+fix('r73','Avoid an untaught gerund.',{q:'Hic locus castrīs <u>aptus</u> est.',e:'Aptus means “fit, suitable.” Castrīs is dative: “suitable for a camp.”'},'scope');
+fix('r25','Avoid an untaught deponent perfect.',{q:'Dux <u>sapientius</u> ēgit quam mīles.'},'scope');
+fix('r111','Behaves translates the whole reflexive idiom.',{q:'Puer <u>sē bene gerit</u>.',correct:'behaves well',other:['carries himself away','wages war','brings a gift'],e:'Sē gerere means “conduct oneself, behave”; bene means “well.”'},'target');
+fix('r150','Avoid a Lesson LV gerundive in XXXIX.',{q:'Putāvit <u>eōs pūnīrī</u>.',correct:'that they were being punished',other:['that they had punished','that they would punish','that they had been punished'],e:'Present passive pūnīrī denotes action simultaneous with past putāvit: “were being punished.”'},'scope');
+fix('r151','Negation comes from negat, formerly outside the underline.',{q:'<u>Negat sē vēnisse</u>.',correct:'He says that he did not come.',other:['He says that he came.','He says that he will come.','He says that he is coming.'],e:'Negat means “says … not,” or “denies”; perfect vēnisse is prior to the denial.'},'target');
+fix('r146','Vīctūrus belongs to vīvō; victūrus to vincō.',{q:'Crēdō <u>hostēs victūrōs esse</u>.',e:'Victūrōs esse is future active infinitive of vincō, “conquer.” Vīctūrōs, with long ī, belongs to vīvō, “live.”'});
+fix('r220','The Julian ancestry claim was paternal.',{q:'Caesar’s paternal family, the Julii, claimed descent from which goddess?',e:'The Julii traced their line through Iulus, Aeneas’ son, to Venus; this does not make Caesar’s maternal family Julian.'});
+['r224','r310'].forEach(function(id){fix(id,'Faciam can also be future indicative; specify deliberation.',{q:'A speaker is deciding what would be advisable: “Quid <u>faciam</u>?” Choose the translation that expresses deliberation.',e:'Here faciam is deliberative present subjunctive: “What should I do?” It can be future indicative elsewhere.'},'ambiguity')});
+['r226','r228'].forEach(function(id){fix(id,'Delay imperfect subjunctive until Lesson XLIV.',{L:44},'scope')});
+fix('r260','Lātus clāvus is on a tunic.',{q:'A Roman senator’s tunic had a broad stripe of',e:'The lātus clāvus was the broad purple stripe on a senatorial tunic; a toga praetexta had a purple border.'});
+fix('r248','Who sought peace could render a relative purpose clause.',{other:['who had already obtained peace','because they had made peace','after breaking the peace']},'ambiguity');
+fix('r293','Do not send punishment like a letter.',{q:'Reus <u>supplicium</u> timet.'});
+fix('r353','The idiom is the whole phrase.',{q:'<u>Certior factus est</u>.',correct:'He was informed.',other:['He informed someone.','He will inform someone.','He is informing someone.'],e:'Certior fīō is passive of certiōrem faciō, “be informed.”'},'target');
+fix('r365','Signal concession explicitly.',{q:'<u>Cum sit</u> dīves, tamen nōn est beātus.',e:'Tamen signals concession: “Although he is rich, he is not happy.”'},'ambiguity');
+fix('r367','Signal concession explicitly.',{q:'<u>Cum tē amem</u>, tamen nōn possum tibi crēdere.',e:'Tamen signals concession: “Although I love you, I nevertheless cannot trust you.”'},'ambiguity');
+fix('r368','A subjunctive alone does not distinguish every sense of cum.',{q:'His knowledge is the reason for his silence: “<u>Cum sciam</u> hoc esse vērum, tacēbō.”',e:'In this stated causal context cum sciam means “since I know.”'},'ambiguity');
+['r383','r409'].forEach(function(id){fix(id,'The key translated parcit instead of underlined mīlitibus.',{q:'Cōnsul <u>mīlitibus</u> parcit. What is the case and use of the underlined word?',correct:'dative, object of parcit',other:['nominative, subject','genitive, possession','ablative, personal agent'],e:'Parcō, “spare,” takes a dative object: the consul spares the soldiers.'})});
+fix('r384','The key translates mihi invidet.',{q:'Ille <u>mihi invidet</u>.'},'target');
+fix('r385','The key translates the whole clause.',{q:'<u>Amīcīs faveō</u>.'},'target');
+fix('r425','Include sī in the conditional target.',{q:'<u>Sī veniat</u>, laetī sīmus.',correct:'If he should come',other:['If he came (contrary to fact now)','If he had come','If he will have come'],e:'Sī with present subjunctive veniat is future less vivid: “If he should come.”'},'target');
+fix('r437','Seven was the normal, not universal, race length.',{q:'In a standard Roman chariot race in the Circus Maximus, how many laps were normally run?'});
+fix('y854','Brutus expelled Tarquin rather than killing a king.',{q:'Sī Brūtus rēgem nōn expulisset, Rōma rēgem <u>habuisset</u>.'});
+fix('y893','English need not retain a subjunctive paraphrase.',{other:['who already believed you yesterday','who will believe you next year','that you believe him'],e:'Crēdat characterizes a possible sort of person. Natural English may use “who would believe” or “who believes”; negative antecedents do not always require subjunctives.'},'ambiguity');
+fix('y895','Interrogative antecedents do not always require subjunctive relatives.',{e:'Here mūnīverit is perfect subjunctive in a relative clause of characteristic. Ordinary identifying relatives after questions can use the indicative.'});
+fix('y888','Not every subordinate clause in reported discourse is subjunctive.',{e:'Here the reason is reported as part of the statement, so sit is subjunctive. A writer’s independent explanation may remain indicative.'});
+fix('y908','Future obligation comes from the gerundive plus erit.',{q:'Cēna mihi <u>comparanda erit</u>.',correct:'will have to be prepared',other:['is preparing','has prepared','was prepared'],e:'Gerundive + future erit expresses future obligation.'},'target');
+fix('y872','Must be destroyed translates dēlenda est.',{q:'Carthāgō <u>dēlenda est</u>.'},'target');
+fix('y869','Use a straightforward gerund without an accusative object.',{q:'Est cupidus <u>vincendī</u>.',correct:'of conquering',other:['by conquering','after conquering','having been conquered'],e:'Vincendī is a genitive gerund after cupidus, “eager for.”'});
+fix('y927','Maximian also abdicated.',{q:'Which emperor abdicated in A.D. 305 and retired to his palace at Split?',e:'Diocletian retired to Split in 305. Maximian also abdicated, so Diocletian was not the only emperor to leave office voluntarily.'});
+fix('y921','Qualify the scope of the citizenship edict.',{correct:'nearly all free inhabitants of the empire',e:'The Constitutio Antoniniana covered nearly all free inhabitants; the dediticii exception and its interpretation require qualification.'});
+fix('y900','The full Pax Romana did not begin with Nerva.',{e:'These emperors reigned in A.D. 96–180; the broader Pax Romana conventionally begins under Augustus.'});
+['b265','b341','r804'].forEach(function(id){
+ var q=id==='b265'?'What authority did an early Republican dictator normally hold?':id==='b341'?'An early Republican dictator was normally appointed for at most':'In the early Republic, the ordinary maximum term of a dictator was';
+ fix(id,'Qualify the ordinary early Republican model, avoiding later exceptions.',{q:q,e:'The ordinary early Republican dictatorship ended when its task was done or after six months. Sulla’s and Caesar’s later dictatorships differed.'});
+});
+fix('b67','With victory can convey a causal meaning.',{other:['Into the victory','In the victory','To the victory']},'ambiguity');
+fix('r457','A simple English past can render an imperfect.',{other:['works','will work','has finished working']},'ambiguity');
+fix('r228','Why he came can render an imperfect.',{other:['why he had already come','why he will come','why he has come']},'ambiguity');
+fix('r364','Slept can render an imperfect.',{other:['he had finished sleeping','he will sleep','he sleeps']},'ambiguity');
+['r363','r408'].forEach(function(id){fix(id,'Test Latin tense rather than competing English when-clause paraphrases.',{q:'Cum <u>vēnisset</u>, nōs salūtāvit. What is the tense and mood of vēnisset?',correct:'pluperfect subjunctive',other:['imperfect subjunctive','perfect subjunctive','present subjunctive'],e:'Vēnisset is pluperfect subjunctive of veniō; coming precedes the greeting.'},'ambiguity')});
+fix('r265','Avoid a valid English simple-past paraphrase.',{other:['what he was doing','what he would do','what he is doing']},'ambiguity');
+fix('r266','Avoid a valid English simple-past paraphrase.',{other:['where the enemy will stay','where the enemy would stay','where the enemy are staying']},'ambiguity');
+fix('y914','A characteristic clause may use an English indicative.',{other:['who said','who will say','whom they are praising']},'ambiguity');
+fix('r402','Studeō can also mean study.',{other:['sleep','stand','sit']},'ambiguity');
+fix('v81','Caedēs can mean violent death.',{other:['debt','sword','right hand']},'ambiguity');
+fix('b113','The opposing commander need not be a king.',{correct:'arms taken by a Roman commander from the enemy commander he personally slew',e:'Spolia opima were exceptional spoils taken when a Roman commander killed the opposing commander personally and dedicated his arms to Jupiter Feretrius.'});
+fix('b258','Add -ūrus to the stem, not the entire participle.',{e:'Use the stem audīt- and add -ūrus: audītūrus, not audītus plus -ūrus.'});
+fix('b94','Generic medicines can bear brand names; test the general etymology.',{q:'The Latin noun genus means “kind, class.” A generic description applies to',correct:'a whole class of things',other:['one named person only','one unique brand only','a single dated event only'],e:'Generic is related to genus, “kind, class.”'});
+fix('b183','A modern academic semester need not last six months.',{q:'The Latin adjective sēmēstris, behind English “semester,” literally refers to a period of',correct:'six months',other:['six weeks','six days','six years'],e:'Sēmēstris means “of six months,” from sex and mēnsis. Modern academic semesters need not last six calendar months.'});
+fix('b161','Name the immediate source eximō.',{e:'Exempt comes through exemptus, perfect participle of eximō, “take out, remove,” containing ex- and the root seen in emō.'});
+fix('b187','Quota is immediately a form of quotus.',{e:'Quota is the feminine of quotus, “which in number,” related to quot, “how many.”'});
+fix('b409','Define the etymology without limiting every treason to literal handing over.',{q:'The English word “treason” comes through French from Latin trāditiō, meaning',correct:'a handing over, betrayal',other:['a planting','a journey','a festival'],e:'Treason comes through Old French traison from Latin trāditiō, “a handing over,” from trādō.'});
+['r144','r208'].forEach(function(id){fix(id,'Use natural English prior action with present dīcit.',{correct:'that he has come',e:'Perfect vēnisse is prior to present dīcit: “that he has come” or “that he came.”'})});
+fix('r252','Tantum can also mean only; give a degree/result context.',{q:'Dux <u>tantum</u> valet ut hostēs eum timeant.',e:'Tantum here indicates degree, “so much,” with a result clause. Elsewhere it may mean “only.”'},'ambiguity');
+fix('r361','Mortal comes from mortālis; morior belongs to the related family.',{q:'The English word “mortal” belongs to the same Latin word family as which verb?',e:'Mortal derives from mortālis, related to mors, “death,” and morior, “die.”'});
+fix('r422','Fiat can be associated with fīō and the suppletive passive of faciō.',{q:'The English noun “fiat” comes from a Latin word meaning',correct:'let it be done',other:['they have faith','his son','his house'],e:'Fīat is third person singular present subjunctive of fīō, also used as the suppletive passive of faciō.'},'ambiguity');
+fix('r553','Explain the derivation without an unnecessary historical count.',{e:'Defenestration is formed from dē-, “down/out,” and fenestra, “window.”'});
+fix('r649','The Septimontium festival is not simply the conventional seven-hill list.',{e:'The conventional seven are the Palatine, Capitoline, Aventine, Caelian, Esquiline, Viminal, and Quirinal.'});
+fix('r466','Gloss the supporting fourth-conjugation future.',{q:'<u>Mox</u> veniet. <small>(veniet = he will come)</small>'},'scope');
+
+/* NLE-style contexts and precise underlined targets. */
+sty('b0','Puerī <u>labōrant</u>.','are working',['is working','will work','were working']);
+sty('b1','Magistra <u>videt</u>.','sees',['see','saw','will see']);
+sty('b2','Amīcōs <u>vocāmus</u>. <small>(amīcōs = friends)</small>','we call',['you call','they call','I call']);
+sty('b3','Nautās <u>timētis</u>. <small>(nautās = sailors)</small>','you (plural) fear',['we fear','they fear','he fears']);
+sty('b5','Puerī <u>ambulābant</u>.','were walking',['are walking','will walk','was walking']);
+sty('b6','Crās <u>labōrābimus</u>.','we will work',['we worked','we were working','they will work']);
+sty('b7','Puellās <u>monēbitis</u>. <small>(puellās = girls)</small>','you (plural) will warn',['you (plural) were warning','you (plural) warn','they will warn']);
+sty('b8','Puella semper <u>cantābat</u>.','was singing',['is singing','will sing','sings']);
+sty('b9','Puella <u>fēminae</u> rosam dat.','to the woman',['the woman (subject)','of the women','the women (object)']);
+sty('b12','Nautae <u>sumus</u>.','we are',['they are','you are','we were']);
+sty('b13','Ambulāre nōn <u>possum</u>.','I am able',['I want','I was able','they are able']);
+sty('b14','Puella <u>cantāre</u> amat.','to sing',['she sings','having sung','to be sung']);
+fix('b15','Underline the noun whose function is requested.',{q:'Iūlia est <u>puella</u>. What is the function of the underlined noun?'},'style');
+sty('b16','<u>Labōrā</u>, Iūlia!','Work!',['Julia is working.','Julia was working.','Julia will work.']);
+sty('b17','<u>Ambulāte</u>, puellae!','Walk! (to several people)',['Walk! (to one person)','They are walking.','You will walk.']);
+sty('b20','<u>Cūr</u> clāmās?','Why',['Where','When','Who']);
+sty('b21','<u>Ubi</u> ambulās?','Where',['Why','When','How']);
+sty('b22','Servus <u>dominō</u> cibum dat.','to the master',['the master (subject)','of the master','by the master']);
+fix('b24','Underline the appositive noun in context.',{q:'Cornēlia, <u>fīlia</u> Mārcī, labōrat. The underlined noun is in apposition to'},'style');
+sty('b26','<u>Semper</u> nautās laudāmus.','always',['never','often','sometimes']);
+sty('b29','<u>Bonī</u> laetī sunt.','The good people',['The good boy','The good person’s','To the good person']);
+sty('b32','Puella ā magistrō <u>vocātur</u>.','is called',['calls','was calling','will call']);
+sty('b33','Ā magistrō <u>monēmur</u>.','we are warned',['we warn','we were warning','we will warn']);
+sty('b35','Crās <u>laudābimur</u>.','we will be praised',['we praise','we are praised','we were praised']);
+sty('b36','Servī ā dominō <u>monēbantur</u>.','were being warned',['were warning','will be warned','are warning']);
+sty('b37','<u>Ego et tū</u> amīcī sumus.','You and I',['You and they','He and I','He and they']);
+sty('b38','<u>Tē</u> amō.','you (object)',['you (subject)','me','myself']);
+fix('b39','Test the possessive construction without equivalent paraphrases.',{q:'<u>Mihi</u> amīca nōn <u>est</u>. The underlined words illustrate',correct:'a dative of possession',other:['a genitive of possession','an ablative of accompaniment','an accusative of duration'],e:'Mihi … est is dative of possession. The whole sentence means “I do not have a friend.”'},'style');
+sty('b41','<u>Vōs</u> estis discipulī bonī.','You (plural)',['We','They','You (singular)']);
+sty('b42','Puella amīcum <u>vocāvit</u>.','called',['calls','was calling','will call'],'Vocāvit is third person singular perfect active indicative: “called” or “has called.”');
+sty('b43','<u>Multōs annōs</u> in Ītaliā habitāvī.','for many years',['in many years','many years ago','of many years'],'Accusative plural multōs annōs expresses duration.');
+sty('b45','Herī amīcum <u>vocāstī</u>.','you called',['you will call','we called','they called'],'Vocāstī is a syncopated second person singular perfect for vocāvistī.');
+fix('b46','Test Latin tenses rather than competing English aspect renderings.',{q:'Puella <u>cantābat</u>; puer <u>clāmāvit</u>. What are the tenses of the two underlined verbs, in order?',correct:'imperfect; perfect',other:['perfect; imperfect','future; present','imperfect; imperfect'],e:'Cantābat is imperfect; clāmāvit is perfect. English can render an imperfect with a simple past, so this question tests the Latin forms directly.'},'ambiguity');
+sty('b47','<u>Cotīdiē</u> labōrō.','every day',['yesterday','tomorrow','slowly']);
+sty('b49','Puerī <u>laudātī sunt</u>.','were praised',['praised (active)','are praising','will be praised']);
+sty('b52','<u>Eam</u> amō.','her',['him','them (masculine)','it (neuter)']);
+sty('b53','Puella <u>eum</u> vīdit.','him',['her','them','they']);
+sty('b54','<u>Hic</u> puer librum habet.','This',['That','These','Those']);
+sty('b55','<u>Illae</u> puellae cantant.','Those',['These','That','This']);
+sty('b57','<u>Ipsa</u> rēgīna ad vīllam properāvit.','herself',['the same','that of yours','this']);
+sty('b59','<u>Postquam</u> amīcus ad vīllam properāvit, cēnāvimus.','After',['Although','Because','If']);
+sty('b60','Rēgīna <u>cīvēs</u> laudāvit.','the citizens (object)',['the citizen (subject)','of the citizens','to the citizens']);
+sty('b65','<u>Animālia</u> in flūmine natant.','The animals',['The animal','Of the animals','By the animals']);
+sty('b68','<u>Corpora</u> in viā iacent.','The bodies',['The body','Of the body','To the bodies']);
+fix('b69','Underline the conjunction.',{q:'<u>Quod</u> vulnerāta est, puella flēbat. Here quod means'},'style');
+sty('b70','Mīles <u>vīrēs</u> magnās habet.','strength',['men','husbands','gifts']);
+sty('b141','Puer <u>quī</u> in hortō est amīcus meus est.','who',['whom','whose','to whom']);
+sty('b142','Librum <u>quem</u> lēgī amō.','that (direct object)',['whose','to which','with which']);
+sty('b143','Puella <u>cuius</u> pater nāvem ēmit mē exspectat.','whose',['whom','to whom','by whom']);
+sty('b147','<u>Quī</u> templum dēlēvērunt ā deīs necābuntur.','Those who',['Those whom','Whose','To whom']);
+sty('b148','<u>Tum</u> amīcus vēnit.','then',['now','always','never']);
+sty('b166','Dabit<u>ne</u> rēx poētae praemium? The underlined enclitic introduces','a neutral yes-or-no question',['a question expecting yes','a question expecting no','an indirect command']);
+sty('b167','<u>Nōnne</u> amīcum vīdistī? The underlined word introduces','a question expecting yes',['a neutral yes-or-no question','a question expecting no','an indirect question']);
+sty('b168','<u>Num</u> hostēs pontem dēlēvērunt? The underlined word introduces','a question expecting no',['a question expecting yes','an indirect question','a command']);
+sty('b169','<u>Quis</u> ānulum invēnit?','Who',['What','Where','Whose']);
+sty('b170','<u>Quid</u> mātrī ēmit?','What',['Who','Why','When']);
+sty('b171','<u>Quod dōnum</u> mātrī ēmit?','Which gift',['Whose gift','Who gave the gift','To which gift']);
+sty('b172','<u>Unde</u> pānem ēmistis?','From where',['To where','When','Why']);
+sty('b173','<u>Quam diū</u> in urbe manēbis?','How long',['How many','Why','When']);
+sty('b174','<u>Quot</u> librōs lēgistī?','How many',['Which','Who','How large']);
+sty('b176','Puer puella<u>que</u> in hortō ambulant. The underlined enclitic means','and',['or','but','because']);
+sty('b189','Mīles portam <u>aperit</u>.','opens',['opened','will open','is opened']);
+sty('b190','Cohors urbem <u>mūnīvit</u>.','fortified',['will fortify','fortifies','is fortified']);
+sty('b191','Carmen <u>audiētur</u>.','will be heard',['is being heard','was heard','will hear']);
+sty('b192','Ā rēge <u>pūnīris</u>.','you are being punished',['you will be punished','you punished','you are punishing']);
+sty('b193','Hostēs <u>vēnērunt</u>.','came',['come','will come','were coming']);
+sty('b194','Epistula ā mē <u>audīta est</u>.','was heard',['was being heard','will hear','hears']);
+sty('b195','Dormīre <u>cōnstituī</u>.','I decided',['I decide','I will decide','I was deciding']);
+sty('b196','Dormīre <u>coepit</u>.','he began',['he wanted','he was able','he decided']);
+sty('b198','Eōs convenīre <u>iusserat</u>.','he had ordered',['he ordered','he will order','they had ordered']);
+sty('b214','Senex <u>cui</u> auxilium dabam nunc in Britanniā habitat.','to whom',['who (subject)','whose','with whom']);
+sty('b216','<u>Quam diū</u> mē exspectābis?','How long',['When','Who','Why']);
+sty('b218','Mīlitēs <u>coāctī erunt</u>.','will have been compelled',['had been compelled','will compel','were compelling']);
+sty('b219','Ā rēge <u>pūniēbāminī</u>.','you (plural) were being punished',['you (plural) will be punished','you (singular) were being punished','they were being punished']);
+sty('b230','Hostēs castra <u>cēpērunt</u>.','captured',['will capture','are capturing','are captured']);
+sty('b231','Castra <u>capiuntur</u>.','are being captured',['capture','were captured','will capture']);
+sty('b232','Mīles <u>fugiet</u>.','will flee',['fled','is fleeing','puts to flight']);
+sty('b233','Caesar hostēs <u>fugāvit</u>.','put to flight',['fled from','was put to flight by','will flee from']);
+sty('b237','Opus <u>cōnfēcimus</u>.','we finished',['we will finish','was finished','we were finishing']);
+sty('b253','Mīles hostēs <u>vidēns</u> fūgit.','seeing',['having been seen','about to see','to be seen']);
+sty('b254','Servus <u>līberātus</u> discessit.','having been freed',['freeing','about to free','to be freed']);
+sty('b255','Imperātor <u>pugnātūrus</u> mīlitēs hortātur. <small>(hortātur = encourages)</small>','about to fight',['having fought','fighting','having been fought']);
+sty('b275','<u>Tōtīus urbis</u> populus clāmāvit.','Of the whole city',['To the whole city','The whole city (subject)','By the whole city']);
+sty('b276','<u>Alter</u> pugnat, <u>alter</u> fugit.','One … the other (of two)',['Some … others (of many)','Neither … nor','Both … and']);
+sty('b277','<u>Aliī</u> rēgem, <u>aliī</u> rēgīnam amant.','Some … others',['The one … the other (of two)','Both … and','Neither … nor']);
+sty('b278','<u>Utra</u> puella est soror tua?','Which of the two',['Whoever','Either of the two','No']);
+sty('b280','<u>Nōn sōlum</u> deōs, <u>sed etiam</u> patriam amat.','not only … but also',['only … and','neither … nor','either … or']);
+sty('b302','<u>Impetus</u> hostium magnus erat.','The attack',['The attacks','Of the attack','To the attack']);
+sty('b303','Ducem <u>exercitūs</u> vīdimus.','of the army',['the army (subject)','to the armies','by the army']);
+sty('b304','<u>Manibus</u> labōrāmus.','with our hands',['for a hand','the hands (subject)','of the hands']);
+sty('b306','<u>Domī</u> manet.','at home',['homeward','from home','of the house']);
+sty('b307','<u>Domum</u> ambulat.','homeward',['at home','from home','of the house']);
+sty('b309','<u>Spem</u> in tē habēmus.','hope',['of hope','to hope','by hope']);
+sty('b310','<u>Merīdiē</u> ad portam vēnit.','at noon',['at dawn','at night','for a whole day']);
+sty('b313','Multārum <u>rērum</u> memor est. <small>(memor = mindful)</small>','of things',['to things','a thing','by things']);
+sty('b327','<u>Cicerōne duce</u>, rēs pūblica fēlīx est.','With Cicero as leader',['To Cicero’s leader','Of Cicero’s leader','The leader called Cicero']);
+sty('b329','Mīlitēs, <u>imperātōre equōs trādūcente</u>, castra mūniēbant.','while the general was leading the horses across',['after the general had been led across','while the horses were leading the general','to lead the general’s horses across']);
+sty('b330','<u>Bellō cōnfectō</u>, imperātor discessit.','When the war had been finished',['While the war is finishing the general','To finish the war','The war’s completion (subject)']);
+sty('b358','<u>Fīliō imperātōris interfectō</u>, pecūnia nōn trādita est.','When the general’s son had been killed',['While the son was killing the general','To kill the general’s son','The son killed by the general (subject)']);
+sty('b359','Līberābit<u>ne</u> mors animum ā corpore? The enclitic -ne marks','a neutral yes-or-no question',['an indirect question','a question expecting no','a negative command']);
+sty('b372','Mārcus <u>fortior</u> est quam Gāius.','braver',['bravest','brave','very brave']);
+sty('b373','Mārcus fortior est <u>Gāiō</u>.','than Gaius',['to Gaius','for Gaius','of Gaius']);
+sty('b374','Ille mīles <u>quam fortissimus</u> erat.','as brave as possible',['braver than anyone','the bravest of all','too brave']);
+sty('b378','<u>Quam dulcis</u> est lībertās!','How sweet',['Sweeter than','As sweet as possible','Which sweet thing']);
+sty('b412','Epistulae <u>mittuntur</u>.','are being sent',['send','will send','were sending']);
+sty('b413','Crās ad urbem <u>mittēris</u>.','you will be sent',['you are sent','you send','you were sending']);
+sty('b415','Hostēs <u>victōriā</u> caruērunt.','victory (ablative object of caruērunt)',['of victory','victory (subject)','to victory']);
+sty('b416','Puerum <u>ā turrī</u> līberāvit.','from the tower',['to the tower','in the tower','of the tower']);
+sty('b418','Hostis <u>ācer</u> urbem oppugnat.','fierce',['fiercely','fiercer','fierceness']);
+sty('b419','Fīlius <u>patrī</u> similis est.','to his father',['his father (subject)','with his father','from his father']);
+sty('b420','Mīles <u>imperātōrī</u> fīdus erat.','to the general',['of the general','by the general','the general (subject)']);
+sty('b438','Puerī epistulam <u>scrībunt</u>.','are writing',['wrote','writes','will write']);
+sty('b439','Dux mīlitēs ad urbem <u>dūcet</u>.','will lead',['leads','led','was leading']);
+sty('b440','“Salvē, amīce!” <u>dīcēbant</u>.','they were saying',['they will say','they say','they had said']);
+sty('b441','In flūmen <u>cadēs</u>.','you will fall',['you fall','you were falling','you have fallen']);
+sty('b442','<u>Mitte</u> librum!','Send!',['He sends.','They send.','He sent.']);
+sty('b443','Rēx mīlitēs <u>relīquit</u>.','left behind',['leaves behind','will leave behind','was leaving behind']);
+sty('r592','<u>Ventus</u> nāvem movet.','The wind',['The year','The word','The hour']);
+sty('v35','Hic est annus <u>decimus</u>.','tenth',['greedy','ten','long']);
+sty('v36','In tabernā <u>decem</u> librī sunt.','ten',['free','sacred','lazy']);
+sty('v37','Magnus <u>ventus</u> nāvem movet.','wind',['silver','shore','word']);
+fix('v38','Give the vocabulary choice a meaningful situation.',{q:'A Roman goes to a shop to buy a book. Which noun names that shop?'},'style');
+
+/* Fixed-set questions and original supplemental reading corrections. */
+sf('nle14',0,'Underline the phrase represented by the key.',{q:'<u>Rēx ipse</u> ad urbem veniēbat.'});
+sf('nle14',1,'Underline the phrase represented by the key.',{q:'<u>Eadem verba</u> cotīdiē clāmās.'});
+sf('nle14',2,'Underline the conjunction.',{q:'<u>Postquam</u> hostēs oppidum oppugnāvērunt, cīvēs in spēluncā latēbant.'});
+sf('nle14',3,'Underline the conjunction.',{q:'<u>Simul atque</u> puella patrem vīdit, clāmāvit.'});
+sf('nle14',4,'Target the demonstrative.',{q:'<u>Iste</u> vir est stultus.',correct:'That (of yours)',other:['Himself','This','The same']});
+sf('nle14',5,'Target the emphatic pronoun.',{q:'Mē <u>ipsum</u> culpās.',correct:'myself (emphasizing mē)',other:['yourself','himself','the same person']});
+sf('nle14',6,'Specify the two targets and order.',{q:'<u>Īdem</u> puerī in <u>eādem</u> spēluncā latēbant. Translate the underlined words in order.',correct:'the same; the same',other:['themselves; itself','such; such','those; that']});
+sf('nle14',7,'Specify temporal ubi.',{q:'<u>Ubi</u> cīvēs vēnērunt, puer clāmāvit. Here ubi is temporal. It means',other:['Why','Although','Because']});
+sf('nle14',8,'Mark the conjunction.',{q:'<u>Quamquam</u> frīgidum est, līberī in hortō ambulant.'});
+sf('nle14',9,'Mark the adverb.',{q:'<u>Cotīdiē</u> in agrō labōrat.'});
+sf('nle14',10,'An active English option was equivalent to the passive key.',{q:'Cīvēs ā rēge <u>laudātī sunt</u>.',correct:'were praised',other:['praised (active)','are praising','will praise']});
+sf('nle14',11,'I have strong eyes and my eyes are strong were both valid.',{q:'<u>Mihi</u> oculī validī <u>sunt</u>. The underlined words illustrate',correct:'a dative of possession',other:['a genitive of possession','an ablative of means','an accusative of duration'],e:'Mihi … sunt expresses possession: “I have strong eyes.” “My eyes are strong” is also a natural paraphrase and must not be a false translation.'});
+sf('nle15',11,'Avoid an unconditional claim about all Roman conquests.',{q:'In the traditional settlement after the Sabine conflict, the Romans and Sabines',correct:'united under shared kingship',other:['abandoned Rome entirely','abolished every public office','placed all Romans in slavery'],e:'Romulus and Titus Tatius become joint rulers in this story. Roman treatment of conquered communities varied.'});
+sf('nle15',14,'Replace a moral question with multiple defensible answers by a textual referent.',{q:'In line 9, <u>istam</u> in “super istam” refers to',correct:'Tarpeia',other:['the Sabine king','the Roman hills','the gold armbands'],e:'Istam is feminine accusative singular, referring to Tarpeia, upon whom the shields are piled.'});
+sf('nle15',17,'Gold is material, not an owner.',{q:'Tarpēia avāra armillās <u>aurī</u> habēre optat. What is the case and use of aurī?',correct:'genitive singular, material (“of gold”)',e:'Aurī is genitive singular of aurum and specifies the material of the armbands.'});
+sf('nle15',20,'Ask the case/number of verba, not of an entire prepositional phrase.',{q:'In “secundum <u>verba</u> Tarpēiae” (line 9), what is the case and number of verba?',correct:'accusative plural',other:['ablative plural','nominative plural','genitive plural'],e:'Secundum governs accusative verba, neuter plural; Tarpēiae is genitive singular.'});
+sf('nle15',22,'Avoid the irregular adjective paradigm before XXVII.',{q:'Erō <u>mihi</u> sōlī fīda (line 5). Mihi means',correct:'to myself',other:['by myself','from myself','my own (adjective)'],e:'Mihi is dative of ego, referring here to the speaker: “I shall be faithful to myself alone.”'});
+sf('nle15',24,'Describe the dative complement accurately.',{q:'Rōma <u>tibi</u> patēbit. What is the case and sense of tibi?',correct:'dative, “to you” (the person for whom Rome will be open)',e:'Tibi is dative singular of tū: “Rome will lie open to you.”'});
+sf('ld54',0,'A causal reading of an ablative absolute can also be valid.',{other:['although Jerusalem was capturing','because Jerusalem captured the army','so that Jerusalem was captured']});
+sf('rs37',9,'Distinguish the phrase meaning from the possessive antecedent.',{q:'In Cato’s quotation (line 6), <u>virōs suōs</u> means',e:'The phrase means “their own husbands.” Suōs agrees with virōs; its possessor is the women, subject fēminae.'});
+sf('rs44',1,'The Latin describes the men without grammatically saying heard about them.',{q:'How are the Gauls and Germans described in line 2?'});
+sf('rs6',9,'Do not test adjective morphology before Lesson VII.',{q:'At the end of the story (line 9), Ulysses says home is',correct:'far away',other:['nearby','under water','on fire'],e:'Patria nunc longē est: “Home is now far away.” Longē is supplied in the glossary.'});
+sf('rs7',2,'Do not test a third-declension name paradigm in VII.',{q:'Hector, <u>fīlius Priamī</u>, in mūrō altō stat (line 2). The underlined phrase is',correct:'in apposition to Hector',other:['the direct object of stat','an ablative of means','a command to Priam'],e:'Fīlius Priamī renames nominative Hector. Apposition is introduced in VI.'});
+sf('rs10',8,'Correct agreement in the explanation.',{e:'Galeam auream capit: he takes a golden helmet.'});
+sf('rs13',5,'Noceō takes dative eīs, not accusative eōs.',{q:'<u>Eīs</u> in line 3 refers to',e:'Eīs is dative plural, referring to the boys, the dative object of nocēbat.'});
+sf('rs22',5,'Do not test locative morphology before XL.',{q:'Quis post patrem nostrum Rōmae <u>rēgnābit</u>? (line 4). The verb means',correct:'will reign',other:['reigned','is reigning','had reigned'],e:'Rēgnābit is third person singular future active indicative; Rōmae is glossed “at Rome.”'});
+sf('gt17',5,'For can express reason in English.',{other:['without my son’s courage','against my son’s courage','before my son’s courage']});
+sf('gt30',2,'Remove a valid causal paraphrase of the ablative absolute.',{other:['while the enemy was driving us away','after the enemy had been driven off','before the enemy reached the battle line']});
+sf('gt30',7,'Remove a valid causal paraphrase.',{other:['before the enemy arrived in Italy','after the enemy had left Italy','so that the enemy would leave Italy']});
+sf('gt42',9,'Greek peirātēs also means robber; one who steals was not a secure distractor.',{q:'The Latin noun <u>pīrāta</u>, borrowed from Greek, means',correct:'a sea robber',other:['a shipbuilder','a harbor official','a merchant'],e:'Latin pīrāta comes from Greek peirātēs, “pirate, robber.”'});
+line('rs10',6,'Nīsus et Euryalus multōs hostēs necant, sed Euryalus galeam auream capit.','Auream agrees with accusative feminine galeam.');
+line('rs13',3,'Hī puerī nōn flēbant, sed laetī erant; lupa eīs nōn nocēbat.','Noceō governs a dative object.');
+line('rs16',7,'Duodecim scūta in templō Mārtis posita sunt; nēmō sciēbat quod scūtum vērum esset.','Use subjunctive esset in the indirect question.');
+line('rs22',3,'Brūtus Apollinī baculum ligneum dōnum dedit; aurum in baculō cavō cēlātum erat.','Livy has gold hidden inside a wooden staff.');
+line('rs45',5,'Caesar eum vincīrī et in carcerem dūcī iussit.','Passive vincīrī means be bound.');
+line('gt36',12,'In urbe magnā, ubi lībera fuī, nunc serva sum.','The female narrator requires lībera.');
+line('gt42',1,'Servus sum Caesaris. Caesar iuvenis erat.','Avoid an inaccurate age of twenty at the capture.');
+line('gt42',7,'Duodēquadrāgintā diēs inter pīrātās mānsit. Cum eīs lūdēbat, et ōrātiōnēs aliquās eīs recitābat.','Plutarch gives thirty-eight days.');
+sub('gt57','A voice from A.D. 275. Grammar through Lesson LVI.','The narrator must be later than the recoveries of Palmyra and Gaul in 272/274.');
+line('gt57',6,'Imperium in trēs partēs scissum est: alia pars in Galliīs erat, alia Rōmae, alia Palmyrae.','Use explicit parallel location clauses.');
+line('ld55',10,'Cinis post eōs crēscēbat; tenebrae tam dēnsae erant ut nihil vidēre possent.','Replace the incoherent contrast nōn lūna sed tenebrae.');
+sf('ld55',11,'Keep the question aligned with the revised passage.',{q:'<u>Tenebrae tam dēnsae erant</u> (line 10) describes the scene as',e:'The darkness was so thick that they could see nothing.'});
+line('rs50',1,'Nasidiēnus, vir dīves sed rīdiculus, Maecēnātem et Fundānium ad cēnam invītāvit.','Fundanius reports the dinner to Horace in Satires 2.8.');
+line('rs50',3,'Nasidiēnus, quod omnia cibōrum nōmina scīre cupiēbat, diū dē vīnō et dē aprō disputāvit.','Diū expresses duration more clearly here.');
+line('rs50',7,'Fundānius, quī hanc cēnam ipse vīderat, Horātiō nārrāvit; Horātius rem versibus scrīpsit.','Distinguish the eyewitness from the poet.');
+sf('rs50',1,'Replace Horace as diner with Fundanius.',{correct:'Maecenas and Fundanius',e:'Maecēnātem et Fundānium. Fundanius tells Horace about the dinner.'});
+sf('rs50',4,'Keep the explanation aligned with diū.',{e:'Diū dē vīnō et dē aprō disputāvit: he talked at length about wine and the boar.'});
+sf('rs50',11,'Distinguish who reports the dinner from who writes it.',{q:'Who tells Horace about the dinner in line 7?',correct:'Fundanius, who attended it',other:['Nasidienus himself','Maecenas alone','a slave'],e:'Fundānius Horātiō nārrāvit. Horace writes about the dinner in verse.'});
+glosses=[
+ {set:'rs22',line:3,text:'baculum, -ī n. staff; ligneus, -a, -um wooden; cavus, -a, -um hollow; cēlātum erat had been hidden'},
+ {set:'rs22',line:4,text:'ōrāculum, -ī n. oracle; rēgnō (1) reign; Rōmae at Rome'},
+ {set:'rs16',line:7,text:'pōnō, -ere, posuī, positum place; quod scūtum vērum esset which shield was genuine'},
+ {set:'gt42',line:7,text:'duodēquadrāgintā thirty-eight; recitābat recited'},
+ {set:'ld55',line:10,text:'cinis, -eris m. ash; tenebrae, -ārum f. pl. darkness; dēnsus, -a, -um thick; ut nihil vidēre possent so that they could see nothing'},
+ {set:'ld56',line:1,text:'Dānuvius, -ī m. the Danube; Quadī, -ōrum m. pl. the Quadi, a Germanic people'},
+ {set:'rs50',line:1,text:'Nasidiēnus, -ī m. Nasidienus; Maecēnās, -ātis m. Maecenas; Fundānius, -ī m. the guest reporting the dinner to Horace; invītō (1) invite'}
+];
+
+ return {version:'2026-11-20-nle-2',bank:Object.values(changes),sets:Object.values(setChanges),passages:passages,glosses:glosses};
+})();
+
+/* Apply the audited original-practice catalogue; keep historical scores intact. */
+(function () {
+ 'use strict';
+ var cat=NLE_REVIEW_CATALOG, changed={}, warnings=[];
+ function clone(v){return JSON.parse(JSON.stringify(v))}
+ function key(q){return JSON.stringify([q.q,q.o,q.a])}
+ function identity(q){return JSON.stringify([q.q,q.o.slice().sort(),q.o[q.a]])}
+ function stamp(v){var s=JSON.stringify(v),a=2166136261,b=5381;
+  for(var i=0;i<s.length;i++){a=Math.imul(a^s.charCodeAt(i),16777619);b=Math.imul(b,33)^s.charCodeAt(i)}
+  return (a>>>0).toString(16).padStart(8,'0')+(b>>>0).toString(16).padStart(8,'0');
+ }
+ var originalIds={};
+ NLEBANK.forEach(function(q){originalIds[identity(q)]=q.id});
+ Object.keys(NLESETS).forEach(function(id){
+  nleItems(NLESETS[id]).forEach(function(q,i){q.id=originalIds[identity(q)]||'set:'+id+':'+i});
+ });
+ function assign(q,v){['c','q','o','a','e'].forEach(function(k){q[k]=clone(v[k])})}
+ cat.bank.forEach(function(c){
+  var b=NLEBANK.find(function(q){return q.id===c.id});
+  if(!b||key(b)!==key(c.before)){warnings.push('Bank baseline mismatch: '+c.id);return}
+  var old=identity(b);
+  Object.keys(NLESETS).forEach(function(id){
+   nleItems(NLESETS[id]).forEach(function(q){
+    if(identity(q)===old){assign(q,c.after);q.id=c.id;changed[id]=true}
+   });
+  });
+  Object.assign(b,clone(c.after));
+ });
+ cat.sets.forEach(function(c){
+  var s=NLESETS[c.set],q=s&&nleItems(s)[c.index];
+  if(!q||key(q)!==key(c.before)){warnings.push('Set baseline mismatch: '+c.set+':'+c.index);return}
+  assign(q,c.after);changed[c.set]=true;
+ });
+ function passage(id){var s=NLESETS[id];var p=s&&s.parts.find(function(p){return p.passage});return p&&p.passage}
+ cat.passages.forEach(function(c){
+  var p=passage(c.set),before=p&&(c.field==='lines'?p.lines[c.index]:p[c.field]);
+  if(before!==c.before){warnings.push('Passage baseline mismatch: '+c.set+':'+c.field+':'+c.index);return}
+  if(c.field==='lines')p.lines[c.index]=c.after;else p[c.field]=c.after;
+  [typeof LADDER==='undefined'?[]:LADDER,typeof READINGS==='undefined'?[]:READINGS].forEach(function(rows){
+   rows.forEach(function(r){if(r.id!==c.set)return;
+    if(c.field==='lines')r.lines[c.index]=c.after;else r[c.field]=c.after;
+   });
+  });
+  changed[c.set]=true;
+ });
+ cat.glosses.forEach(function(c){
+  var p=passage(c.set);if(!p){warnings.push('Missing gloss passage: '+c.set);return}
+  p.gloss=p.gloss||[];var row=p.gloss.find(function(g){return g[0]===c.line});
+  if(row)row[1]=c.text;else p.gloss.push([c.line,c.text]);
+  var rd=typeof readingById==='function'&&readingById(c.set);
+  if(rd){rd.nleReviewGlosses=rd.nleReviewGlosses||{};rd.nleReviewGlosses[c.line]=c.text}
+ });
+ var finalIds={};
+ NLEBANK.forEach(function(q){finalIds[identity(q)]=q.id});
+ Object.keys(NLESETS).forEach(function(id){nleItems(NLESETS[id]).forEach(function(q){finalIds[identity(q)]=q.id})});
+ var copy=nleCopy;nleCopy=function(q){var c=copy(q);c.id=q.id||finalIds[identity(q)];return c};
+ var items=nleItems;nleItems=function(s){var a=items(s);a.forEach(function(q){if(!q.id)q.id=finalIds[identity(q)]||'question:'+stamp([q.q,q.o,q.a])});return a};
+ // Papers are immutable after review; a new seed creates a new set object.
+ // Cache by object so roadmap progress does not rehash every paper for every tile.
+ var revisions=new WeakMap();
+ function revision(set){
+  var cached=revisions.get(set);if(cached)return cached;
+  nleItems(set);
+  var rev=stamp(set.parts.map(function(p){return [p.passage?p.passage.lines:null,p.items.map(function(q){return [q.id,q.c,q.q,q.o,q.a,q.e]})]}));
+  revisions.set(set,rev);return rev;
+ }
+ var state=nleState;nleState=function(id){
+  var st=state(id),set=NLESETS[id];if(!set)return st;
+  var rev=revision(set),hasWork=st.done||Object.keys(st.ans||{}).length>0;
+  var dynamic=S.nleSpec&&'nle'+S.nleSpec.n===id;
+  var refresh=st.revision?st.revision!==rev:changed[id]||id==='nle14'||dynamic;
+  if(hasWork&&refresh){
+   S.nleReviewArchive=S.nleReviewArchive||[];
+   S.nleReviewArchive.push({set:id,archivedAt:Date.now(),revision:st.revision||'legacy',state:clone(st)});
+   S.nleReviewArchive=S.nleReviewArchive.slice(-100);
+   st=S.nle[id]={ans:{},done:false,reviewNotice:'These practice questions have been corrected. Start a fresh attempt; your earlier recorded scores remain in your history.'};
+  }
+  st.revision=rev;return st;
+ };
+ var view=nleView;nleView=function(id,np){
+  var st=nleState(id);
+  return '<p class="note nle-target-help">Answer about the <u>underlined word or phrase</u>. Translate the whole sentence only when the question asks you to do so.</p>'+
+   (st.reviewNotice?'<div class="callout" role="status">'+esc(st.reviewNotice)+'</div>':'')+view(id,np);
+ };
+ var check=ACT['nle-check'];
+ ACT['nle-check']=function(t){
+  var id=t.dataset.s,st=nleState(id);if(st.done||!NLESETS[id])return;
+  var count=(S.attempts||[]).length;check.apply(this,arguments);
+  if(S.attempts&&S.attempts.length>count){
+   var a=S.attempts[S.attempts.length-1];
+   a.nleVersion=cat.version;a.nleRevision=st.revision;a.questionIds=nleItems(NLESETS[id]).map(function(q){return q.id});
+   persist();
+  }
+ };
+ if(typeof readerHead==='function'){
+  var head=readerHead;readerHead=function(rd){
+   var h=head.apply(this,arguments),g=rd&&rd.nleReviewGlosses;
+   if(g&&rdState().help)h+='<div class="callout"><b>Reading help</b><ul>'+
+    Object.keys(g).sort(function(a,b){return a-b}).map(function(n){return '<li>Line '+n+': '+esc(g[n])+'</li>'}).join('')+'</ul></div>';
+   return h;
+  };
+ }
+ var style=document.createElement('style');
+ style.textContent='.nleq u{text-decoration-line:underline;text-decoration-thickness:2px;text-underline-offset:3px;text-decoration-skip-ink:auto}.nle-target-help{max-width:72ch}';
+ document.head.appendChild(style);
+ window.__nleReview={version:cat.version,bankCorrections:cat.bank.length,setCorrections:cat.sets.length,warnings:warnings};
+})();
+
+/* NLE REVIEW END */
 
 render();
 })();
