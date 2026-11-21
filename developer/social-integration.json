@@ -1,0 +1,104 @@
+{
+  "source_sha256": "da70ad1b35945dc9a4d3c9e1b0dd3969ea9fcffe9eae1a4ea1f7e4321c069dfc",
+  "changes": [
+    {
+      "start": 11450,
+      "end": 11452,
+      "lines": [
+        " function getDb(){return Promise.resolve(window.RomanWayData&&window.RomanWayData.social?window.RomanWayData.social.db:null)}\n",
+        " function getUser(){return Promise.resolve(window.RomanWayData&&window.RomanWayData.social?window.RomanWayData.social.user:null)}\n"
+      ]
+    },
+    {
+      "start": 12022,
+      "end": 12025,
+      "lines": [
+        " function getDb(){return Promise.resolve(window.RomanWayData&&window.RomanWayData.social?window.RomanWayData.social.db:null)}\n",
+        " function getUser(){return Promise.resolve(window.RomanWayData&&window.RomanWayData.social?window.RomanWayData.social.user:null)}\n",
+        " function myId(){return getUser().then(function(u){return u?u.id():null})}\n"
+      ]
+    },
+    {
+      "start": 12317,
+      "end": 12318,
+      "lines": [
+        "  return Promise.all([getDb(),myId()]).then(function(r){var db=r[0],id=r[1];if(!db||!id)return;var d={name:myName(),rating:a.rating,t:Date.now()};if(a.last.practice)d.practice=a.last.practice;if(a.last.ranked)d.ranked=a.last.ranked;return db.doc('arena/'+id).set(d).then(function(){AR.writable=true},function(e){AR.writable=false;AR.msg='Your ghost could not be shared ('+code(e)+'). Use Share my saved match to retry.';render(true)})}).catch(function(e){AR.msg='Your ghost could not be shared ('+code(e)+').';render(true)});\n"
+      ]
+    },
+    {
+      "start": 12335,
+      "end": 12336,
+      "lines": [
+        " function rankedGhosts(){var cp=AR.cp;return (AR.all||[]).filter(function(g){return cp&&g.ranked&&g.ranked.set===cp.id&&g.ranked.ids&&g.ranked.res&&g.ranked.ids.length>=4}).sort(function(a,b){return Math.abs(a.rating-st().rating)-Math.abs(b.rating-st().rating)})}\n"
+      ]
+    },
+    {
+      "start": 12433,
+      "end": 12434,
+      "lines": [
+        "  else if(AR.gerr)h+='<p class=\"note\">'+(AR.gerr==='no-shared-storage'?'Ghost bouts need shared storage, which this view does not have. Sign in with Google and ask your instructor to approve your class membership.':'Could not reach the arena ('+AR.gerr+').')+'</p>';\n"
+      ]
+    },
+    {
+      "start": 13964,
+      "end": 13966,
+      "lines": [
+        " function getDb(){return Promise.resolve(window.RomanWayData&&window.RomanWayData.social?window.RomanWayData.social.db:null)}\n",
+        " function getUser(){return Promise.resolve(window.RomanWayData&&window.RomanWayData.social?window.RomanWayData.social.user:null)}\n"
+      ]
+    },
+    {
+      "start": 13986,
+      "end": 13987,
+      "lines": [
+        " function myName(){return String((S.av&&S.av.done&&S.av.name)||('Classmate '+String(AUTH.uid||'').slice(-4))).slice(0,30)}\n"
+      ]
+    },
+    {
+      "start": 13991,
+      "end": 13992,
+      "lines": [
+        " function blank(){return {name:myName(),furthest:furthest(),t:Date.now(),asks:[],replies:[],thanks:[],reports:[],earned:['lib','con'].map(function(v){var xp=S.xp&&S.xp.atr&&+S.xp.atr[v]||0;return xp>0?{k:'legacy:'+v,v:v,xp:xp,why:'legacy',day:dayOf(Date.now()),t:Date.now()}:null}).filter(Boolean),done:{},hist:[],patron:null,client:null,clients:[],claim:null}}\n"
+      ]
+    },
+    {
+      "start": 14086,
+      "end": 14087,
+      "lines": [
+        "  return h+Q.map(function(x){var a=x.a,can=AT.canEdit||mastered(+a.lesson),already=(mine().replies||[]).some(function(r){return r.ask===a.id&&r.to===x.uid}),open=AT.reply&&AT.reply.uid===x.uid&&AT.reply.id===a.id,cl=claimsOn(x.uid,a.id);\n"
+      ]
+    },
+    {
+      "start": 14161,
+      "end": 14162,
+      "lines": [
+        "  if(AT.err==='no-shared-storage')return h+'<div class=\"panel\"><p style=\"margin:0\"><span class=\"chip\">Needs the class page</span> The Atrium works when everyone opens the class’s hosted page and signs in, so that questions and replies can be shared. Sign in with Google and ask your instructor to approve your membership, then select Refresh.</p></div>';\n"
+      ]
+    },
+    {
+      "start": 14205,
+      "end": 14206,
+      "lines": [
+        "   var asker=t.dataset.u,ask=t.dataset.a,a=((AT.docs[asker]||{}).asks||[]).filter(function(x){return x.id===ask})[0];if(!a||(!AT.canEdit&&!mastered(+a.lesson)))return;\n"
+      ]
+    },
+    {
+      "start": 16121,
+      "end": 16121,
+      "lines": [
+        "\n",
+        "var socialOldSetUser=window.RomanWayAuthApp.setUser;\n",
+        "window.RomanWayAuthApp.setUser=function(user){\n",
+        " window.RomanWaySocialUid=user&&user.uid||null;\n",
+        " if((user&&user.uid)!==AUTH.uid){\n",
+        "  var board=window.__board;if(board){board.rows=[];board.names={};board.me=null;board.loaded=false;board.busy=false;board.canEdit=false;board.isOwner=false;board.settings=null;board.lastSent='';board.err=null;}\n",
+        "  var at=window.__atriumState;if(at){at.docs={};at.real={};at.me=null;at.loaded=false;at.busy=false;at.err=null;at.canEdit=false;at.reply=null;at.draft=null;at.form=null;at.fu=null;at.set={approve:true,ok:{},hidden:{}};}\n",
+        "  var ar=window.__arena&&window.__arena.state();if(ar){ar.all=null;ar.priv=null;ar.cp=null;ar.m=null;ar.canEdit=false;ar.writable=false;ar.view='menu';ar.gerr=null;}\n",
+        " }\n",
+        " return socialOldSetUser(user);\n",
+        "};\n",
+        "\n"
+      ]
+    }
+  ]
+}
