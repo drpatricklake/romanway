@@ -32,3 +32,9 @@ jobs:
         working-directory: developer/tests
       - run: npm test
         working-directory: developer/tests
+      - name: Install Chromium for presentation checks
+        run: npx playwright install --with-deps chromium
+        working-directory: developer/tests
+      - name: Browser interaction and mobile Circus presentation
+        run: npm run test:browser
+        working-directory: developer/tests

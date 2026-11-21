@@ -58,13 +58,17 @@ try{
  await student.getByRole('heading',{name:'Race a classmate’s ghost'}).waitFor();
  await student.getByRole('button',{name:'Race this ghost',exact:true}).click();
  await student.getByRole('heading',{name:'Ghost race',exact:true}).waitFor();
+ assert.equal(await student.locator('.circus-dolphin').count(),7);
+ assert.equal(await student.locator('.circus-team').count(),2);
+ assert.equal(await student.locator('[role="meter"]').first().getAttribute('aria-valuenow'),'0');
+ await student.screenshot({path:'/tmp/romanway-circus-phone.png',fullPage:true});
  await student.getByRole('button',{name:'loves',exact:true}).click();
  assert.ok((await student.locator('body').innerText()).includes('Correct.'));
  assert.equal(await student.locator('[data-act="pilot-race-answer"]:enabled').count(),0);
  const width=await student.evaluate(()=>({body:document.documentElement.scrollWidth,viewport:innerWidth}));
  assert.ok(width.body<=width.viewport+2,JSON.stringify(width));
  await student.emulateMedia({reducedMotion:'reduce'});
- assert.equal(await student.locator('.pilot-track span').first().evaluate(el=>getComputedStyle(el).transitionDuration),'0s');
+ assert.equal(await student.locator('.circus-team').first().evaluate(el=>getComputedStyle(el).animationDuration),'0s');
  assert.deepEqual(failures,[]);
  console.log('PASS Chromium teacher sign-in/dashboard/settings/assignment/live-lobby interactions and phone-sized student ghost answers, overflow, and reduced-motion checks.');
 }finally{await browser.close();server.close()}

@@ -32,3 +32,9 @@ runpy.run_path(str(root/"apply-social.py"),run_name="__main__")
 
 # Apply the audited NLE catalogue after the shared integrations.
 runpy.run_path(str(root/"apply-nle.py"),run_name="__main__")
+
+# Add score-driven Circus presentation after the shared and NLE integrations.
+s= (repo/'index.html').read_text()
+end='\nrender();\n})();\n</script>\n<script type="module" src="/firebase-auth.js"'
+assert s.count(end)==1
+(repo/'index.html').write_text(s.replace(end,'\n'+(root/'circus-motion.js').read_text()+end,1))
