@@ -38,3 +38,9 @@ s= (repo/'index.html').read_text()
 end='\nrender();\n})();\n</script>\n<script type="module" src="/firebase-auth.js"'
 assert s.count(end)==1
 (repo/'index.html').write_text(s.replace(end,'\n'+(root/'circus-motion.js').read_text()+end,1))
+
+# Refine generated practice wording and English input normalization.
+s=(repo/'index.html').read_text()
+end='\nrender();\n})();\n</script>\n<script type="module" src="/firebase-auth.js"'
+assert s.count(end)==1
+(repo/'index.html').write_text(s.replace(end,'\n'+(root/'practice-clarity.js').read_text()+end,1))
