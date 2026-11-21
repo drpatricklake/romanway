@@ -1,0 +1,33 @@
+name: NLE audit recovery
+on:
+  push:
+    branches: [audit-nle-accuracy]
+permissions:
+  contents: write
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Inspect scoring interfaces
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          names=['function nleItems','function nleCopy','function nleState','function nleView','function nleScore','function nlePassage',"ACT['nle-check']", 'function readerHead','function nleDynBuild','function nleElig','function readingById','function nleEnsureDyn','function nleWarmSet','function nleLadderFor','var LADDER','var READINGS']
+          out=[]
+          for n in names:
+              i=s.find(n)
+              out.append(n+'\n'+(s[i:i+2100] if i>=0 else 'NOT FOUND'))
+          Path('developer/NLE-SOURCE-CHECK.txt').write_text('\n\n'.join(out))
+          PY
+      - name: Save recovered interfaces
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add developer/NLE-SOURCE-CHECK.txt
+          git diff --cached --quiet || git commit -m "Inspect NLE scoring interfaces for audit recovery"
+          git push origin HEAD:audit-nle-accuracy
