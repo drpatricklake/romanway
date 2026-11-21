@@ -96,7 +96,7 @@ function harness(filename) {
 window.probe = {get state(){return S},get view(){return V},actions:ACT,render:render,lessonTabs:lessonTabs,
   get inputs(){return {vocab:VOC,auto:(AUTOMAP||(buildAuto(),AUTOMAP)),lex:LEX,lab:LAB,labcl:window.__LABCL,labsets:LABSETS,worksheets:WS,ladder:LADDER}},exercises:EX,notes:NOTES_BY,worksheets:WS,lab:LAB,labSets:LABSETS,gradeLatin:gradeLatin,
   scoreSet:scoreSet,credit:credit,lquery:lessonKey,notesStatus:notesStatus,labState:labState,
-  ${getOptional(['notesCheck','LAB2','openLab','TABS','LREG','exStatus','LADDER','nleState','ROMAN'])}};
+  ${getOptional(['NLEBANK','NLESETS','NLE_REVIEW_CATALOG','nleView','nleScore','nleItems','nleCopy','nleDynBuild','nleEnsureDyn','nleElig','nleWarmSet','nleLadderFor','nlePassage','READINGS','readingById','notesCheck','LAB2','openLab','TABS','LREG','exStatus','LADDER','nleState','ROMAN'])}};
 `;
   const labHook = ' function advance(id){var v=st2(id),ph=phasesFor(id)';
   const script = app.replace(labHook, ' window.probeLab={phasesFor,K,kindsFor,vgroups,vcats,vcat,typeAsked,typesFor,canon,clauseFits};\n' + labHook)

@@ -29,3 +29,6 @@ replace_once('\nrender();\n})();\n</script>\n<script type="module" src="/firebas
 # Apply the Firebase social integration to the rebuilt pilot baseline.
 import runpy
 runpy.run_path(str(root/"apply-social.py"),run_name="__main__")
+
+# Apply the audited NLE catalogue after the shared integrations.
+runpy.run_path(str(root/"apply-nle.py"),run_name="__main__")

@@ -12,22 +12,39 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
-      - name: Inspect scoring interfaces
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: developer/tests/package-lock.json
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --ignore-scripts
+        working-directory: developer/tests
+      - name: Rebuild reviewed application
+        run: python developer/build.py
+      - name: Export complete before and after catalogue
+        working-directory: developer/tests
+        run: node export-nle.mjs ../../index.html /tmp/nle-snapshot.json ../nle-corrections.json
+      - name: Export editorial spreadsheet
+        run: python developer/export-nle-review.py
+      - name: NLE regressions
+        working-directory: developer/tests
+        run: npm run test:nle
+      - name: Full classroom regressions
+        working-directory: developer/tests
+        run: npm test
+      - name: Check deterministic rebuild
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          s=Path('index.html').read_text()
-          names=['function nleItems','function nleCopy','function nleState','function nleView','function nleScore','function nlePassage',"ACT['nle-check']", 'function readerHead','function nleDynBuild','function nleElig','function readingById','function nleEnsureDyn','function nleWarmSet','function nleLadderFor','var LADDER','var READINGS']
-          out=[]
-          for n in names:
-              i=s.find(n)
-              out.append(n+'\n'+(s[i:i+2100] if i>=0 else 'NOT FOUND'))
-          Path('developer/NLE-SOURCE-CHECK.txt').write_text('\n\n'.join(out))
-          PY
-      - name: Save recovered interfaces
+          cp index.html /tmp/nle-built-index.html
+          python developer/build.py
+          cmp index.html /tmp/nle-built-index.html
+      - name: Save tested application and editorial exports
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add developer/NLE-SOURCE-CHECK.txt
-          git diff --cached --quiet || git commit -m "Inspect NLE scoring interfaces for audit recovery"
+          git add index.html developer/nle-corrections.json developer/NLE-CORRECTIONS.csv
+          git diff --cached --quiet || git commit -m "Build audited NLE questions and export reviewed corrections"
           git push origin HEAD:audit-nle-accuracy
