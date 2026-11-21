@@ -45,7 +45,8 @@ const bank=id=>m.NLEBANK.find(q=>q.id===id);
 assert.match(bank('r146').q,/victūrōs/);assert.doesNotMatch(bank('r146').q,/vīctūrōs/);
 assert.match(bank('r86').q+' '+bank('r86').o.join(' '),/[Tt]ria mīlia/);
 assert.match(bank('x102').e,/masculine/i);
-assert.match(bank('b293').o[bank('b293').a],/[Gg]auls/);
+assert.match(bank('b293').q,/Romans were defeated by the Gauls/);
+assert.equal(bank('b293').o[bank('b293').a],'390 B.C.');
 for(const id of ['r383','r409'])assert.match(bank(id).o[bank(id).a],/dative/i);
 for(const id of ['r226','r228']){
  assert.ok(!m.nleElig(43,false).some(q=>q.id===id),id+' introduced too early');
