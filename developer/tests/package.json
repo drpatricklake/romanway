@@ -2,8 +2,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node core.test.mjs && node auth.test.mjs ../../index.html ../../firebase-auth.js && node ui.test.mjs ../../index.html ./fixtures/baseline-index.html && node race-ui.test.mjs ../../index.html && node social-ui.test.mjs ../../index.html && firebase emulators:exec --config ../../firebase.json --project demo-romanway --only firestore \"node rules.test.mjs && node data.test.mjs && node classroom.test.mjs && node social.test.mjs\"",
-    "test:browser": "node browser.test.mjs"
+    "test": "node core.test.mjs && node auth.test.mjs ../../index.html ../../firebase-auth.js && node ui.test.mjs ../../index.html ./fixtures/baseline-index.html && node race-ui.test.mjs ../../index.html && node social-ui.test.mjs ../../index.html && node nle.test.mjs ../../index.html && firebase emulators:exec --config ../../firebase.json --project demo-romanway --only firestore \"node rules.test.mjs && node data.test.mjs && node classroom.test.mjs && node social.test.mjs\"",
+    "test:browser": "node browser.test.mjs",
+    "test:nle": "node nle.test.mjs ../../index.html"
   },
   "devDependencies": {
     "firebase": "13.4.0",
