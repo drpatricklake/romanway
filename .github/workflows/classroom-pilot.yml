@@ -8,7 +8,7 @@ permissions:
 jobs:
   classroom:
     name: Test classroom app and shared permissions
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -32,3 +32,10 @@ jobs:
         working-directory: developer/tests
       - run: npm test
         working-directory: developer/tests
+      - name: Install Chromium for presentation checks
+        run: npx playwright install --with-deps chromium
+        working-directory: developer/tests
+      - name: Browser interaction and mobile Circus presentation
+        run: npm run test:browser
+        working-directory: developer/tests
+

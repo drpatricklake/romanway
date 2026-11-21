@@ -10,8 +10,15 @@ app.setUser({uid:'student',name:'Student',email:'s@example.test'});app.databaseH
 for(const tab of p.context.__circusAPI.drillTabs(1))p.model.state.attempts.push({kind:'exercise',ref:tab[0],correct:1,total:1,t:p.context.Date.now()});
 action(p,'open-circus');assert.ok(p.markup().includes('Race this ghost'));
 action(p,'pilot-ghost-start',{id:'g'});assert.ok(p.markup().includes('Ghost race'));
+assert.equal((p.markup().match(/class="circus-dolphin(?: |")/g)||[]).length,7);
+assert.ok(p.markup().includes('0 of 7 dolphins turned'));
+assert.equal((p.markup().match(/aria-valuenow="0"/g)||[]).length,2,'Both racers start at zero');
+action(p,'pilot-race-answer',{choice:'0'});
+assert.ok(p.markup().includes('1 of 8 questions completed'));
+assert.ok(p.markup().includes('advancing'),'Earned points move the chariot');
+
 for(let i=0;i<8;i++){action(p,'pilot-race-answer',{choice:'0'});assert.ok(p.markup().includes('Correct.'));p.tick(15001);await new Promise(r=>setImmediate(r));}
-assert.ok(p.markup().includes('Race finished'));assert.equal(writes,1);assert.equal(p.model.state.pilot.sharedRuns,1);
+assert.ok(p.markup().includes('Race finished'));assert.ok(p.markup().includes('7 of 7 dolphins turned'));assert.equal(writes,1);assert.equal(p.model.state.pilot.sharedRuns,1);
 p.tick(5000);await new Promise(r=>setImmediate(r));assert.equal(writes,1,'Finished races must not resubmit results');
 action(p,'pilot-circus-menu');action(p,'pilot-ghost-start',{id:'g'});fail=true;
 for(let i=0;i<8;i++){action(p,'pilot-race-answer',{choice:'0'});p.tick(15001);await new Promise(r=>setImmediate(r));}
@@ -28,3 +35,13 @@ await action(p,'pilot-room-open',{id:'live-tie'});p.tick(200);await new Promise(
 assert.equal(p.model.state.circus.stats.d,1,'All tied first-place finishers receive a draw, regardless of ordering');
 console.log('PASS tied live scoreboard and draw handling.');
 console.log('PASS eight-round ghost race, answer lock, timed transitions, finish save, no duplicate reward, bounded failure handling, and manual retry.');
+
+action(p,'pilot-circus-menu');action(p,'cir-start');
+assert.equal((p.markup().match(/class="circus-team/g)||[]).length,2,'Trainer gets two chariots');
+assert.ok(p.markup().includes('0 of 8 questions completed'));
+const trainer=p.context.__circus.race;
+action(p,'cir-ans',{k:String(trainer.items[0].a)});
+assert.ok(p.markup().includes('1 of 8 questions completed'));
+action(p,'cir-again');
+assert.ok(p.markup().includes('0 of 7 dolphins turned'),'Replay resets dolphins');
+console.log('PASS trainer movement and new-race marker reset.');
