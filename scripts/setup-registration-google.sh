@@ -2,6 +2,8 @@
 # Run in Google Cloud Shell as an authorized project administrator. No key downloads.
 set -euo pipefail
 PROJECT=latinrw
+# Explicitly select the consumer project for CLI and direct REST requests.
+export CLOUDSDK_BILLING_QUOTA_PROJECT="$PROJECT"
 NUMBER=203865387786
 SA=romanway-registration@latinrw.iam.gserviceaccount.com
 POOL=romanway-vercel
@@ -32,7 +34,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 TOKEN=$(gcloud auth print-access-token)
 URL="https://firebaseappcheck.googleapis.com/v1/projects/$NUMBER/apps/$APP/recaptchaEnterpriseConfig"
-HTTP=$(curl -sS -o "$TMP/config.json" -w '%{http_code}' -H "Authorization: Bearer $TOKEN" "$URL")
+HTTP=$(curl -sS -o "$TMP/config.json" -w '%{http_code}' -H "Authorization: Bearer $TOKEN" -H "x-goog-user-project: $PROJECT" "$URL")
 if [[ "$HTTP" == 200 ]]; then
  KEY=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("siteKey",""))' "$TMP/config.json")
 elif [[ "$HTTP" == 404 ]]; then
@@ -44,10 +46,10 @@ if [[ -z "$KEY" ]]; then
  KEY_PATH=$(gcloud recaptcha keys create --project="$PROJECT" --display-name='Roman Way web App Check' --web --domains=romanway.vercel.app --integration-type=score --format='value(name)' --quiet)
  KEY=${KEY_PATH##*/}
  python3 -c 'import json,sys;json.dump({"siteKey":sys.argv[1],"tokenTtl":"3600s"},open(sys.argv[2],"w"))' "$KEY" "$TMP/body.json"
- curl --fail-with-body -sS -X PATCH -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' --data-binary "@$TMP/body.json" "$URL?updateMask=siteKey,tokenTtl" > "$TMP/result.json"
+ curl --fail-with-body -sS -X PATCH -H "Authorization: Bearer $TOKEN" -H "x-goog-user-project: $PROJECT" -H 'Content-Type: application/json' --data-binary "@$TMP/body.json" "$URL?updateMask=siteKey,tokenTtl" > "$TMP/result.json"
 fi
 # Enable password sign-in; preserve Google and all existing provider settings.
-curl --fail-with-body -sS -X PATCH -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' --data '{"signIn":{"email":{"enabled":true,"passwordRequired":true}}}' "https://identitytoolkit.googleapis.com/admin/v2/projects/$PROJECT/config?updateMask=signIn.email.enabled,signIn.email.passwordRequired" >/dev/null
+curl --fail-with-body -sS -X PATCH -H "Authorization: Bearer $TOKEN" -H "x-goog-user-project: $PROJECT" -H 'Content-Type: application/json' --data '{"signIn":{"email":{"enabled":true,"passwordRequired":true}}}' "https://identitytoolkit.googleapis.com/admin/v2/projects/$PROJECT/config?updateMask=signIn.email.enabled,signIn.email.passwordRequired" >/dev/null
 printf '\nSetup complete. Public registration remains OFF. No service-account private key was created.\n'
 printf 'GCP_PROJECT_NUMBER=%s\nGCP_SERVICE_ACCOUNT_EMAIL=%s\nROMANWAY_APPCHECK_SITE_KEY=%s\n' "$NUMBER" "$SA" "$KEY"
 printf 'Send the three configuration lines above back to ChatGPT. They are not passwords or private keys.\n'
