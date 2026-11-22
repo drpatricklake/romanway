@@ -44,3 +44,6 @@ s=(repo/'index.html').read_text()
 end='\nrender();\n})();\n</script>\n<script type="module" src="/firebase-auth.js"'
 assert s.count(end)==1
 (repo/'index.html').write_text(s.replace(end,'\n'+(root/'practice-clarity.js').read_text()+end,1))
+
+# Match English calling labels to the selected origin without changing the art or Latin.
+runpy.run_path(str(root/'apply-avatar-labels.py'),run_name='__main__')
