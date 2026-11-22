@@ -34,3 +34,12 @@ await reject(()=>run('set-role',{role:'teacher',adult:true,setting:'school'},'te
 console.log('PASS registration authorization, consent gate, class limit, student privacy, scoped reset, role immutability and adult support gate');
 
 await reject(()=>run('student-register',{age13:false},'','ip','valid'),400);
+
+const closed=createRegistration({db,auth,secret:'test-only-secret',testMode:true,verifyAppCheck:async()=>{}});
+await reject(()=>closed('session',{},'teacher1'),403);
+await reject(()=>closed('session',{},uid),403);
+await reject(()=>closed('student-address',{code:c1.code,username:'pseudonym',age13:true},'','new-ip','valid'),403);
+data.get('classes/'+c1.classId).previewTest=true;data.get('classes/'+c1.classId).teacherId=OWNER;
+assert.equal((await closed('session',{},uid)).account.role,'student');
+await closed('session',{},OWNER);
+console.log('PASS closed-preview owner/test-student restriction and rejection of regular class codes');
