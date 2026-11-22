@@ -21,6 +21,7 @@ export function createRegistration({db,auth,verifyAppCheck,secret,support={},now
  return async function run(action,b={},token='',ip='',appToken=''){
   if(action==='config')return {enabled:true,studentRegistration:true};
   if(action==='student-address'||action==='student-register'){
+   if(b.age13!==true)fail(400,'The expanded pilot is for students aged 13 or older.');
    await publicGate(ip,appToken);const c=await codeClass(clean(b.code));const username=clean(b.username).toLowerCase();const email=studentAddress(c.id,username,secret);
    if(action==='student-address')return {email};
    if(typeof b.password!=='string'||b.password.length<12||b.password.length>128)fail(400,'Use a password of 12–128 characters.');
@@ -43,7 +44,7 @@ export function createRegistration({db,auth,verifyAppCheck,secret,support={},now
   if(action==='set-role'){
    if(a)fail(409,'This account already has a role. Contact the administrator to change it.');
    if(!['teacher','independent','student'].includes(b.role))fail(400,'Choose a role.');
-   if(b.role==='independent'&&b.age13!==true)fail(400,'Independent registration is for learners aged 13 or older.');
+   if(['student','independent'].includes(b.role)&&b.age13!==true)fail(400,'Independent registration is for learners aged 13 or older.');
    if(b.role==='teacher'&&b.adult!==true)fail(400,'Teacher and parent accounts are for adults.');
    if(b.role==='teacher'&&!['school','college','homeschool'].includes(b.setting))fail(400,'Choose your teaching setting.');
    const value={role:b.role,adultConfirmed:b.adult===true,age13:b.age13===true,setting:b.role==='teacher'?b.setting:null,approvedTeacher:u.uid===OWNER,createdAt:new Date(now())};

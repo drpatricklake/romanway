@@ -1,5 +1,8 @@
 # Registration, classroom expansion and support — pilot handoff
 
+**Approved rollout: expanded pilot is 13+.** Student access requires an explicit 13+ confirmation before registration or login. Independent learners also confirm 13+; teacher/parent accounts require 18+. Under-13 registration is deferred. Age confirmations are attestations, not identity verification.
+
+
 This branch prepares role-first registration at `/register.html` and isolated classrooms. It does not turn on public registration or activate payment links. Existing Google accounts and the pilot classroom retain their current paths. Do not invite children into the new flow until the launch prerequisites below are complete.
 
 ## What is implemented

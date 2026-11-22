@@ -18,8 +18,8 @@ await reject(()=>run('create-class',{name:'A'},'teacher1'),400);
 const c1=await run('create-class',{name:'A',authorization:true},'teacher1');assert.match(c1.code,/^\d{6}$/);
 const c2=await run('create-class',{name:'B',authorization:true},'teacher1');assert.notEqual(c1.classId,c2.classId);
 await reject(()=>run('create-class',{name:'C',authorization:true},'teacher1'),403);
-await reject(()=>run('student-register',{code:c1.code,username:'pseudonym',password:'a good long password'},'', 'ip'),403);
-const st=await run('student-register',{code:c1.code,username:'pseudonym',password:'a good long password'},'','ip','valid');
+await reject(()=>run('student-register',{code:c1.code,username:'pseudonym',password:'a good long password',age13:true},'', 'ip'),403);
+const st=await run('student-register',{code:c1.code,username:'pseudonym',password:'a good long password',age13:true},'','ip','valid');
 assert.equal(st.email,studentAddress(c1.classId,'pseudonym','test-only-secret'));assert.ok(!st.email.includes('pseudonym'));
 const uid=[...users.keys()][0];assert.equal(data.get(`classes/${c1.classId}/members/${uid}`).status,'pending');
 await reject(()=>run('reset-password',{classId:c1.classId,uid},'attacker'),403);
@@ -32,3 +32,5 @@ await run('set-role',{role:'independent',age13:true,adult:false},'teen');assert.
 await run('set-role',{role:'independent',age13:true,adult:true},'adult');assert.equal((await run('session',{},'adult')).support.kofi,'https://ko-fi.com/example');
 await reject(()=>run('set-role',{role:'teacher',adult:true,setting:'school'},'teen'),409);
 console.log('PASS registration authorization, consent gate, class limit, student privacy, scoped reset, role immutability and adult support gate');
+
+await reject(()=>run('student-register',{age13:false},'','ip','valid'),400);
