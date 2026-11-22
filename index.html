@@ -1214,7 +1214,7 @@ function screenLogin(){
   var busy=AUTH.phase==='loading'||AUTH.phase==='busy';
   var failed=AUTH.phase==='failed';
   var label=AUTH.phase==='loading'?'Checking sign-in…':AUTH.phase==='busy'?'Opening Google…':failed?'Retry connection':'Continue with Google';
-  return '<main class="wrap narrow"><h1 class="display">Latin: The Roman Way</h1><p class="lede">Latin language and Roman civilization</p><section class="panel"><h2>Welcome</h2><p>Sign in with your Google account to begin or resume your lessons.</p><p><button class="btn" data-act="'+(failed?'auth-retry':'auth-google')+'"'+(busy?' disabled':'')+'>'+label+'</button></p><p class="note" role="status" aria-live="polite">'+esc(AUTH.error)+'</p></section><p class="fine">Signed-in progress is saved online with a browser backup. Join your instructor’s class from Account to share your progress with them.</p></main>';
+  return '<main class="wrap narrow"><h1 class="display">Latin: The Roman Way</h1><p class="lede">Latin language and Roman civilization</p><section class="panel"><h2>Welcome</h2><p><a href="/register.html">New classroom and account options</a></p><p>Sign in with your Google account to begin or resume your lessons.</p><p><button class="btn" data-act="'+(failed?'auth-retry':'auth-google')+'"'+(busy?' disabled':'')+'>'+label+'</button></p><p class="note" role="status" aria-live="polite">'+esc(AUTH.error)+'</p></section><p class="fine">Signed-in progress is saved online with a browser backup. Join your instructor’s class from Account to share your progress with them.</p></main>';
 }
 
 /* ================= rendering: lesson ================= */
@@ -15795,7 +15795,7 @@ function screenTeacherCloud(){
   return h+'</tbody></table></div><p class="note">Accuracy is calculated from saved exercise attempts, including repeats. It is not an official grade. Use View work for submitted written responses.</p></section>'+teacherStudentHtml()+'</main>';
 }
 screenSignin=function(){
-  var u=AUTH.identity,h='<main class="wrap narrow"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1>Account</h1><section class="panel"><h2>Google sign-in</h2><p>'+esc(u?u.name:'')+'<br>'+esc(u?u.email:'')+'</p><p>Progress is saved to your Google-linked app account. Check the saving status above before closing the page.</p><button class="btn ghost" data-act="cloud-retry">Retry online save</button> <button class="btn ghost" data-act="cloud-backup">Download device backup</button>';
+  var u=AUTH.identity,h='<main class="wrap narrow"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1>Account</h1><p><a href="/register.html">Manage classrooms and account options</a></p><section class="panel"><h2>Google sign-in</h2><p>'+esc(u?u.name:'')+'<br>'+esc(u?u.email:'')+'</p><p>Progress is saved to your Google-linked app account. Check the saving status above before closing the page.</p><button class="btn ghost" data-act="cloud-retry">Retry online save</button> <button class="btn ghost" data-act="cloud-backup">Download device backup</button>';
   if(CLOUD.phase==='error')h+=' <button class="btn ghost" data-act="cloud-local-signout">Sign out with device copy only</button>';
   h+='</section>';
   if(CLOUD.error)h+='<p class="alert" role="alert">'+esc(CLOUD.error)+'</p>';
