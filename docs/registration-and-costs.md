@@ -58,3 +58,10 @@ Sources checked 22 November 2026:
 ## Follow-on work
 
 Full institutional administration, Stripe webhooks/invoice reconciliation, paid entitlements, formal school contracts, automatic export/deletion workflows, closed-class code rotation/transfer UI and publication of named supporter credits are not shipped by this PR. The `tier` field is server-created as `free`; no client can claim paid status. Keep core course access independent of donations. Do not paywall essential student feedback or accessibility.
+## One-time keyless setup (follow-up)
+
+Run `scripts/setup-registration-google.sh` in Google Cloud Shell as the project administrator. It creates a dedicated runtime service account, grants Auth administration and Firestore data access, and trusts only this project's **preview** Vercel OIDC subject. It creates/registers a score-based reCAPTCHA Enterprise key if none is registered, and enables email/password without disabling Google. It does not create a private key, open public registration, change Firestore rules, authorize arbitrary preview domains or enable project-wide App Check enforcement. Existing App Check configuration is preserved.
+
+The script prints three nonsecret configuration values to return for Vercel setup. The server uses @vercel/oidc and standard Google external-account ADC files under /tmp with 0600 token permissions; no long-lived Google key is stored. Refresh tokens are supplied anew on each request before ADC is used.
+
+After Google setup: authorize the exact stable test hostname in reCAPTCHA and Firebase Auth, configure a branch-only closed preview, deploy the reviewed rules or use a separate staging Firebase project, and perform real Google, managed password, class isolation, save/resume, App Check rejection and password-reset tests. Tests use consenting adult test accounts with invented coursework. Public/production registration stays false. Production identity trust is deliberately not granted by this script; add it only after successful acceptance tests and the launch decision. The username HMAC secret must be kept stable.
