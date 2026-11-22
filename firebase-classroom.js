@@ -1,7 +1,7 @@
 /* Shared pilot classroom features. Firestore rules enforce all instructor permissions. */
 import {doc,collection,getDoc,getDocFromServer,getDocs,setDoc,updateDoc,deleteDoc,runTransaction,onSnapshot,serverTimestamp,Timestamp,query,orderBy,limit,where} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
-const ROOT='classes/pilot';
 export function createClassroom(db,identity,core=globalThis.RomanWayPilot) {
+ const ROOT='classes/'+(identity.classId||'pilot');
   const uid=identity.uid,ref=path=>doc(db,`${ROOT}/${path}`);
   const stops=[];
   let offset=0;

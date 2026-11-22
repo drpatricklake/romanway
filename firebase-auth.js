@@ -78,6 +78,17 @@ try {
     settled = true;
     window.clearTimeout(startupTimeout);
     const identity=user ? {uid:user.uid, name:user.displayName || 'Student', email:user.email || ''} : null;
+    if(identity){
+      const cfg=await fetch('/api/registration').then(r=>r.json()).catch(()=>({enabled:false}));
+      if(cfg.enabled){
+        try{
+          const response=await fetch('/api/registration',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+await user.getIdToken()},body:JSON.stringify({action:'session'})});
+          if(!response.ok)throw new Error('Account service unavailable');
+          const session=await response.json();
+          if(session.account){identity.classId=session.account.activeClassId||('solo_'+user.uid);identity.role=session.account.role;}
+        }catch(e){app.setStatus('failed','The account service could not load your classroom. Try again.');return;}
+      }
+    }
     app.setUser(identity);
     if (identity && !window.RomanWayData) {
       const databaseTimeout=window.setTimeout(()=>app.databaseSlow(),20000);

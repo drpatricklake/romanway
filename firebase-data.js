@@ -8,7 +8,6 @@ import {createSocial} from './firebase-social.js';
 import {createClassroom} from './firebase-classroom.js';
 
 export const OWNER_UID = 'ZU5goPmM28X40rVridJLtZ9JcBu2';
-const CLASS = 'pilot';
 const CHUNK_SIZE = 120000;
 const MAX_CHUNKS = 100;
 const conflict = () => Object.assign(new Error('Another device saved newer work.'), {code:'romanway/conflict'});
@@ -16,6 +15,7 @@ const conflict = () => Object.assign(new Error('Another device saved newer work.
 export function createStore(firebaseApp, identity, hooks, runtime = {localStorage, window, crypto}) {
   const {localStorage, window, crypto}=runtime;
   const db = runtime.db || getFirestore(firebaseApp);
+  const CLASS=identity.classId || 'pilot';
   const classroom=createClassroom(db,identity);
   const social=createSocial(db,identity);
   const uid = identity.uid;
@@ -67,7 +67,7 @@ export function createStore(firebaseApp, identity, hooks, runtime = {localStorag
   }
 
   async function bootstrap() {
-    if (uid!==OWNER_UID) return;
+    if (uid!==OWNER_UID || CLASS!=='pilot') return;
     const classRef = ref(`classes/${CLASS}`);
     await runTransaction(db, async tx => {
       const existing = await tx.get(classRef);
@@ -79,6 +79,7 @@ export function createStore(firebaseApp, identity, hooks, runtime = {localStorag
   }
 
   async function rotateCode() {
+    if(CLASS!=='pilot')throw new Error('Manage new classrooms at /register.html.');
     const bytes = crypto.getRandomValues(new Uint8Array(10));
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const code = 'ROMA-' + [...bytes].map(b => alphabet[b % alphabet.length]).join('');
@@ -103,7 +104,7 @@ export function createStore(firebaseApp, identity, hooks, runtime = {localStorag
     revision = remote.revision;
     chunks = remote.parts;
     classInfo = cls.exists() ? cls.data() : {threshold:80};
-    hooks.access({teacher:uid===OWNER_UID || staff.data()?.active===true,member:member.data() || null,classInfo});
+    hooks.access({teacher:uid===OWNER_UID && CLASS==='pilot' || staff.data()?.active===true,member:member.data() || null,classInfo});
     stops.push(onSnapshot(ref(`classes/${CLASS}/members/${uid}`), snap => hooks.member(snap.data() || null), error => hooks.error(error)));
     stops.push(onSnapshot(ref(`classes/${CLASS}`), snap => {
       classInfo = snap.data() || {threshold:80};
@@ -223,6 +224,7 @@ export function createStore(firebaseApp, identity, hooks, runtime = {localStorag
   }
 
   async function classCode() {
+    if(CLASS!=='pilot'){const c=await getDoc(ref(`classes/${CLASS}`));hooks.code(c.data()?.joinCode||'');return;}
     const snap=await getDoc(ref(`classes/${CLASS}/admin/enrollment`));
     hooks.code(snap.data()?.code || '');
   }
