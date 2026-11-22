@@ -1,12 +1,12 @@
 /* Class-scoped Atrium and Arena persistence. No Claude services or credentials. */
 import {doc,collection,getDoc,getDocs,setDoc,deleteDoc,writeBatch,query,where,limit,serverTimestamp} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
-const ROOT='classes/pilot';
 const clone=x=>JSON.parse(JSON.stringify(x));
 export function createSocial(db,identity){
+ const ROOT='classes/'+(identity.classId||'pilot');
  const uid=identity.uid,ref=p=>doc(db,p),classRef=p=>ref(`${ROOT}/${p}`);
  let teacher=false,loaded=false;
  const ensure=()=>{if(globalThis.RomanWaySocialUid!==undefined&&globalThis.RomanWaySocialUid!==uid)throw Object.assign(new Error('Account changed; reopen this view.'),{code:'auth/session-changed'});};
- async function role(){const s=await getDoc(classRef(`staff/${uid}`));teacher=uid==='ZU5goPmM28X40rVridJLtZ9JcBu2'||s.data()?.active===true;loaded=true;ensure();return teacher;}
+ async function role(){const s=await getDoc(classRef(`staff/${uid}`));teacher=ROOT==='classes/pilot'&&uid==='ZU5goPmM28X40rVridJLtZ9JcBu2'||s.data()?.active===true;loaded=true;ensure();return teacher;}
  const snap=(value,id)=>({id,exists:!!value,data:()=>value});
  async function settings(name){const r=classRef(`socialSettings/${name}`);let s=await getDoc(r);if(name==='atrium'&&!s.exists()&&(loaded?teacher:await role())){await setDoc(r,{approve:true,ok:{},hidden:{}});s=await getDoc(r);}return s;}
  async function privateRecord(who){return getDoc(ref(`users/${who}/social/atrium`));}

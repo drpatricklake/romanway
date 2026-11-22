@@ -3,20 +3,29 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
       return request.auth != null && request.auth.token.email_verified == true
-        && request.auth.token.firebase.sign_in_provider == 'google.com';
+        && (request.auth.token.firebase.sign_in_provider == 'google.com'
+          || (request.auth.token.firebase.sign_in_provider == 'password'
+            && exists(/databases/$(database)/documents/accounts/$(request.auth.uid))));
     }
     function owner() { return signedIn() && request.auth.uid == 'ZU5goPmM28X40rVridJLtZ9JcBu2'; }
-    function teacher() {
-      return owner() || (signedIn()
-        && exists(/databases/$(database)/documents/classes/pilot/staff/$(request.auth.uid))
-        && get(/databases/$(database)/documents/classes/pilot/staff/$(request.auth.uid)).data.active == true);
+    function classTeacher(classId) {
+      return signedIn() && ((classId == 'pilot' && owner())
+        || (exists(/databases/$(database)/documents/classes/$(classId)/staff/$(request.auth.uid))
+        && get(/databases/$(database)/documents/classes/$(classId)/staff/$(request.auth.uid)).data.active == true));
     }
     function self(uid) { return signedIn() && request.auth.uid == uid; }
-    function canRead(uid) {
-      return self(uid) || (teacher()
-        && exists(/databases/$(database)/documents/classes/pilot/members/$(uid))
-        && get(/databases/$(database)/documents/classes/pilot/members/$(uid)).data.status == 'active');
+    function enrolledTeacher(uid, classId) {
+      return classTeacher(classId)
+        && exists(/databases/$(database)/documents/classes/$(classId)/members/$(uid))
+        && get(/databases/$(database)/documents/classes/$(classId)/members/$(uid)).data.status == 'active';
     }
+    function canRead(uid) {
+      return self(uid) || enrolledTeacher(uid,'pilot')
+        || (signedIn() && exists(/databases/$(database)/documents/accounts/$(uid))
+          && get(/databases/$(database)/documents/accounts/$(uid)).data.activeClassId is string
+          && enrolledTeacher(uid,get(/databases/$(database)/documents/accounts/$(uid)).data.activeClassId));
+    }
+    match /accounts/{uid} { allow get: if self(uid); }
     function validLearning(l) {
       return l.keys().hasOnly(['threshold','macrons','practiceLen','vocabRule','dailyGoal','classGoal','newPerDay','models','aiFeedback','autoAddLooked','readingU','showDrafts','lab','labLock','forumMode'])
         && l.threshold is int && l.threshold >= 0 && l.threshold <= 100
@@ -45,16 +54,18 @@ service cloud.firestore {
         && (!('biblioteca' in data) || validLibrary(data.biblioteca));
     }
 
-    match /classes/pilot {
-      allow get: if signedIn();
-      allow create, update: if teacher()
+    match /classes/{classId} {
+      allow get: if signedIn() && (classId == 'pilot' || classId == 'solo_' + request.auth.uid
+        || classTeacher(classId) || exists(/databases/$(database)/documents/classes/$(classId)/members/$(request.auth.uid)));
+      allow create, update: if classTeacher(classId)
+        && (classId == 'pilot' || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['threshold','learning','circus','biblioteca']))
         && request.resource.data.threshold is int
         && request.resource.data.threshold >= 0 && request.resource.data.threshold <= 100 && validClass(request.resource.data);
       function active() {
-        return signedIn() && exists(/databases/$(database)/documents/classes/pilot/members/$(request.auth.uid))
-          && get(/databases/$(database)/documents/classes/pilot/members/$(request.auth.uid)).data.status == 'active';
+        return signedIn() && exists(/databases/$(database)/documents/classes/$(classId)/members/$(request.auth.uid))
+          && get(/databases/$(database)/documents/classes/$(classId)/members/$(request.auth.uid)).data.status == 'active';
       }
-      function participant() { return active() || teacher(); }
+      function participant() { return active() || classTeacher(classId); }
       function safePack(q) {
         return q is list && q.size() == 8
           && safeQuestion(q[0]) && safeQuestion(q[1]) && safeQuestion(q[2]) && safeQuestion(q[3])
@@ -87,7 +98,7 @@ service cloud.firestore {
       }
       match /assignments/{assignmentId} {
         allow read: if participant();
-        allow create, update: if teacher()
+        allow create, update: if classTeacher(classId)
           && request.resource.data.keys().hasOnly(['id','title','kind','targetId','source','lesson','due','audience','author','updatedAt'])
           && request.resource.data.id == assignmentId
           && request.resource.data.title is string && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 200
@@ -97,7 +108,7 @@ service cloud.firestore {
           && request.resource.data.due is string && request.resource.data.due.size() <= 10
           && request.resource.data.audience is list && request.resource.data.audience.size() <= 100
           && request.resource.data.author == request.auth.uid && request.resource.data.updatedAt == request.time;
-        allow delete: if teacher();
+        allow delete: if classTeacher(classId);
       }
       match /classmates/{uid} {
         allow read: if participant();
@@ -109,22 +120,22 @@ service cloud.firestore {
           && request.resource.data.eligible is list && request.resource.data.eligible.size() <= 57
           && request.resource.data.week is string && request.resource.data.weekPractice is number && request.resource.data.weekPractice >= 0 && request.resource.data.weekPractice <= 210
           && request.resource.data.updatedAt == request.time;
-        allow delete: if self(uid) || teacher();
+        allow delete: if self(uid) || classTeacher(classId);
       }
       match /circusRooms/{roomId} {
         allow read: if participant();
-        allow create: if teacher()
+        allow create: if classTeacher(classId)
           && request.resource.data.keys().hasOnly(['title','event','questions','host','status','createdAt','startsAt'])
           && request.resource.data.host == request.auth.uid && request.resource.data.status == 'lobby'
           && request.resource.data.startsAt == null && request.resource.data.createdAt == request.time
           && request.resource.data.title is string && request.resource.data.title.size() <= 100
           && request.resource.data.event in ['mixed','cursus','quad','formae'] && request.resource.data.questions is list && request.resource.data.questions.size() == 8;
-        allow update: if teacher()
+        allow update: if classTeacher(classId)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','startsAt'])
           && (request.resource.data.status == 'cancelled' ||
             resource.data.status == 'lobby' && request.resource.data.status == 'running'
             && request.resource.data.startsAt >= request.time && request.resource.data.startsAt <= request.time + duration.value(30,'s'));
-        function room() { return get(/databases/$(database)/documents/classes/pilot/circusRooms/$(roomId)).data; }
+        function room() { return get(/databases/$(database)/documents/classes/$(classId)/circusRooms/$(roomId)).data; }
         match /participants/{uid} {
           allow read: if participant();
           allow create: if self(uid) && participant() && room().status == 'lobby'
@@ -133,10 +144,10 @@ service cloud.firestore {
             && request.resource.data.faction in ['blue','green','red','white'] && request.resource.data.joinedAt == request.time;
         }
         match /rounds/{round}/answers/{uid} {
-          allow get: if participant() && (self(uid) || teacher() || request.time >= room().startsAt + duration.value((int(round)+1)*15,'s'));
-          allow list: if participant() && (teacher() || request.time >= room().startsAt + duration.value((int(round)+1)*15,'s'));
+          allow get: if participant() && (self(uid) || classTeacher(classId) || request.time >= room().startsAt + duration.value((int(round)+1)*15,'s'));
+          allow list: if participant() && (classTeacher(classId) || request.time >= room().startsAt + duration.value((int(round)+1)*15,'s'));
           allow create: if self(uid) && participant() && round.matches('[0-7]')
-            && exists(/databases/$(database)/documents/classes/pilot/circusRooms/$(roomId)/participants/$(uid))
+            && exists(/databases/$(database)/documents/classes/$(classId)/circusRooms/$(roomId)/participants/$(uid))
             && room().status == 'running'
             && request.time >= room().startsAt + duration.value(int(round)*15,'s')
             && request.time <= room().startsAt + duration.value(int(round)*15+14,'s')
@@ -160,19 +171,19 @@ service cloud.firestore {
         allow create: if participant() && valid(request.resource.data);
       }
       function source(r) {
-        return r.kind == 'live' ? get(/databases/$(database)/documents/classes/pilot/circusRooms/$(r.sourceId)).data
-          : get(/databases/$(database)/documents/classes/pilot/circusGhosts/$(r.sourceId)).data;
+        return r.kind == 'live' ? get(/databases/$(database)/documents/classes/$(classId)/circusRooms/$(r.sourceId)).data
+          : get(/databases/$(database)/documents/classes/$(classId)/circusGhosts/$(r.sourceId)).data;
       }
       function previousCount(uid,day) {
-        return exists(/databases/$(database)/documents/classes/pilot/circusDays/$(uid+'_'+day))
-          ? get(/databases/$(database)/documents/classes/pilot/circusDays/$(uid+'_'+day)).data.count : 0;
+        return exists(/databases/$(database)/documents/classes/$(classId)/circusDays/$(uid+'_'+day))
+          ? get(/databases/$(database)/documents/classes/$(classId)/circusDays/$(uid+'_'+day)).data.count : 0;
       }
       function withinDay(day) {
         return request.time >= timestamp.date(int(day.split('-')[0]),int(day.split('-')[1]),int(day.split('-')[2]))
           && request.time < timestamp.date(int(day.split('-')[0]),int(day.split('-')[1]),int(day.split('-')[2])) + duration.value(1,'d');
       }
       function permittedFaction(r) {
-        let member = get(/databases/$(database)/documents/classes/pilot/members/$(request.auth.uid)).data;
+        let member = get(/databases/$(database)/documents/classes/$(classId)/members/$(request.auth.uid)).data;
         return !('faction' in member) || member.faction == 'auto' || member.faction == r.faction;
       }
       match /circusResults/{resultId} {
@@ -181,7 +192,7 @@ service cloud.firestore {
           let uid = request.auth.uid;
           let src = source(r);
           let count = previousCount(uid,r.competitionDay);
-          let after = getAfter(/databases/$(database)/documents/classes/pilot/circusDays/$(uid+'_'+r.competitionDay)).data;
+          let after = getAfter(/databases/$(database)/documents/classes/$(classId)/circusDays/$(uid+'_'+r.competitionDay)).data;
           return r.keys().hasOnly(['uid','kind','sourceId','alias','faction','answers','points','correct','competitionDay','eligible','createdAt'])
             && r.uid == uid && r.kind in ['live','ghost'] && r.sourceId.matches('[A-Za-z0-9_-]{1,120}')
             && resultId == uid+'_'+r.kind+'_'+r.sourceId
@@ -192,7 +203,7 @@ service cloud.firestore {
             && r.correct == totalCorrect(src.questions,r.answers) && r.points is int && r.points >= r.correct*10 && r.points <= r.correct*15
             && (r.kind == 'ghost' && src.uid != uid || r.kind == 'live' && src.status == 'running'
               && request.time >= src.startsAt+duration.value(120,'s')
-              && exists(/databases/$(database)/documents/classes/pilot/circusRooms/$(r.sourceId)/participants/$(uid)))
+              && exists(/databases/$(database)/documents/classes/$(classId)/circusRooms/$(r.sourceId)/participants/$(uid)))
             && r.eligible == (count<5)
             && (!r.eligible || after.lastResult == resultId && after.count == count+1)
             && r.createdAt == request.time;
@@ -206,16 +217,16 @@ service cloud.firestore {
           && request.resource.data.uid == request.auth.uid && capId == request.auth.uid+'_'+request.resource.data.day
           && withinDay(request.resource.data.day)
           && request.resource.data.count == previousCount(request.auth.uid,request.resource.data.day)+1 && request.resource.data.count <= 5
-          && !exists(/databases/$(database)/documents/classes/pilot/circusResults/$(request.resource.data.lastResult))
-          && getAfter(/databases/$(database)/documents/classes/pilot/circusResults/$(request.resource.data.lastResult)).data.uid == request.auth.uid
-          && getAfter(/databases/$(database)/documents/classes/pilot/circusResults/$(request.resource.data.lastResult)).data.competitionDay == request.resource.data.day
-          && getAfter(/databases/$(database)/documents/classes/pilot/circusResults/$(request.resource.data.lastResult)).data.eligible == true;
+          && !exists(/databases/$(database)/documents/classes/$(classId)/circusResults/$(request.resource.data.lastResult))
+          && getAfter(/databases/$(database)/documents/classes/$(classId)/circusResults/$(request.resource.data.lastResult)).data.uid == request.auth.uid
+          && getAfter(/databases/$(database)/documents/classes/$(classId)/circusResults/$(request.resource.data.lastResult)).data.competitionDay == request.resource.data.day
+          && getAfter(/databases/$(database)/documents/classes/$(classId)/circusResults/$(request.resource.data.lastResult)).data.eligible == true;
       }
 
       // Shared tutoring and Arena services are restricted to the approved class.
       match /socialSettings/{name} {
         allow read: if participant();
-        allow write: if teacher() && name in ['atrium','arena','leaderboard']
+        allow write: if classTeacher(classId) && name in ['atrium','arena','leaderboard']
           && request.resource.data.size() <= 3;
       }
       match /atriumProfiles/{uid} {
@@ -229,19 +240,19 @@ service cloud.firestore {
           && request.resource.data.clients is list && request.resource.data.clients.size() <= 1;
       }
       function pairApproved(client,patron) {
-        let c=get(/databases/$(database)/documents/classes/pilot/atriumProfiles/$(client)).data;
-        let p=get(/databases/$(database)/documents/classes/pilot/atriumProfiles/$(patron)).data;
-        let s=get(/databases/$(database)/documents/classes/pilot/socialSettings/atrium).data;
+        let c=get(/databases/$(database)/documents/classes/$(classId)/atriumProfiles/$(client)).data;
+        let p=get(/databases/$(database)/documents/classes/$(classId)/atriumProfiles/$(patron)).data;
+        let s=get(/databases/$(database)/documents/classes/$(classId)/socialSettings/atrium).data;
         return c.client.patron == patron && !('ended' in c.client) && client in p.clients
           && (s.approve == false || s.ok[client] == patron);
       }
       function visibleQuestion(q) {
-        return participant() && (teacher() || q.owner == request.auth.uid ||
+        return participant() && (classTeacher(classId) || q.owner == request.auth.uid ||
           q.readers.hasAny(['all',request.auth.uid]));
       }
       function validReaders(q) {return q.readers == ((q.hidden || q.deleted) ? [] : [q.audience]);}
       match /atriumQuestions/{id} {
-        allow get: if participant() && !exists(/databases/$(database)/documents/classes/pilot/atriumQuestions/$(id));
+        allow get: if participant() && !exists(/databases/$(database)/documents/classes/$(classId)/atriumQuestions/$(id));
         allow read: if visibleQuestion(resource.data);
         allow create: if participant() && self(request.resource.data.owner)
           && id == request.auth.uid+'_'+request.resource.data.value.id
@@ -251,7 +262,7 @@ service cloud.firestore {
           && request.resource.data.value.lesson is int && request.resource.data.value.lesson >= 1 && request.resource.data.value.lesson <= 57
           && request.resource.data.value.q is string && request.resource.data.value.q.size() > 0 && request.resource.data.value.q.size() <= 300
           && request.resource.data.thanks is list && request.resource.data.thanks.size() == 0;
-        allow update: if (teacher() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden','readers']) && validReaders(request.resource.data)) ||
+        allow update: if (classTeacher(classId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden','readers']) && validReaders(request.resource.data)) ||
           (participant() && self(resource.data.owner)
            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['value','thanks','deleted','readers']) && validReaders(request.resource.data)
            && request.resource.data.deleted == ('deleted' in request.resource.data.value)
@@ -261,19 +272,19 @@ service cloud.firestore {
            && request.resource.data.value.q == resource.data.value.q
            && request.resource.data.thanks is list && request.resource.data.thanks.size() <= 60);
         match /replies/{replyId} {
-          function parent(){return get(/databases/$(database)/documents/classes/pilot/atriumQuestions/$(id)).data;}
-          allow read: if visibleQuestion(parent()) && (teacher() || resource.data.hidden == false);
+          function parent(){return get(/databases/$(database)/documents/classes/$(classId)/atriumQuestions/$(id)).data;}
+          allow read: if visibleQuestion(parent()) && (classTeacher(classId) || resource.data.hidden == false);
           allow create: if visibleQuestion(parent()) && request.auth.uid != parent().owner
             && parent().deleted == false && parent().value.open == true && parent().hidden == false
-            && (teacher() || (get(/databases/$(database)/documents/classes/pilot/atriumProfiles/$(request.auth.uid)).data.mastered >= parent().value.lesson
-            && get(/databases/$(database)/documents/classes/pilot/atriumProfiles/$(request.auth.uid)).data.done.keys().hasAny([string(parent().value.lesson)])))
+            && (classTeacher(classId) || (get(/databases/$(database)/documents/classes/$(classId)/atriumProfiles/$(request.auth.uid)).data.mastered >= parent().value.lesson
+            && get(/databases/$(database)/documents/classes/$(classId)/atriumProfiles/$(request.auth.uid)).data.done.keys().hasAny([string(parent().value.lesson)])))
             && request.resource.data.keys().hasOnly(['author','hidden','value'])
             && self(request.resource.data.author) && replyId == request.auth.uid+'_'+request.resource.data.value.id
             && request.resource.data.hidden == false
             && request.resource.data.value.to == parent().owner && request.resource.data.value.ask == parent().value.id
             && request.resource.data.value.kind in ['hint','rule','check']
             && request.resource.data.value.text is string && request.resource.data.value.text.size() >= 10 && request.resource.data.value.text.size() <= 1200;
-          allow update: if teacher() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden']);
+          allow update: if classTeacher(classId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden']);
         }
       }
 
@@ -301,18 +312,18 @@ service cloud.firestore {
       }
 
       match /staff/{uid} {
-        allow get: if self(uid) || teacher();
-        allow list: if teacher();
+        allow get: if self(uid) || classTeacher(classId);
+        allow list: if classTeacher(classId);
         allow write: if owner();
       }
-      match /admin/{id} { allow read, write: if teacher(); }
+      match /admin/{id} { allow read, write: if classTeacher(classId); }
       match /invites/{code} {
         allow get: if signedIn();
-        allow list, write: if teacher();
+        allow list, write: if classTeacher(classId);
       }
       match /members/{uid} {
-        allow get: if self(uid) || teacher();
-        allow list: if teacher();
+        allow get: if self(uid) || classTeacher(classId);
+        allow list: if classTeacher(classId);
         allow create: if self(uid)
           && request.resource.data.keys().hasOnly(['uid','displayName','email','status','inviteCode','requestedAt'])
           && request.resource.data.uid == uid
@@ -322,12 +333,12 @@ service cloud.firestore {
           && request.resource.data.requestedAt == request.time
           && request.resource.data.inviteCode is string
           && request.resource.data.inviteCode.matches('ROMA-[A-Z2-9]{10}')
-          && get(/databases/$(database)/documents/classes/pilot/invites/$(request.resource.data.inviteCode)).data.active == true;
-        allow update: if teacher()
+          && get(/databases/$(database)/documents/classes/$(classId)/invites/$(request.resource.data.inviteCode)).data.active == true;
+        allow update: if classTeacher(classId)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','faction'])
           && request.resource.data.status in ['pending','active','declined']
           && (!('faction' in request.resource.data) || request.resource.data.faction in ['auto','blue','green','red','white']);
-        allow delete: if teacher();
+        allow delete: if classTeacher(classId);
       }
     }
     match /users/{uid} {

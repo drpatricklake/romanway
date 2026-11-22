@@ -24,6 +24,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Install server identity dependencies
+        run: npm ci --ignore-scripts
+      - name: Test keyless Google identity adapter
+        run: node developer/tests/google-identity.test.mjs
       - name: Verify reproducible application build
         run: |
           python developer/build.py
