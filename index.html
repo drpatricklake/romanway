@@ -13784,7 +13784,7 @@ Object.assign(window.__ART=window.__ART||{},{"rank_civis": {"u": "data:image/web
   var c=S.circus||{},cst=c.stats||{w:0,l:0,d:0};Object.keys(c.runs||{}).forEach(function(k){v.virtus+=(c.runs[k].acc>=100?15:10)});var mcz=credit('circus',(cst.w||0)+(cst.l||0)+(cst.d||0),cst.w||0);v.virtus+=mcz.b*3+mcz.w*12;
   if(S.grimm&&S.grimm.done)v.pietas+=40;if(S.cw47&&S.cw47.done)v.pietas+=40;if(S.orbis&&S.orbis.final)v.pietas+=40;
   try{v.pietas+=Object.keys((S.forum&&S.forum.mon)||{}).length*20}catch(e){}
-  v.liberalitas+=xs().service||0;var atr=xs().atr||{};v.liberalitas+=atr.lib||0;v.constantia+=atr.con||0;
+  v.liberalitas+=xs().service||0;var atr=xs().atr||{};if(atr.src==='ledger'){v.liberalitas+=atr.lib||0;v.constantia+=atr.con||0}
   /* the days of study, for Cōnstantia */
   var x=xs(),base=v.sapientia+v.constantia+v.fortitudo+v.virtus+v.pietas+v.liberalitas,today=dkey(new Date());
   if(x.lastBase==null){x.lastBase=base;if(base>0)x.days[today]=1;persist()}
@@ -13992,7 +13992,7 @@ var screenDomus;
  function dayOf(t){var d=new Date(t);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
  function ago(t){var m=Math.max(0,Math.round((Date.now()-t)/60000));if(m<1)return 'just now';if(m<60)return m+' min ago';var h=Math.round(m/60);if(h<24)return h+' h ago';var d=Math.round(h/24);return d+' day'+(d>1?'s':'')+' ago'}
  function clean(s,n){return String(s||'').replace(/\s+/g,' ').trim().slice(0,n||MAXTXT)}
- function blank(){return {name:myName(),furthest:furthest(),t:Date.now(),asks:[],replies:[],thanks:[],reports:[],earned:['lib','con'].map(function(v){var xp=S.xp&&S.xp.atr&&+S.xp.atr[v]||0;return xp>0?{k:'legacy:'+v,v:v,xp:xp,why:'legacy',day:dayOf(Date.now()),t:Date.now()}:null}).filter(Boolean),done:{},hist:[],patron:null,client:null,clients:[],claim:null}}
+ function blank(){return {name:myName(),furthest:furthest(),t:Date.now(),asks:[],replies:[],thanks:[],reports:[],earned:[],done:{},hist:[],patron:null,client:null,clients:[],claim:null}}
  function mine(){return AT.docs[AT.me]||blank()}
  function nameOf(id){var d=AT.docs[id];return d&&d.name?String(d.name).slice(0,30):'A classmate'}
  function who(id){var r=AT.real&&AT.real[id];return nameOf(id)+(r&&r!==nameOf(id)?' ('+r+')':'')}
@@ -14002,7 +14002,7 @@ var screenDomus;
   if(AT.busy)return;AT.busy=true;AT.err=null;
   Promise.all([getDb(),getUser()]).then(function(r){var db=r[0],u=r[1];if(!db||!u){AT.err='no-shared-storage';return}
    return Promise.all([u.id(),u.canEdit(),u.isOwner()]).then(function(p){AT.me=p[0];AT.canEdit=!!(p[1]||p[2]);if(!AT.me){AT.err='no-shared-storage';return}
-    return Promise.all([db.doc('settings/atrium').get().then(function(s){var d=s.exists?(s.data()||{}):{};AT.set={approve:d.approve!==false,ok:d.ok||{},hidden:d.hidden||{}}},function(){}),
+    return Promise.all([db.doc('settings/atrium').get().then(function(s){var d=s.exists?(s.data()||{}):{};AT.set={approve:d.approve!==false,ok:d.ok||{},hidden:d.hidden||{},rewardsFrom:d.rewardsFrom}},function(){}),
      db.collection('atrium').get().then(function(q){var o={};q.docs.forEach(function(d){o[d.id]=d.data()||{}});AT.docs=o})]).then(function(){AT.loaded=true;return sync()}).then(function(){
       if(AT.canEdit&&u.profiles)return u.profiles(Object.keys(AT.docs)).then(function(ps){AT.real={};Object.keys(ps||{}).forEach(function(k){AT.real[k]=(ps[k]&&ps[k].name)||''})},function(){})})})})
   .catch(function(e){AT.err=code(e)}).then(function(){AT.busy=false;render(true)})}
@@ -14010,9 +14010,8 @@ var screenDomus;
  function sync(){
   var d=mine(),f=furthest(),mu=masteredUpTo(),changed=!AT.docs[AT.me]||d.name!==myName()||d.furthest!==f||d.mastered!==mu,done=Object.assign({},d.done||{});
   for(var n=1;n<=57;n++)if(complete(n)&&!done[n]){done[n]=Date.now();changed=true}
-  var add=newAwards();if(add.length)changed=true;
-  if(!changed){totals();return Promise.resolve()}
-  return save(function(x){x.done=done;x.mastered=mu;x.earned=(x.earned||[]).concat(add)},true)}
+  if(!changed){totals();return settleMine()}
+  return save(function(x){x.done=done;x.mastered=mu},true).then(function(){return settleMine()})}
  function save(mut,quiet){
   return getDb().then(function(db){if(!db||!AT.me){AT.err='no-shared-storage';return}
    var d=JSON.parse(JSON.stringify(mine()));d.asks=d.asks||[];d.replies=d.replies||[];d.thanks=d.thanks||[];d.reports=d.reports||[];d.earned=d.earned||[];d.hist=d.hist||[];d.clients=d.clients||[];d.done=d.done||{};
@@ -14027,25 +14026,26 @@ var screenDomus;
  function myPatron(){var c=mine().client;return c&&!c.ended?c.patron:null}
  function clientsOf(p){return Object.keys(AT.docs).filter(function(k){var d=AT.docs[k];return k!==p&&d.client&&!d.client.ended&&d.client.patron===p&&((AT.docs[p]||{}).clients||[]).indexOf(k)>=0})}
  /* ---------- rewards: each earned once, kept in my own record, never removed ---------- */
- function have(k){return (mine().earned||[]).some(function(e){return e.k===k})}
- function newAwards(){
-  var me=AT.me,out=[],ledger=(mine().earned||[]).slice(),has=function(k){return ledger.some(function(e){return e.k===k})||out.some(function(e){return e.k===k})};
-  var daySum=function(day){var s=0;ledger.concat(out).forEach(function(e){if(e.day===day&&(e.why==='reply'||e.why==='helpful'))s+=e.xp});return s},dayReplies=function(day){return ledger.concat(out).filter(function(e){return e.day===day&&e.why==='reply'}).length};
-  var ev=[];
-  (mine().replies||[]).forEach(function(r){if(r.kind&&String(r.text||'').length>=QUALIFY&&!hidden('r:'+r.id))ev.push({t:r.t,k:'rp:'+r.id,why:'reply',xp:XP_REPLY})});
-  Object.keys(AT.docs).forEach(function(k){(AT.docs[k].thanks||[]).forEach(function(t){if(t.helper===me&&!hidden('r:'+t.reply))ev.push({t:t.t,k:'hp:'+k+':'+t.ask,why:'helpful',xp:XP_HELPFUL})})});
-  ev.sort(function(a,b){return a.t-b.t}).forEach(function(e){if(has(e.k))return;var day=dayOf(e.t);
-   if(e.why==='reply'&&dayReplies(day)>=REPLY_DAILY)return;
-   var room=DAILY_REPLY_XP-daySum(day);if(room<=0)return;
-   out.push({k:e.k,why:e.why,v:'lib',xp:Math.min(e.xp,room),day:day,t:Date.now()})});
-  /* a client finishes a lesson after a tutoring exchange on that lesson: once per client and lesson */
-  clientsOf(me).forEach(function(c){if(!pairActive(c,me))return;var d=AT.docs[c];
-   Object.keys(d.done||{}).forEach(function(L){L=+L;var key='pl:'+c+':'+L;if(has(key))return;
-    var ex=(mine().replies||[]).some(function(r){if(r.to!==c||hidden('r:'+r.id))return false;var a=(d.asks||[]).filter(function(x){return x.id===r.ask})[0];return a&&+a.lesson===L&&r.t<d.done[L]&&r.t>=(d.client.t||0)});
-    if(ex)out.push({k:key,why:'patron',v:'lib',xp:XP_PATRON_LESSON,day:dayOf(Date.now()),t:Date.now(),client:c,lesson:L})})});
-  return out}
- function totals(){var lib=0,con=0;(mine().earned||[]).forEach(function(e){if(e.v==='lib')lib+=e.xp;else if(e.v==='con')con+=e.xp});var x=S.xp=S.xp||{};x.atr={lib:lib,con:con,t:Date.now()};persist()}
- function award(k,v,xp,extra){if(have(k))return Promise.resolve();return save(function(d){if(!(d.earned||[]).some(function(e){return e.k===k}))d.earned=(d.earned||[]).concat([Object.assign({k:k,v:v,xp:xp,day:dayOf(Date.now()),t:Date.now()},extra||{})])})}
+ function have(k){var m=/^fu:(\d+)$/.exec(k);return !!m&&(mine().earned||[]).some(function(e){return e.why==='followup'&&+e.lesson===+m[1]})}
+ function newAwards(){return []}
+ function totals(){var lib=0,con=0;(mine().earned||[]).forEach(function(e){if(e.v==='lib')lib+=e.xp;else if(e.v==='con')con+=e.xp});var x=S.xp=S.xp||{};x.atr={lib:lib,con:con,src:'ledger',t:Date.now()};persist()}
+ function award(){return Promise.resolve()}
+ function friendlyErr(e){var c=e&&(e.code||e.status);if(c==='permission-denied')return 'This page is out of date. Reload it to keep using the Atrium.';if(c===429)return 'Please wait a moment and try again.';return 'Something went wrong. Try again in a moment.'}
+ /* the server decides what is earned; the page only names which items to look at */
+ function serverSettle(h){var s=window.RomanWayData&&window.RomanWayData.social;return s&&s.settle?s.settle(h):Promise.resolve({awarded:[],applied:0})}
+ var SETTLING=false;
+ function settleMine(extra){
+  if(SETTLING||!AT.me)return Promise.resolve();
+  var qs={},cl={},me=AT.me;
+  (mine().asks||[]).slice(-5).forEach(function(a){qs[me+'_'+a.id]=1});
+  (mine().replies||[]).slice(-5).forEach(function(r){qs[r.to+'_'+r.ask]=1});
+  clientsOf(me).forEach(function(c){cl[c]=1});
+  if(myPatron())cl[me]=1;
+  var h={questions:Object.keys(qs).slice(0,10),clients:Object.keys(cl).slice(0,2),followups:(extra&&extra.followups)||[]};
+  if(!h.questions.length&&!h.clients.length&&!h.followups.length)return Promise.resolve();
+  SETTLING=true;
+  return serverSettle(h).then(function(r){SETTLING=false;return r&&r.applied>0?reloadLedger():null},function(e){SETTLING=false;return null})}
+ function reloadLedger(){return getDb().then(function(db){return db?db.collection('atrium').get():null}).then(function(q){if(!q)return;var o={};q.docs.forEach(function(d){o[d.id]=d.data()||{}});AT.docs=o;totals();render(true)})}
  /* ---------- capturing what the student is stuck on ---------- */
  function capture(){
   var main=document.querySelector('main');if(!main)return null;
@@ -14071,7 +14071,7 @@ var screenDomus;
   Object.keys(AT.docs).forEach(function(k){if(k===mp)return;var d=AT.docs[k];(d.asks||[]).forEach(function(a){if(!a.open||a.deleted||hidden('a:'+a.id))return;if(a.to&&a.to!=='all'&&a.to!==mp)return;out.push({uid:k,a:a,n:repliesTo(k,a.id).length,mine:a.to===mp})})});
   out.sort(function(x,y){return (y.mine-x.mine)||(x.n-y.n)||(x.a.t-y.a.t)});return out}
  function repliesTo(asker,askId){var out=[];Object.keys(AT.docs).forEach(function(k){(AT.docs[k].replies||[]).forEach(function(r){if(r.to===asker&&r.ask===askId&&!hidden('r:'+r.id))out.push({uid:k,r:r})})});out.sort(function(a,b){return a.r.t-b.r.t});return out}
- function claimsOn(asker,askId){var out=[];Object.keys(AT.docs).forEach(function(k){if(k===AT.me)return;var c=AT.docs[k].claim;if(c&&c.asker===asker&&c.ask===askId&&Date.now()-c.t<CLAIM_MIN*60000)out.push({uid:k,t:c.t})});return out}
+ function claimsOn(asker,askId){var out=[];((AT.docs[asker]||{}).claims||[]).forEach(function(c){if(c.ask===askId&&c.uid!==AT.me&&Date.now()-c.t<CLAIM_MIN*60000)out.push({uid:c.uid,t:c.t})});return out}
  function noteHtml(a){if(a.tried||a.dont)return '<p style="margin:.3em 0 .2em">“I tried <b>'+esc(a.tried||'…')+'</b>'+(a.because?' because <b>'+esc(a.because)+'</b>':'')+', but I don’t understand <b>'+esc(a.dont||'…')+'</b>.”</p>';return '<p style="margin:.3em 0 .2em"><b>What they don’t understand:</b> '+esc(a.note||'')+'</p>'}
  function askCard(uid,a,extra,forTeacher){
   return '<div class="atq"><p class="note" style="margin:0 0 .25em"><b>'+esc(forTeacher?who(uid):nameOf(uid))+'</b> · Lesson '+R(a.lesson)+(a.where?' · '+esc(a.where):'')+' · '+ago(a.t)+(a.to&&a.to!=='all'?' · <span class="chip">to '+(uid===AT.me?'your':'their')+' patron; the teacher can read it too</span>':'')+(a.deleted?' · <span class="chip">deleted by the student</span>':'')+'</p>'+
@@ -14147,7 +14147,7 @@ var screenDomus;
   else{var P=Object.keys(AT.docs).filter(function(k){var d=AT.docs[k];return k!==AT.me&&d.patron&&d.patron.on&&(d.mastered||0)>f}).sort(function(a,b){return (AT.docs[b].mastered||0)-(AT.docs[a].mastered||0)});
    h+=P.length?P.map(function(k){var d=AT.docs[k],taken=clientsOf(k).length>0;return '<div class="atq"><b>'+esc(nameOf(k))+'</b> · has mastered Lessons I to '+R(d.mastered)+'<div style="margin-top:.4em">'+(taken?'<span class="note">Has a client right now.</span>':'<button class="btn sm" data-act="at-askpatron" data-u="'+k+'">Ask to be their client</button>')+'</div></div>'}).join(''):'<p class="note" style="margin:0">No classmate further along than you is offering to be a patron yet.</p>'}
   return h+'</div>'}
- function viewTeacher(){var h='<div class="panel"><h3 style="margin:0 0 .3em">Teacher controls</h3><label class="chk-row"><input type="checkbox" data-act="at-approve"'+(AT.set.approve?' checked':'')+'> Approve each patron–client pairing before it starts</label><p class="note" style="margin:.3em 0 0">Account names appear only in this tab.</p></div>';
+ function viewTeacher(){var h='<div class="panel"><h3 style="margin:0 0 .3em">Teacher controls</h3><label class="chk-row"><input type="checkbox" data-act="at-approve"'+(AT.set.approve?' checked':'')+'> Approve each patron–client pairing before it starts</label><p class="note" style="margin:.3em 0 0">Account names appear only in this tab.</p>'+(AT.set.rewardsFrom?'':'<p class="note" style="margin:.5em 0 0"><b>Server rewards have not started.</b> No XP is paid until the developer reviews the starting balances and sets the start time (see docs/atrium-mapping.md).</p>')+'</div>';
   var pend=[],hist=[];Object.keys(AT.docs).forEach(function(k){var d=AT.docs[k];if(d.client&&!d.client.ended){var p=d.client.patron,acc=AT.docs[p]&&(AT.docs[p].clients||[]).indexOf(k)>=0;if(acc)pend.push([k,p,AT.set.ok[k]===p])}(d.hist||[]).forEach(function(x){if(x.client===k)hist.push(x)})});
   var exch=function(c,p){return ((AT.docs[p]||{}).replies||[]).filter(function(r){return r.to===c}).length};
   h+='<div class="panel"><h3 style="margin:0 0 .3em">Pairings</h3>'+(pend.length?pend.map(function(x){return '<div class="atq">'+esc(who(x[1]))+' (patron) and '+esc(who(x[0]))+' (client) · '+exch(x[0],x[1])+' tutoring repl'+(exch(x[0],x[1])===1?'y':'ies')+' · '+(x[2]?'<span class="chip ok">Approved</span> <button class="btn sm ghost" data-act="at-unapprove" data-u="'+x[0]+'">Withdraw approval</button>':'<button class="btn sm" data-act="at-okpair" data-u="'+x[0]+'" data-p="'+x[1]+'">Approve</button>')+'</div>'}).join(''):'<p class="note" style="margin:0">No pairings yet (a pairing appears here once the patron accepts).</p>')+
@@ -14156,14 +14156,14 @@ var screenDomus;
   h+='<div class="panel"><h3 style="margin:0 0 .3em">Reported replies</h3>'+(rep.length?rep.map(function(x){var r=((AT.docs[x.t.helper]||{}).replies||[]).filter(function(y){return y.id===x.t.reply})[0];return '<div class="atq"><p class="note" style="margin:0">Reported by '+esc(who(x.by))+' · reply by '+esc(who(x.t.helper))+'</p><p style="margin:.2em 0;white-space:pre-wrap">'+esc(r?r.text:'(deleted)')+'</p>'+(hidden('r:'+x.t.reply)?'<span class="chip">Hidden</span> <button class="btn sm ghost" data-act="at-unhide" data-k="r:'+x.t.reply+'">Show again</button>':'<button class="btn sm" data-act="at-hide" data-k="r:'+x.t.reply+'">Hide this reply</button>')+'</div>'}).join(''):'<p class="note" style="margin:0">No reports.</p>')+'</div>';
   var all=[];Object.keys(AT.docs).forEach(function(k){(AT.docs[k].asks||[]).forEach(function(a){all.push({uid:k,a:a})})});all.sort(function(x,y){return y.a.t-x.a.t});
   h+='<div class="panel"><h3 style="margin:0 0 .3em">All questions ('+all.length+')</h3>'+(all.length?all.slice(0,60).map(function(x){return askCard(x.uid,x.a,'<details class="atd"><summary>Replies</summary>'+repliesHtml(x.uid,x.a,false,true)+'</details><div style="margin-top:.3em">'+(hidden('a:'+x.a.id)?'<span class="chip">Hidden</span> <button class="btn sm ghost" data-act="at-unhide" data-k="a:'+x.a.id+'">Show again</button>':'<button class="btn sm ghost" data-act="at-hide" data-k="a:'+x.a.id+'">Hide from the class</button>')+'</div>',true)}).join(''):'<p class="note" style="margin:0">No questions yet.</p>')+'</div>';
-  var led=[];Object.keys(AT.docs).forEach(function(k){(AT.docs[k].earned||[]).forEach(function(e){led.push({uid:k,e:e})})});
-  h+='<details class="panel atd"><summary><b>Atrium rewards</b> ('+led.length+' awards)</summary>'+(led.length?'<div class="tablewrap"><table class="apx-t" style="min-width:0"><tbody>'+led.slice(-80).reverse().map(function(x){return '<tr><td>'+esc(who(x.uid))+'</td><td>'+esc({reply:'Reply',helpful:'Marked helpful',patron:'Client finished Lesson '+R(x.e.lesson),followup:'Follow-up practice'}[x.e.why]||x.e.why)+'</td><td>'+x.e.xp+' '+(x.e.v==='con'?'Cōnstantia':'Līberālitās')+'</td><td>'+esc(x.e.day||'')+'</td></tr>'}).join('')+'</tbody></table></div>':'<p class="note">None yet.</p>')+'</details>';
+  var led=[];Object.keys(AT.docs).forEach(function(k){(AT.docs[k].earned||[]).forEach(function(e){if(e.xp>0)led.push({uid:k,e:e})})});
+  h+='<details class="panel atd"><summary><b>Atrium rewards</b> ('+led.length+' awards)</summary>'+(led.length?'<div class="tablewrap"><table class="apx-t" style="min-width:0"><tbody>'+led.slice(-80).reverse().map(function(x){return '<tr><td>'+esc(who(x.uid))+'</td><td>'+esc({reply:'Reply',helpful:'Marked helpful',patron:'Client finished Lesson '+R(x.e.lesson),followup:'Follow-up practice',baseline:'Starting balance (reviewed)'}[x.e.why]||x.e.why)+'</td><td>'+x.e.xp+' '+(x.e.v==='con'?'Cōnstantia':'Līberālitās')+'</td><td>'+esc(x.e.day||'')+'</td></tr>'}).join('')+'</tbody></table></div>':'<p class="note">None yet.</p>')+'</details>';
   return h}
  window.__atriumView=function(art){
   if(!AT.loaded&&!AT.busy&&!AT.err)setTimeout(load,0);
   var h=art+'<div class="panel"><h2 style="margin:0 0 .3em;font-size:1.3rem">The Atrium</h2><p style="margin:0;max-width:72ch">In the atrium a Roman <i>patrōnus</i> received his <i>clientēs</i> each morning. Here classmates help one another: send a question you are stuck on, answer one you have mastered, or pair up as patron and client.</p></div>';
   if(AT.err==='no-shared-storage')return h+'<div class="panel"><p style="margin:0"><span class="chip">Needs the class page</span> The Atrium works when everyone opens the class’s hosted page and signs in, so that questions and replies can be shared. Sign in with Google and ask your instructor to approve your membership, then select Refresh.</p></div>';
-  if(AT.err)return h+'<div class="panel"><p class="fb-no" style="margin:0">The Atrium could not be loaded ('+esc(AT.err)+'). <button class="link" data-act="at-refresh">Try again</button></p></div>';
+  if(AT.err)return h+'<div class="panel"><p class="fb-no" style="margin:0">'+(AT.err==='permission-denied'?'This page is out of date. Reload it to keep using the Atrium.':'The Atrium could not be loaded ('+esc(AT.err)+').')+' <button class="link" data-act="at-refresh">Try again</button></p></div>';
   if(!AT.loaded)return h+'<p class="note">Opening the Atrium…</p>';
   h+=tabs()+'<p class="note" style="margin:-.4em 0 .6em"><button class="link" data-act="at-refresh">Refresh</button> to see new questions and replies.</p>';
   if(AT.tab==='ask')h+=viewAsk();else if(AT.tab==='mine')h+=viewMine();else if(AT.tab==='patrons')h+=viewPatrons();else if(AT.tab==='teacher'&&AT.canEdit)h+=viewTeacher();else h+=viewQueue();
@@ -14208,7 +14208,7 @@ var screenDomus;
    if(txt.length<10){AT.msg='Write your reply in the box.';render();return}
    var asker=t.dataset.u,ask=t.dataset.a,a=((AT.docs[asker]||{}).asks||[]).filter(function(x){return x.id===ask})[0];if(!a||(!AT.canEdit&&!mastered(+a.lesson)))return;
    var kind=AT.reply.kind;save(function(d){d.replies=d.replies.concat([{id:uid(),t:Date.now(),ask:ask,to:asker,text:txt,kind:kind}]);d.claim=null}).then(function(){AT.reply=null;AT.msg='';return sync()}).then(function(){render(true)})};
-  A['at-thank']=function(t){var r=t.dataset.r,h=t.dataset.h,a=t.dataset.a;save(function(d){if(!d.thanks.some(function(x){return x.ask===a&&x.helper===h}))d.thanks=d.thanks.concat([{reply:r,helper:h,ask:a,t:Date.now()}])})};
+  A['at-thank']=function(t){var r=t.dataset.r,h=t.dataset.h,a=t.dataset.a;save(function(d){if(!d.thanks.some(function(x){return x.ask===a&&x.helper===h}))d.thanks=d.thanks.concat([{reply:r,helper:h,ask:a,t:Date.now()}])}).then(function(){return settleMine()})};
   A['at-report']=function(t){var r=t.dataset.r,h=t.dataset.h,a=t.dataset.a;save(function(d){if(!d.reports.some(function(x){return x.reply===r}))d.reports=d.reports.concat([{reply:r,helper:h,ask:a,t:Date.now()}])})};
   A['at-close']=function(t){var id=t.dataset.a;save(function(d){d.asks.forEach(function(a){if(a.id===id){a.open=false;a.closed=Date.now()}})})};
   A['at-reopen']=function(t){var id=t.dataset.a;save(function(d){d.asks.forEach(function(a){if(a.id===id){a.open=true;delete a.closed}})})};
@@ -14216,7 +14216,10 @@ var screenDomus;
   A['at-del']=function(t){var id=t.dataset.a;save(function(d){d.asks.forEach(function(a){if(a.id===id){a.deleted=Date.now();a.open=false}})})};
   A['at-fu']=function(t){var L=+t.dataset.l,ids=fuItems(L);if(ids.length<3){AT.msg='No practice questions are ready for this lesson yet.';render();return}AT.fu={L:L,ids:ids,ans:ids.map(function(){return null}),done:false,award:false,eligible:gotHelp(L)};render()};
   A['at-fu-a']=function(t){if(!AT.fu||AT.fu.done)return;AT.fu.ans[+t.dataset.i]=+t.dataset.j;render()};
-  A['at-fu-check']=function(){var F=AT.fu;if(!F)return;F.done=true;if(F.eligible&&!have('fu:'+F.L)){F.award=true;award('fu:'+F.L,'con',XP_FOLLOWUP,{why:'followup',lesson:F.L})}else render()};
+  A['at-fu-check']=function(){var F=AT.fu;if(!F)return;F.done=true;
+   if(F.eligible&&!have('fu:'+F.L)){
+    getDb().then(function(db){return db?db.doc('followups/'+F.L).set({}):null}).then(function(){return settleMine({followups:[F.L]})}).then(function(){F.award=have('fu:'+F.L);render(true)},function(e){AT.msg=friendlyErr(e);render()})
+   }else render()};
   A['at-fu-close']=function(){AT.fu=null;render()};
   A['at-patron-on']=function(){save(function(d){d.patron={on:true,t:Date.now()}})};
   A['at-patron-off']=function(){save(function(d){d.patron={on:false,t:Date.now()}})};
