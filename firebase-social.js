@@ -1,6 +1,7 @@
 /* Class-scoped Atrium and Arena persistence. No Claude services or credentials. */
 import {doc,collection,getDoc,getDocs,setDoc,deleteDoc,writeBatch,query,where,limit,serverTimestamp} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
 const clone=x=>JSON.parse(JSON.stringify(x));
+const millis=v=>(v&&typeof v.toMillis==='function')?v.toMillis():(Number(v)||0);
 export function createSocial(db,identity){
  const ROOT='classes/'+(identity.classId||'pilot');
  const uid=identity.uid,ref=p=>doc(db,p),classRef=p=>ref(`${ROOT}/${p}`);
@@ -15,6 +16,8 @@ export function createSocial(db,identity){
   const profiles=await getDocs(collection(db,`${ROOT}/atriumProfiles`));const out={};
   profiles.docs.forEach(p=>out[p.id]={...p.data(),asks:[],replies:[],thanks:[],reports:[],earned:[],hist:[]});
   const own=await privateRecord(uid);out[uid]={...(out[uid]||{}),...(own.data()||{})};
+  delete out[uid].earned;   // XP written by a browser is not an XP source. Earlier totals return only as reviewed baseline entries in the server ledger.
+  delete out[uid].legacyEarned;
   let threads;
   if(teacher)threads=(await getDocs(collection(db,`${ROOT}/atriumQuestions`))).docs;
   else{
@@ -26,26 +29,57 @@ export function createSocial(db,identity){
   await Promise.all(threads.map(async t=>{
    const q=t.data(),owner=out[q.owner]||(out[q.owner]={asks:[],replies:[],thanks:[]});
    owner.asks=(owner.asks||[]).filter(a=>a.id!==q.value.id).concat([q.value]);
-   owner.thanks=(owner.thanks||[]).filter(a=>a.ask!==q.value.id).concat(q.thanks||[]);
    const coll=collection(db,`${ROOT}/atriumQuestions/${t.id}/replies`);
    const replies=await getDocs(teacher?coll:query(coll,where('hidden','==',false)));
    replies.docs.forEach(r=>{const x=r.data(),person=out[x.author]||(out[x.author]={asks:[],replies:[],thanks:[]});person.replies=(person.replies||[]).filter(a=>a.id!==x.value.id).concat([x.value]);});
+   // helpful marks are documents in the thread; a thread with no replies cannot have any. Older marks kept on the question are read for display only.
+   const legacy=(q.thanks||[]).map(x=>({...x,ask:q.value.id}));
+   let marks=legacy;
+   if(replies.size){const th=await getDocs(collection(db,`${ROOT}/atriumQuestions/${t.id}/thanks`));marks=th.docs.map(d=>({...d.data(),ask:q.value.id,helper:d.id,t:millis(d.data().t)})).concat(legacy);}
+   owner.thanks=(owner.thanks||[]).filter(a=>a.ask!==q.value.id).concat(marks);
+   // "I'm helping with this": only an open, undeleted question can have a live claim
+   if(q.value.open&&!q.deleted&&!q.hidden){
+    const cl=await getDocs(collection(db,`${ROOT}/atriumQuestions/${t.id}/claims`));
+    owner.claims=(owner.claims||[]).filter(c=>c.ask!==q.value.id).concat(cl.docs.map(d=>({ask:q.value.id,uid:d.id,t:millis(d.data().createdAt)})));
+   }
   }));
-  if(teacher){await Promise.all(Object.keys(out).map(async who=>{let s;try{s=await privateRecord(who)}catch(e){if(e.code==='permission-denied')return;throw e}const d=s.data();if(d)out[who]={...out[who],reports:d.reports||[],hist:d.hist||[],earned:d.earned||[],asks:d.asks||out[who].asks};}));}
+  if(teacher){await Promise.all(Object.keys(out).map(async who=>{let s;try{s=await privateRecord(who)}catch(e){if(e.code==='permission-denied')return;throw e}const d=s.data();if(d)out[who]={...out[who],reports:d.reports||[],hist:d.hist||[],asks:d.asks||out[who].asks};}));}
+  // XP: only from the server ledger (a student sees their own entries; the instructor sees the class)
+  const ledger=collection(db,`${ROOT}/atriumLedger`);
+  const led=await getDocs(teacher?ledger:query(ledger,where('uid','==',uid)));
+  led.docs.forEach(e=>{const x=e.data(),o=out[x.uid]||(out[x.uid]={asks:[],replies:[],thanks:[]});o.earned=(o.earned||[]).concat([{...x,t:millis(x.t)}]);});
   ensure();return {docs:Object.entries(out).map(([id,d])=>snap(d,id))};
  }
  async function saveRecord(who,value){
   if(who!==uid)throw new Error('Only your own Atrium record can be saved.');
   const prev=(await privateRecord(uid)).data()||{},d=clone(value),batch=writeBatch(db);
+  // XP is written only by the server. An earlier XP array is kept, unread, under a new name so nothing is erased; the baseline tool reads it.
+  if(prev.earned&&!prev.legacyEarned)d.legacyEarned=prev.earned;else if(prev.legacyEarned)d.legacyEarned=prev.legacyEarned;
+  delete d.earned;
   batch.set(ref(`users/${uid}/social/atrium`),d);
   const profile={};for(const k of ['name','furthest','mastered','done','patron','client','clients','declined'])if(d[k]!==undefined)profile[k]=d[k];
   batch.set(classRef(`atriumProfiles/${uid}`),profile);
-  for(const a of d.asks||[]){
-   const prior=(prev.asks||[]).find(x=>x.id===a.id),thanks=(d.thanks||[]).filter(x=>x.ask===a.id),oldThanks=(prev.thanks||[]).filter(x=>x.ask===a.id);
-   if(JSON.stringify(a)===JSON.stringify(prior)&&JSON.stringify(thanks)===JSON.stringify(oldThanks))continue;
-   const r=classRef(`atriumQuestions/${uid}_${a.id}`),existing=await getDoc(r);
-   const hidden=existing.data()?.hidden||false;batch.set(r,{owner:uid,audience:a.to||'all',readers:hidden||a.deleted?[]:[a.to||'all'],deleted:!!a.deleted,hidden,value:a,thanks});
+  // a lesson newly completed gets a server-time record, which lets the server tell whether it came after a tutoring reply
+  for(const L of Object.keys(d.done||{})){
+   if((prev.done||{})[L]!==undefined)continue;
+   const c=classRef(`atriumCompletions/${uid}_${L}`);
+   if(!(await getDoc(c)).exists())batch.set(c,{uid,lesson:Number(L),t:serverTimestamp()});
   }
+  for(const a of d.asks||[]){
+   const prior=(prev.asks||[]).find(x=>x.id===a.id);
+   if(JSON.stringify(a)===JSON.stringify(prior))continue;
+   const r=classRef(`atriumQuestions/${uid}_${a.id}`),existing=await getDoc(r);
+   const hidden=existing.data()?.hidden||false;
+   // the question's own marks array is no longer written; marks are documents in the thanks subcollection
+   batch.set(r,{owner:uid,audience:a.to||'all',readers:hidden||a.deleted?[]:[a.to||'all'],deleted:!!a.deleted,hidden,value:a,thanks:existing.data()?.thanks||[]});
+  }
+  for(const x of d.thanks||[]){
+   if((prev.thanks||[]).some(y=>y.ask===x.ask&&y.helper===x.helper))continue;   // one mark per helper per question, ever
+   batch.set(classRef(`atriumQuestions/${uid}_${x.ask}/thanks/${x.helper}`),{helper:x.helper,reply:x.reply,t:serverTimestamp()});
+  }
+  const oc=prev.claim||null,nc=d.claim||null,same=(a,b)=>a&&b&&a.asker===b.asker&&a.ask===b.ask;
+  if(oc&&!same(oc,nc))batch.delete(classRef(`atriumQuestions/${oc.asker}_${oc.ask}/claims/${uid}`));
+  if(nc&&!same(oc,nc))batch.set(classRef(`atriumQuestions/${nc.asker}_${nc.ask}/claims/${uid}`),{uid,createdAt:serverTimestamp()});
   for(const r of d.replies||[]){if((prev.replies||[]).some(x=>JSON.stringify(x)===JSON.stringify(r)))continue;
    batch.set(classRef(`atriumQuestions/${r.to}_${r.ask}/replies/${uid}_${r.id}`),{author:uid,hidden:false,value:r});
   }
@@ -54,7 +88,8 @@ export function createSocial(db,identity){
  async function saveSettings(name,value){
   if(name==='atrium'){
    const before=(await settings(name)).data()||{},keys=new Set([...Object.keys(before.hidden||{}),...Object.keys(value.hidden||{})]);
-   const b=writeBatch(db);b.set(classRef(`socialSettings/${name}`),value);
+   const keep={};for(const k of ['rewardsFrom','strict'])if(before[k]!==undefined)keep[k]=before[k];   // set by the developer, never by this screen
+   const b=writeBatch(db);b.set(classRef(`socialSettings/${name}`),{...value,...keep});
    if([...keys].some(k=>!!before.hidden?.[k]!==!!value.hidden?.[k])){
     const qs=await getDocs(collection(db,`${ROOT}/atriumQuestions`));
     for(const q of qs.docs){const d=q.data(),hide=!!value.hidden?.['a:'+d.value.id];if(hide!==d.hidden)b.update(q.ref,{hidden:hide,readers:hide||d.deleted?[]:[d.audience]});
@@ -68,10 +103,18 @@ export function createSocial(db,identity){
  const bridge={
   doc(path){return {
    async get(){ensure();if(path.startsWith('settings/')){const s=await settings(path.split('/')[1]);ensure();return snap(s.data());}if(path.startsWith('atrium/')){const s=await privateRecord(path.slice(7));ensure();return snap(s.data());}const p=translate(path);if(!p)throw new Error('Unknown shared path');const s=await getDoc(ref(p));ensure();return snap(s.data());},
-   async set(value){ensure();if(path.startsWith('settings/'))return saveSettings(path.split('/')[1],value);if(path.startsWith('atrium/'))return saveRecord(path.slice(7),value);const p=translate(path);if(!p)throw new Error('Unknown shared path');return setDoc(ref(p),clone(value));},
+   async set(value){ensure();if(path.startsWith('settings/'))return saveSettings(path.split('/')[1],value);if(path.startsWith('followups/')){const lesson=Number(path.split('/')[1]),f=ref(`${ROOT}/atriumFollowups/${uid}_${lesson}`);if((await getDoc(f)).exists())return;return setDoc(f,{uid,lesson,t:serverTimestamp()});}if(path.startsWith('atrium/'))return saveRecord(path.slice(7),value);const p=translate(path);if(!p)throw new Error('Unknown shared path');return setDoc(ref(p),clone(value));},
    async delete(){const p=translate(path);if(!p)throw new Error('Unknown shared path');return deleteDoc(ref(p));}
   }},
   collection(path){return {async get(){if(path==='atrium')return records();if(path==='scores'){const s=await getDocs(collection(db,`${ROOT}/socialScores`));ensure();return {docs:s.docs.map(d=>snap(d.data(),d.id))};}if(path==='arena'){const s=await getDocs(query(collection(db,`${ROOT}/arenaGhosts`),limit(100)));ensure();return {docs:s.docs.map(d=>snap(d.data(),d.id))};}throw new Error('Unknown shared collection');}};}
  };
- return {db:bridge,user:{id:async()=>uid,canEdit:role,isOwner:async()=>uid==='ZU5goPmM28X40rVridJLtZ9JcBu2',async profiles(ids){if(!await role()){const s=await getDocs(collection(db,`${ROOT}/classmates`));ensure();return Object.fromEntries(s.docs.filter(d=>ids.includes(d.id)).map(d=>[d.id,{name:d.data().alias}]));}const s=await getDocs(collection(db,`${ROOT}/members`));ensure();return Object.fromEntries(s.docs.filter(d=>ids.includes(d.id)).map(d=>[d.id,{name:d.data().displayName}]));}},role};
+ async function settle(hints={}){
+  const token=identity.getToken?await identity.getToken():null;
+  if(!token)return {awarded:[],applied:0};
+  const res=await globalThis.fetch('/api/atrium-rewards',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({classId:identity.classId||'pilot',...hints})});
+  const body=await res.json().catch(()=>({}));
+  if(!res.ok)throw Object.assign(new Error(body.error||'Rewards could not be updated.'),{status:res.status});
+  ensure();return body;
+ }
+ return {settle,db:bridge,user:{id:async()=>uid,canEdit:role,isOwner:async()=>uid==='ZU5goPmM28X40rVridJLtZ9JcBu2',async profiles(ids){if(!await role()){const s=await getDocs(collection(db,`${ROOT}/classmates`));ensure();return Object.fromEntries(s.docs.filter(d=>ids.includes(d.id)).map(d=>[d.id,{name:d.data().alias}]));}const s=await getDocs(collection(db,`${ROOT}/members`));ensure();return Object.fromEntries(s.docs.filter(d=>ids.includes(d.id)).map(d=>[d.id,{name:d.data().displayName}]));}},role};
 }

@@ -25,6 +25,13 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/accounts/$(uid)).data.activeClassId is string
           && enrolledTeacher(uid,get(/databases/$(database)/documents/accounts/$(uid)).data.activeClassId));
     }
+    // Transition switch for the Atrium rewards update. While `strict` is absent or false (the update period), tabs running the previous
+    // page can still write the question's marks array and `earned` in the private record: the server ignores both for XP, so nothing is
+    // exposed. After the developer sets strict:true on classes/<id>/socialSettings/atrium in the Firebase console, those writes are refused.
+    function atriumStrictIn(classId) {
+      return exists(/databases/$(database)/documents/classes/$(classId)/socialSettings/atrium)
+        && get(/databases/$(database)/documents/classes/$(classId)/socialSettings/atrium).data.get('strict', false) == true;
+    }
     match /accounts/{uid} { allow get: if self(uid); }
     function validLearning(l) {
       return l.keys().hasOnly(['threshold','macrons','practiceLen','vocabRule','dailyGoal','classGoal','newPerDay','models','aiFeedback','autoAddLooked','readingU','showDrafts','lab','labLock','forumMode'])
@@ -224,10 +231,17 @@ service cloud.firestore {
       }
 
       // Shared tutoring and Arena services are restricted to the approved class.
+      // rewardsFrom (when server-computed rewards began) and strict (the end of the update period) are set only by the developer through the
+      // Admin SDK or console; a client write, even the instructor's, cannot add, change, or remove them.
       match /socialSettings/{name} {
         allow read: if participant();
-        allow write: if classTeacher(classId) && name in ['atrium','arena','leaderboard']
-          && request.resource.data.size() <= 3;
+        allow create: if classTeacher(classId) && name in ['atrium','arena','leaderboard']
+          && request.resource.data.size() <= 3
+          && !('rewardsFrom' in request.resource.data) && !('strict' in request.resource.data);
+        allow update: if classTeacher(classId) && name in ['atrium','arena','leaderboard']
+          && request.resource.data.size() <= (name == 'atrium' ? 5 : 3)
+          && request.resource.data.get('rewardsFrom', null) == resource.data.get('rewardsFrom', null)
+          && request.resource.data.get('strict', null) == resource.data.get('strict', null);
       }
       match /atriumProfiles/{uid} {
         allow read: if participant();
@@ -251,7 +265,13 @@ service cloud.firestore {
           q.readers.hasAny(['all',request.auth.uid]));
       }
       function validReaders(q) {return q.readers == ((q.hidden || q.deleted) ? [] : [q.audience]);}
+      function atriumProfile(uid) {return get(/databases/$(database)/documents/classes/$(classId)/atriumProfiles/$(uid)).data;}
+      function masteredLesson(lesson) {
+        return atriumProfile(request.auth.uid).mastered >= lesson
+          && atriumProfile(request.auth.uid).done.keys().hasAny([string(lesson)]);
+      }
       match /atriumQuestions/{id} {
+        function question() {return get(/databases/$(database)/documents/classes/$(classId)/atriumQuestions/$(id)).data;}
         allow get: if participant() && !exists(/databases/$(database)/documents/classes/$(classId)/atriumQuestions/$(id));
         allow read: if visibleQuestion(resource.data);
         allow create: if participant() && self(request.resource.data.owner)
@@ -270,7 +290,8 @@ service cloud.firestore {
            && request.resource.data.value.lesson == resource.data.value.lesson
            && request.resource.data.value.to == resource.data.value.to
            && request.resource.data.value.q == resource.data.value.q
-           && request.resource.data.thanks is list && request.resource.data.thanks.size() <= 60);
+           && request.resource.data.thanks is list && request.resource.data.thanks.size() <= 60
+           && (!atriumStrictIn(classId) || request.resource.data.thanks == resource.data.thanks));
         match /replies/{replyId} {
           function parent(){return get(/databases/$(database)/documents/classes/$(classId)/atriumQuestions/$(id)).data;}
           allow read: if visibleQuestion(parent()) && (classTeacher(classId) || resource.data.hidden == false);
@@ -286,6 +307,49 @@ service cloud.firestore {
             && request.resource.data.value.text is string && request.resource.data.value.text.size() >= 10 && request.resource.data.value.text.size() <= 1200;
           allow update: if classTeacher(classId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden']);
         }
+        // "I'm helping with this": a temporary claim by a helper who has mastered the lesson; expires in the app after 20 minutes.
+        match /claims/{uid} {
+          allow read: if participant() && visibleQuestion(question());
+          allow create: if participant() && self(uid) && visibleQuestion(question()) && uid != question().owner
+            && question().deleted == false && question().value.open == true && question().hidden == false
+            && (classTeacher(classId) || masteredLesson(question().value.lesson))
+            && request.resource.data.keys().hasOnly(['uid','createdAt']) && request.resource.data.uid == uid && request.resource.data.createdAt == request.time;
+          allow delete: if self(uid);
+        }
+        // The owner marks a helper's reply helpful. One mark per helper per question (the document id is the helper); it cannot be removed
+        // or repeated, it is stamped with server time, and it must point at a reply that exists.
+        match /thanks/{helper} {
+          allow read: if visibleQuestion(question());
+          allow create: if participant() && self(question().owner) && question().deleted == false
+            && request.resource.data.keys().hasOnly(['helper','reply','t'])
+            && request.resource.data.helper == helper && request.resource.data.t == request.time
+            && exists(/databases/$(database)/documents/classes/$(classId)/atriumQuestions/$(id)/replies/$(helper + '_' + request.resource.data.reply));
+        }
+      }
+
+      // A lesson completed. Create-only and stamped with server time, so the server can tell whether a completion came after a tutoring reply.
+      // That the lesson was really completed is still reported by the student's own page (see docs/atrium-mapping.md).
+      match /atriumCompletions/{docId} {
+        allow get: if participant() && !exists(/databases/$(database)/documents/classes/$(classId)/atriumCompletions/$(docId));   // lets a page ask "is it there yet?"
+        allow read: if participant() && (classTeacher(classId) || resource.data.uid == request.auth.uid);
+        allow create: if participant() && docId == request.auth.uid + '_' + string(request.resource.data.lesson)
+          && request.resource.data.keys().hasOnly(['uid','lesson','t']) && request.resource.data.uid == request.auth.uid
+          && request.resource.data.lesson is int && request.resource.data.lesson >= 1 && request.resource.data.lesson <= 57
+          && request.resource.data.t == request.time;
+      }
+      // Follow-up practice completed for a lesson on which the student received help. One document per student and lesson.
+      match /atriumFollowups/{docId} {
+        allow get: if participant() && !exists(/databases/$(database)/documents/classes/$(classId)/atriumFollowups/$(docId));
+        allow read: if participant() && (classTeacher(classId) || resource.data.uid == request.auth.uid);
+        allow create: if participant() && docId == request.auth.uid + '_' + string(request.resource.data.lesson)
+          && request.resource.data.keys().hasOnly(['uid','lesson','t']) && request.resource.data.uid == request.auth.uid
+          && request.resource.data.lesson is int && request.resource.data.lesson >= 1 && request.resource.data.lesson <= 57
+          && request.resource.data.t == request.time;
+      }
+      // Rewards. Written only by the server (the Vercel route, through the Admin SDK, which bypasses these rules).
+      match /atriumLedger/{entryId} {
+        allow read: if participant() && (classTeacher(classId) || resource.data.uid == request.auth.uid);
+        allow write: if false;
       }
 
       match /socialScores/{uid} {
@@ -351,7 +415,8 @@ service cloud.firestore {
         && request.resource.data.summary is map && request.resource.data.updatedAt == request.time;
       match /social/{kind} {
         allow get: if canRead(uid) && kind in ['atrium','arena'];
-        allow create, update: if self(uid) && kind in ['atrium','arena'];
+        allow create, update: if self(uid) && kind in ['atrium','arena']
+          && (kind != 'atrium' || !atriumStrictIn('pilot') || !request.resource.data.keys().hasAny(['earned']));
       }
       match /progress/current {
         allow get: if canRead(uid);

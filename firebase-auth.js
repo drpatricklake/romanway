@@ -77,7 +77,7 @@ try {
   authSdk.onAuthStateChanged(auth, async user => {
     settled = true;
     window.clearTimeout(startupTimeout);
-    const identity=user ? {uid:user.uid, name:user.displayName || 'Student', email:user.email || ''} : null;
+    const identity=user ? {uid:user.uid, name:user.displayName || 'Student', email:user.email || '', getToken:() => user.getIdToken()} : null;
     if(identity){
       const cfg=await fetch('/api/registration').then(r=>r.json()).catch(()=>({enabled:false}));
       if(cfg.enabled){
