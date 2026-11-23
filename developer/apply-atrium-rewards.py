@@ -43,7 +43,7 @@ replace_once("""  var add=newAwards();if(add.length)changed=true;
   return save(function(x){x.done=done;x.mastered=mu},true).then(function(){return settleMine()})}""")
 replace_between(" function totals(){", " /* ---------- capturing what the student is stuck on", """ function totals(){var lib=0,con=0;(mine().earned||[]).forEach(function(e){if(e.v==='lib')lib+=e.xp;else if(e.v==='con')con+=e.xp});var x=S.xp=S.xp||{};x.atr={lib:lib,con:con,src:'ledger',t:Date.now()};persist()}
  function award(){return Promise.resolve()}
- function friendlyErr(e){var c=e&&(e.code||e.status);if(c==='permission-denied')return 'This page is out of date. Reload it to keep using the Atrium.';if(c===429)return 'Please wait a moment and try again.';return 'Something went wrong. Try again in a moment.'}
+ function friendlyErr(e){var c=e&&(e.code||e.status);if(c==='permission-denied')return 'Your account could not access this Atrium item. Reload and try again; if it continues, contact your instructor.';if(c===429)return 'Please wait a moment and try again.';return 'Something went wrong. Try again in a moment.'}
  /* the server decides what is earned; the page only names which items to look at */
  function serverSettle(h){var s=window.RomanWayData&&window.RomanWayData.social;return s&&s.settle?s.settle(h):Promise.resolve({awarded:[],applied:0})}
  var SETTLING=false;
@@ -87,8 +87,10 @@ replace_once("Account names appear only in this tab.</p></div>';",
 replace_once("(AT.docs[k].earned||[]).forEach(function(e){led.push({uid:k,e:e})})", "(AT.docs[k].earned||[]).forEach(function(e){if(e.xp>0)led.push({uid:k,e:e})})")
 replace_once("followup:'Follow-up practice'}[x.e.why]", "followup:'Follow-up practice',baseline:'Starting balance (reviewed)'}[x.e.why]")
 
-# 9. a page left open across the update says so
+# 9. Permission failures do not by themselves prove that a page is outdated.
 replace_once("The Atrium could not be loaded ('+esc(AT.err)+').",
-             "'+(AT.err==='permission-denied'?'This page is out of date. Reload it to keep using the Atrium.':'The Atrium could not be loaded ('+esc(AT.err)+').')+'")
+             "'+(AT.err==='permission-denied'?'Your account could not access this Atrium item. Reload and try again; if it continues, contact your instructor.':'The Atrium could not be loaded ('+esc(AT.err)+').')+'")
 
+# A permission error may precede a later successful save; do not keep displaying it.
+replace_once("AT.docs[AT.me]=d;AT.msg='';totals()", "AT.docs[AT.me]=d;AT.err='';AT.msg='';totals()")
 (repo / 'index.html').write_text(s)
