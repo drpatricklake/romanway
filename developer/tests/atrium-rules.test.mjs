@@ -143,5 +143,24 @@ try {
   await A.db.doc('followups/2').set({}); await A.db.doc('followups/2').set({});                                     // the second is skipped, not an error
   assert.equal((await getDocs(query(collection(a, `${P}/atriumFollowups`), where('uid', '==', 'alice')))).size, 1);   // a rule is not a filter, so the query states whose records it wants
 
+  // Reopen a form after a tab left an orphaned create-only claim behind.
+  await reset();
+  const B=createSocial(b,{uid:'bob'});
+  const record={...prof(5),asks:[],replies:[],thanks:[],reports:[],hist:[],claim:null};
+  await admin(async d=>{
+    await setDoc(doc(d,'users/bob/social/atrium'),record);
+    await setDoc(doc(d,`${P}/atriumQuestions/alice_a1/claims/bob`),{uid:'bob',createdAt:serverTimestamp()});
+  });
+  const claimRef=doc(b,`${P}/atriumQuestions/alice_a1/claims/bob`);
+  const originalTime=(await getDoc(claimRef)).data().createdAt.toMillis();
+  const reopen={...record,claim:{asker:'alice',ask:'a1',t:Date.now()}};
+  await B.db.doc('atrium/bob').set(reopen);
+  assert.equal((await getDoc(claimRef)).data().createdAt.toMillis(),originalTime);
+  await B.db.doc('atrium/bob').set({...reopen,claim:null,replies:[{id:'retry_reply',ask:'a1',to:'alice',kind:'hint',text:'Look at the preposition and decide whether it describes motion or location.',t:Date.now()}]});
+  assert.equal((await getDoc(doc(b,`${P}/atriumQuestions/alice_a1/replies/bob_retry_reply`))).exists(),true);
+  assert.equal((await getDoc(claimRef)).exists(),false);
+  await Promise.all([B.db.doc('atrium/bob').set(reopen),B.db.doc('atrium/bob').set(reopen)]);
+  assert.equal((await getDoc(claimRef)).exists(),true);
+
   console.log('PASS atrium-rules: server-only ledger, the strict transition switch, marks, claims, completions, follow-ups, protected settings, and the migration display policy.');
 } finally { await env.cleanup(); }

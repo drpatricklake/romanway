@@ -1,5 +1,5 @@
 /* Class-scoped Atrium and Arena persistence. No Claude services or credentials. */
-import {doc,collection,getDoc,getDocs,setDoc,deleteDoc,writeBatch,query,where,limit,serverTimestamp} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
+import {doc,collection,getDoc,getDocs,setDoc,deleteDoc,writeBatch,runTransaction,query,where,limit,serverTimestamp} from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
 const clone=x=>JSON.parse(JSON.stringify(x));
 const millis=v=>(v&&typeof v.toMillis==='function')?v.toMillis():(Number(v)||0);
 export function createSocial(db,identity){
@@ -79,7 +79,12 @@ export function createSocial(db,identity){
   }
   const oc=prev.claim||null,nc=d.claim||null,same=(a,b)=>a&&b&&a.asker===b.asker&&a.ask===b.ask;
   if(oc&&!same(oc,nc))batch.delete(classRef(`atriumQuestions/${oc.asker}_${oc.ask}/claims/${uid}`));
-  if(nc&&!same(oc,nc))batch.set(classRef(`atriumQuestions/${nc.asker}_${nc.ask}/claims/${uid}`),{uid,createdAt:serverTimestamp()});
+  if(nc&&!same(oc,nc)){
+   // A closed tab can leave this create-only document behind. Reuse it without
+   // refreshing its timestamp; transactions also make simultaneous tabs safe.
+   const claim=classRef(`atriumQuestions/${nc.asker}_${nc.ask}/claims/${uid}`);
+   await runTransaction(db,async tx=>{if(!(await tx.get(claim)).exists())tx.set(claim,{uid,createdAt:serverTimestamp()});});
+  }
   for(const r of d.replies||[]){if((prev.replies||[]).some(x=>JSON.stringify(x)===JSON.stringify(r)))continue;
    batch.set(classRef(`atriumQuestions/${r.to}_${r.ask}/replies/${uid}_${r.id}`),{author:uid,hidden:false,value:r});
   }
