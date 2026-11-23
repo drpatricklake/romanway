@@ -14017,7 +14017,7 @@ var screenDomus;
    var d=JSON.parse(JSON.stringify(mine()));d.asks=d.asks||[];d.replies=d.replies||[];d.thanks=d.thanks||[];d.reports=d.reports||[];d.earned=d.earned||[];d.hist=d.hist||[];d.clients=d.clients||[];d.done=d.done||{};
    mut(d);d.name=myName();d.furthest=furthest();d.mastered=masteredUpTo();d.t=Date.now();
    d.asks=prune(d.asks,MAXASK);d.replies=d.replies.slice(-MAXREP);d.thanks=d.thanks.slice(-300);d.reports=d.reports.slice(-100);d.hist=d.hist.slice(-50);
-   return db.doc('atrium/'+AT.me).set(d).then(function(){AT.docs[AT.me]=d;AT.msg='';totals()},function(e){AT.err=code(e)})}).then(function(){if(!quiet)render(true)})}
+   return db.doc('atrium/'+AT.me).set(d).then(function(){AT.docs[AT.me]=d;AT.err='';AT.msg='';totals()},function(e){AT.err=code(e)})}).then(function(){if(!quiet)render(true)})}
  function prune(a,max){if(a.length<=max)return a;var keep=a.slice();while(keep.length>max){var i=keep.findIndex(function(x){return x.deleted||!x.open});keep.splice(i>=0?i:0,1)}return keep}
  function saveSettings(mut){return getDb().then(function(db){if(!db)return;var s=JSON.parse(JSON.stringify(AT.set));mut(s);return db.doc('settings/atrium').set(s).then(function(){AT.set=s},function(e){AT.err=code(e)})}).then(function(){render(true)})}
  /* ---------- pairing: one active client per patron in the pilot ---------- */
@@ -14030,7 +14030,7 @@ var screenDomus;
  function newAwards(){return []}
  function totals(){var lib=0,con=0;(mine().earned||[]).forEach(function(e){if(e.v==='lib')lib+=e.xp;else if(e.v==='con')con+=e.xp});var x=S.xp=S.xp||{};x.atr={lib:lib,con:con,src:'ledger',t:Date.now()};persist()}
  function award(){return Promise.resolve()}
- function friendlyErr(e){var c=e&&(e.code||e.status);if(c==='permission-denied')return 'This page is out of date. Reload it to keep using the Atrium.';if(c===429)return 'Please wait a moment and try again.';return 'Something went wrong. Try again in a moment.'}
+ function friendlyErr(e){var c=e&&(e.code||e.status);if(c==='permission-denied')return 'Your account could not access this Atrium item. Reload and try again; if it continues, contact your instructor.';if(c===429)return 'Please wait a moment and try again.';return 'Something went wrong. Try again in a moment.'}
  /* the server decides what is earned; the page only names which items to look at */
  function serverSettle(h){var s=window.RomanWayData&&window.RomanWayData.social;return s&&s.settle?s.settle(h):Promise.resolve({awarded:[],applied:0})}
  var SETTLING=false;
@@ -14163,7 +14163,7 @@ var screenDomus;
   if(!AT.loaded&&!AT.busy&&!AT.err)setTimeout(load,0);
   var h=art+'<div class="panel"><h2 style="margin:0 0 .3em;font-size:1.3rem">The Atrium</h2><p style="margin:0;max-width:72ch">In the atrium a Roman <i>patrōnus</i> received his <i>clientēs</i> each morning. Here classmates help one another: send a question you are stuck on, answer one you have mastered, or pair up as patron and client.</p></div>';
   if(AT.err==='no-shared-storage')return h+'<div class="panel"><p style="margin:0"><span class="chip">Needs the class page</span> The Atrium works when everyone opens the class’s hosted page and signs in, so that questions and replies can be shared. Sign in with Google and ask your instructor to approve your membership, then select Refresh.</p></div>';
-  if(AT.err)return h+'<div class="panel"><p class="fb-no" style="margin:0">'+(AT.err==='permission-denied'?'This page is out of date. Reload it to keep using the Atrium.':'The Atrium could not be loaded ('+esc(AT.err)+').')+' <button class="link" data-act="at-refresh">Try again</button></p></div>';
+  if(AT.err)return h+'<div class="panel"><p class="fb-no" style="margin:0">'+(AT.err==='permission-denied'?'Your account could not access this Atrium item. Reload and try again; if it continues, contact your instructor.':'The Atrium could not be loaded ('+esc(AT.err)+').')+' <button class="link" data-act="at-refresh">Try again</button></p></div>';
   if(!AT.loaded)return h+'<p class="note">Opening the Atrium…</p>';
   h+=tabs()+'<p class="note" style="margin:-.4em 0 .6em"><button class="link" data-act="at-refresh">Refresh</button> to see new questions and replies.</p>';
   if(AT.tab==='ask')h+=viewAsk();else if(AT.tab==='mine')h+=viewMine();else if(AT.tab==='patrons')h+=viewPatrons();else if(AT.tab==='teacher'&&AT.canEdit)h+=viewTeacher();else h+=viewQueue();
