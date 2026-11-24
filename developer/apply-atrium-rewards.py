@@ -91,6 +91,10 @@ replace_once("followup:'Follow-up practice'}[x.e.why]", "followup:'Follow-up pra
 replace_once("The Atrium could not be loaded ('+esc(AT.err)+').",
              "'+(AT.err==='permission-denied'?'Your account could not access this Atrium item. Reload and try again; if it continues, contact your instructor.':'The Atrium could not be loaded ('+esc(AT.err)+').')+'")
 
-# A permission error may precede a later successful save; do not keep displaying it.
-replace_once("AT.docs[AT.me]=d;AT.msg='';totals()", "AT.docs[AT.me]=d;AT.err='';AT.msg='';totals()")
+# Save outcomes are explicit: never discard a reply draft after a rejected write.
+replace_once("AT.docs[AT.me]=d;AT.msg='';totals()", "AT.docs[AT.me]=d;AT.err='';AT.msg='';totals();return true")
+replace_once("function(e){AT.err=code(e)})}).then(function(){if(!quiet)render(true)})}",
+             "function(e){AT.err='';AT.msg=friendlyErr(e);return false})}).then(function(saved){if(!quiet)render(true);return saved})}")
+replace_once("}).then(function(){AT.reply=null;AT.msg='';return sync()}).then(function(){render(true)})};",
+             "}).then(function(saved){if(!saved){render(true);return}AT.reply=null;AT.msg='';return sync()}).then(function(){render(true)})};")
 (repo / 'index.html').write_text(s)
