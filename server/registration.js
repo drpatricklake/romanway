@@ -6,7 +6,7 @@ export function studentAddress(classId,username,secret){
  if(!/^[a-z0-9][a-z0-9_-]{2,23}$/.test(username))fail(400,'Use a pseudonym of 3–24 letters, digits, underscores or hyphens.');
  return createHmac('sha256',secret).update(classId+':'+username).digest('hex')+'@students.romanway.invalid';
 }
-export function createRegistration({db,auth,verifyAppCheck,secret,support={},now=()=>Date.now()}){
+export function createRegistration({db,auth,verifyAppCheck,secret,support={},testMode=false,now=()=>Date.now()}){
  const ref=p=>db.doc(p);
  async function read(p){return (await ref(p).get()).data();}
  async function signed(token){if(!token)fail(401,'Sign in first.');const u=await auth.verifyIdToken(token,true);if(!u.email_verified)fail(403,'Verify your email before continuing.');return u;}
@@ -16,7 +16,7 @@ export function createRegistration({db,auth,verifyAppCheck,secret,support={},now
  }
  async function managedClass(uid,id){const c=await read('classes/'+id);if(!c||c.teacherId!==uid)fail(403,'Only the teacher who owns this class can manage it.');return c;}
  async function account(u){return await read('accounts/'+u.uid)||null;}
- async function codeClass(code){if(!/^\d{6}$/.test(code))fail(400,'Enter the six-digit class code.');const found=await read('registrationCodes/'+code);if(!found?.active)fail(400,'Check the class code with your teacher.');const c=await read('classes/'+found.classId);if(!c?.registrationOpen)fail(403,'This class is not accepting registrations.');return {...c,id:found.classId};}
+ async function codeClass(code){if(!/^\d{6}$/.test(code))fail(400,'Enter the six-digit class code.');const found=await read('registrationCodes/'+code);if(!found?.active)fail(400,'Check the class code with your teacher.');const c=await read('classes/'+found.classId);if(!c?.registrationOpen)fail(403,'This class is not accepting registrations.');if(testMode&&(c.teacherId!==OWNER||c.previewTest!==true))fail(403,'This preview accepts only the owner’s test classroom.');return {...c,id:found.classId};}
  async function publicGate(ip,appToken){if(!appToken)fail(403,'Student registration needs a verified app connection.');await verifyAppCheck(appToken);await limited('ip:'+ip);}
  return async function run(action,b={},token='',ip='',appToken=''){
   if(action==='config')return {enabled:true,studentRegistration:true};
@@ -39,6 +39,7 @@ export function createRegistration({db,auth,verifyAppCheck,secret,support={},now
    return {email};
   }
   const u=await signed(token),a=await account(u);
+  if(testMode&&u.uid!==OWNER){const c=a?.activeClassId?await read('classes/'+a.activeClassId):null;if(!a?.managedStudent||c?.teacherId!==OWNER||c?.previewTest!==true)fail(403,'This preview is restricted to the owner and managed test students.');}
   if(action==='session')return {account:a,support: a?.adultConfirmed===true&&['teacher','independent'].includes(a.role)?support:{}};
   await limited('uid:'+u.uid,60);
   if(action==='set-role'){
@@ -65,7 +66,7 @@ export function createRegistration({db,auth,verifyAppCheck,secret,support={},now
      const counter=ref('teacherClassCounts/'+u.uid),n=await tx.get(counter),codeRef=ref('registrationCodes/'+code),exists=await tx.get(codeRef);
      if((n.data()?.count||0)>=2)fail(403,'The free pilot supports two classes. Contact the administrator for more.');if(exists.exists)fail(409,'code-collision');
      tx.set(counter,{count:(n.data()?.count||0)+1});tx.set(codeRef,{classId:id,active:true});
-     tx.set(ref('classes/'+id),{name,teacherId:u.uid,threshold:80,tier:'free',joinCode:code,registrationOpen:true,educationalAuthorization:{accepted:true,actor:u.uid,at:new Date(now()),version:'pilot-1'}});
+     tx.set(ref('classes/'+id),{name,teacherId:u.uid,threshold:80,tier:'free',...(testMode?{previewTest:true}:{}),joinCode:code,registrationOpen:true,educationalAuthorization:{accepted:true,actor:u.uid,at:new Date(now()),version:'pilot-1'}});
      tx.set(ref(`classes/${id}/staff/${u.uid}`),{active:true,role:'instructor'});tx.update(ref('accounts/'+u.uid),{activeClassId:id});
     });break;}catch(e){if(e.message==='code-collision')continue;throw e;}
    }

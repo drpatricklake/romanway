@@ -14,7 +14,7 @@ export default async function handler(req,res){
  if(!process.env.ROMANWAY_USERNAME_SECRET)return res.status(503).json({error:'Registration configuration is incomplete.'});
  try{
   await prepareGoogleIdentity();
-  if(!run){const app=getApps()[0]||initializeApp({credential:process.env.FIREBASE_ADMIN_CREDENTIALS?cert(JSON.parse(process.env.FIREBASE_ADMIN_CREDENTIALS)):applicationDefault(),projectId:'latinrw'});run=createRegistration({db:getFirestore(app),auth:getAuth(app),verifyAppCheck:t=>getAppCheck(app).verifyToken(t),secret:process.env.ROMANWAY_USERNAME_SECRET,support:{patreon:supportURL(process.env.ROMANWAY_PATREON_URL,'patreon.com'),kofi:supportURL(process.env.ROMANWAY_KOFI_URL,'ko-fi.com')}});}
+  if(!run){const app=getApps()[0]||initializeApp({credential:process.env.FIREBASE_ADMIN_CREDENTIALS?cert(JSON.parse(process.env.FIREBASE_ADMIN_CREDENTIALS)):applicationDefault(),projectId:'latinrw'});run=createRegistration({db:getFirestore(app),auth:getAuth(app),verifyAppCheck:t=>getAppCheck(app).verifyToken(t),secret:process.env.ROMANWAY_USERNAME_SECRET,testMode:process.env.VERCEL_ENV==='preview'&&process.env.ROMANWAY_SETUP_TEST_MODE==='true',support:{patreon:supportURL(process.env.ROMANWAY_PATREON_URL,'patreon.com'),kofi:supportURL(process.env.ROMANWAY_KOFI_URL,'ko-fi.com')}});}
   const body=req.method==='POST'?req.body||{}:{};
   if(Buffer.byteLength(JSON.stringify(body))>8192)return res.status(413).json({error:'Request too large.'});
   const action=req.method==='GET'?'config':body.action;
