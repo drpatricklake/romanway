@@ -20,13 +20,15 @@ export function createSocial(db,identity){
  }
  async function records(){
   if(!loaded)await role();
+  const timing=globalThis.RomanWayAtriumTiming={};const begun=Date.now();
+  const timed=(label,p)=>p.then(v=>{timing[label]=Date.now()-begun;return v});
   const threadRead=teacher?getDocs(collection(db,`${ROOT}/atriumQuestions`)).then(q=>q.docs):Promise.all([
    getDocs(query(collection(db,`${ROOT}/atriumQuestions`),where('readers','array-contains-any',['all',uid]))),
    getDocs(query(collection(db,`${ROOT}/atriumQuestions`),where('owner','==',uid)))
   ]).then(qs=>[...new Map(qs.flatMap(q=>q.docs).map(d=>[d.id,d])).values()]);
   // Independent reads share one network phase; rewards never trigger another thread scan.
   const [profiles,own,threads,led]=await Promise.all([
-   getDocs(collection(db,`${ROOT}/atriumProfiles`)),privateRecord(uid),threadRead,ledgerRecords()
+   timed('profilesMs',getDocs(collection(db,`${ROOT}/atriumProfiles`))),timed('privateRecordMs',privateRecord(uid)),timed('questionsMs',threadRead),timed('ledgerMs',ledgerRecords())
   ]),out={};
   profiles.docs.forEach(p=>out[p.id]={...p.data(),asks:[],replies:[],thanks:[],reports:[],earned:[],hist:[]});
   out[uid]={...(out[uid]||{}),...(own.data()||{})};
@@ -49,7 +51,9 @@ export function createSocial(db,identity){
     owner.claims=(owner.claims||[]).filter(c=>c.ask!==q.value.id).concat(cl.docs.map(d=>({ask:q.value.id,uid:d.id,t:millis(d.data().createdAt)})));
    }
   }));
+  timing.discussionDetailsMs=Date.now()-begun;
   if(teacher){await Promise.all(Object.keys(out).map(async who=>{let s;try{s=await privateRecord(who)}catch(e){if(e.code==='permission-denied')return;throw e}const d=s.data();if(d)out[who]={...out[who],reports:d.reports||[],hist:d.hist||[],asks:d.asks||out[who].asks};}));}
+  timing.allRecordsMs=Date.now()-begun;
   // Never use an old private XP array; only merge the server ledger fetched above.
   led.docs.forEach(e=>{const o=out[e.id]||(out[e.id]={asks:[],replies:[],thanks:[]});o.earned=e.data().earned;});
   ensure();return {docs:Object.entries(out).map(([id,d])=>snap(d,id))};

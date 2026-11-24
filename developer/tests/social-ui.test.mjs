@@ -26,6 +26,23 @@ for(let i=0;i<ids.length;i++){action(p,'ar-ans',{k:String(AR.m.items[i].a)});act
 assert.ok(p.model.state.arena.ranked.seed);assert.ok(p.model.state.arena.rating>1000);
 action(p,'ar-menu');action(p,'ar-ranked');assert.equal(AR.m,null,'The same rated checkpoint cannot be played twice');
 action(p,'at-refresh');await settle();assert.equal(p.context.__atriumState.loaded,true);assert.equal(p.context.__atriumState.me,'player');
+// Slow progress writes must not block reading the discussion or permit an early claim.
+const docBefore=social.db.doc;let finishSync;
+social.db.doc=path=>{const d=docBefore(path);return path==='atrium/player'?{...d,set:()=>new Promise(resolve=>{finishSync=resolve})}:d};
+action(p,'at-refresh');await settle();
+assert.equal(p.context.__atriumState.busy,false,'A slow progress write does not block the discussion');
+assert.equal(p.context.__atriumState.syncing,true);
+const replyBefore=p.context.__atriumState.reply;
+action(p,'at-reply',{u:'friend',a:'early'});await settle();
+assert.equal(p.context.__atriumState.reply,replyBefore,'A helper cannot claim while eligibility is still uploading');
+finishSync();await settle();
+assert.equal(p.context.__atriumState.syncing,false);
+social.db.doc=docBefore;
+let finishNames;const editBefore=social.user.canEdit;
+social.user.canEdit=async()=>true;social.user.profiles=()=>new Promise(resolve=>{finishNames=resolve});
+action(p,'at-refresh');await settle();
+assert.equal(p.context.__atriumState.busy,false,'A teacher name lookup does not block the discussion');
+finishNames({});await settle();social.user.canEdit=editBefore;delete social.user.profiles;
 // A cold reward server must never hold the Atrium loading screen open.
 let finishRewards,settleCalls=0,ledgerReads=0,threadReads=0;
 const originalCollection=social.db.collection;
