@@ -43,6 +43,11 @@ function harness(filename, options = {}) {
   assert.match(app, end, 'The app closure moved');
   const hostNodes = new Map(['app', 'macbar', 'nick', 'code'].map(id => [id, element()]));
   const listeners = new Map();
+  const appListeners = new Map();
+  hostNodes.get('app').addEventListener = (name, handler) => {
+    const list = appListeners.get(name) ?? [];
+    list.push(handler); appListeners.set(name, list);
+  };
   const intervals=new Map();let nextInterval=1;
   hostNodes.get('nick').value = 'Review Student';
   const saved = new Map();
@@ -113,8 +118,10 @@ window.probe = {get state(){return S},get view(){return V},actions:ACT,render:re
     markup() { return hostNodes.get('app').innerHTML; },
     step(ms = 200) { at += ms; },
     tick(ms=200){at+=ms;for(const fn of Array.from(intervals.values()))fn()},
-    input(id, value) {
-      for (const handler of listeners.get('input') ?? []) handler({target:{id,value, dataset:{}, matches:()=>false}});
+    input(id, value, dataset = {}) {
+      const event = {target:{id,value,tagName:'TEXTAREA',dataset,matches:()=>false}};
+      for (const handler of appListeners.get('input') ?? []) handler(event);
+      for (const handler of listeners.get('input') ?? []) handler(event);
     },
   };
 }

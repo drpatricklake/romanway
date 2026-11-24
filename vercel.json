@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo 'Static Public Practice build: no dependencies required'",
+  "buildCommand": "node scripts/build-public-practice.mjs"
+}

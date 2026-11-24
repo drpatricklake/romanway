@@ -65,4 +65,31 @@ if (PUBLIC_PRACTICE) {
   window.addEventListener('pagehide',function(){if(S.user)persist()});
   document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&S.user)persist()});
   if (localStore.issue) localStatus();
+  var publicPracticeMarkup=function(h) {
+    return h
+      .replace(/<details[^>]*><summary>Have a class code from your teacher\?[\s\S]*?<\/details>/g,'')
+      .replace(/<button[^>]*data-act="open-board"[^>]*>[\s\S]*?<\/button>/g,'')
+      .replace(/<div class="speccard">(?:(?!<div class="speccard">)[\s\S])*?<b[^>]*>Victories<\/b>[\s\S]*?<\/div><\/div>/g,'')
+      .replace(/<button[^>]*data-act="(?:ai-check|lab-ai|set-ai)"[^>]*>[\s\S]*?<\/button>/g,'')
+      .replace(/against trainers, ghosts, and classmates/g,'against trainers')
+      .replace(/The record of victories is kept here too\./g,'Your game records stay on this device.')
+      .replace(/; the Atrium is where students help one another/g,'; the Atrium introduces Roman patronage')
+      .replace(/and 10 for each lesson you finish while you have a patron in the Atrium\./g,'.')
+      .replace(/Helping classmates in the Atrium \([\s\S]*?service your teacher assigns\./g,'Peer tutoring rewards are available in the classroom edition.')
+      .replace(/Līberālitās can come from tutoring in the Atrium or from service your teacher assigns\./g,'Peer tutoring rewards are available in the classroom edition.')
+      .replace(/The final rank, which opens in the full course, asks for balance:[\s\S]*?six virtues\./g,'')
+      .replace(/The first \d+ Ludus bouts and \d+ ghost bouts each day pay/g,'The first 5 Ludus bouts each day pay');
+  }
+  screenTeacherCloud=screenSignin;
+  screenBoard=function(){return screenSignin()};
+  /* Disable hidden/stale classroom actions as well as their visible controls. */
+  Object.keys(ACT).forEach(function(k){
+    if (/^(teacher-|class-|board-|at-|atr-|pilot-(?:room-|ghost-|race-|assign|unassign|save-|faction|finish-|open-assignment)|auth-|cloud-)/.test(k) ||
+        ['ar-find','ar-ghost','ar-ranked','ar-baseline','ar-share','ar-cp-publish','forum-code','dm-assign','cir-mode','bb-mode','bb-task','bb-paid','ai-check','lab-ai','set-ai'].indexOf(k)>=0) {
+      ACT[k]=function(){return false};
+    }
+  });
+  ACT['open-board']=function(){V.screen='signin';render(true)};
+  window.__pilotTrainerFinished=function(){};
+
 }

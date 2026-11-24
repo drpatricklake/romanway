@@ -59,3 +59,6 @@ s=s.replace('<h1>Account</h1><section class="panel"><h2>Google sign-in</h2>', '<
 
 # Select a shared-code edition and add account-free browser saving.
 runpy.run_path(str(root/'apply-public-practice.py'),run_name='__main__')
+
+# Hide shared features and close public cloud actions after the common integrations.
+runpy.run_path(str(root/'apply-public-isolation.py'),run_name='__main__')

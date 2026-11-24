@@ -1201,7 +1201,7 @@ function render(nav){
   else if(V.screen==='lesson')body=screenLesson();
   else body=screenHome();
   var cpOld=document.querySelector('.chartpanel'),cpTop=cpOld?cpOld.scrollTop:0;
-  if(PUBLIC_PRACTICE)body=body.replace(/Sign-in check/g,'Device progress').replace(/\(your instructor can read these\)/g,'(saved on this device)');
+  if(PUBLIC_PRACTICE)body=publicPracticeMarkup(body).replace(/Sign-in check/g,'Device progress').replace(/\(your instructor can read these\)/g,'(saved on this device)');
   $app.innerHTML=header()+body+chartPanel();
   var cpNew=document.querySelector('.chartpanel');if(cpNew)cpNew.scrollTop=cpTop;
   document.body.classList.toggle('has-charts',!!cpNew);
@@ -1750,7 +1750,7 @@ function goalsRow(){
   var h='<div class="goals">';
   h+='<section class="panel"><h3 style="margin:0 0 .3em">Today’s review</h3><p style="margin:0 0 .7em">'+(any?'<b>'+rc.due+'</b> card'+(rc.due===1?'':'s')+' due'+(rc.newN?', plus up to '+rc.newN+' new':'')+'. About five minutes.':'You’re all caught up. Nothing is due right now.')+'</p>'+(any?'<button class="btn" data-act="rev-start">Start review</button>':'<button class="btn ghost" data-act="rev-more">Review a few extra</button>')+'</section>';
   h+='<section class="panel"><h3 style="margin:0 0 .3em">Daily goal</h3><div class="bar" style="margin-bottom:6px"><i style="width:'+Math.min(100,pct(gs.n,gs.goal))+'%"></i></div><p style="margin:0 0 .6em"><b>'+(gs.n>gs.goal?gs.n+' cards':gs.n+' of '+gs.goal)+'</b> today'+(gs.n>gs.goal?' (goal '+gs.goal+')':'')+'. '+(met?'Goal met. Anything more is a bonus.':(gs.n?(gs.goal-gs.n)+' more to reach your goal.':'A few minutes is plenty.'))+'</p><div class="week" role="group" aria-label="This week">'+week+'</div><p class="note" style="margin:.5em 0 0">'+gs.daysActive+' day'+(gs.daysActive===1?'':'s')+' practiced this week.</p></section>';
-  h+='<section class="panel"><h3 style="margin:0 0 .3em">Class goal this week</h3><div class="bar" style="margin-bottom:6px"><i style="width:'+Math.min(100,pct(ct.total,ct.goal))+'%"></i></div><p style="margin:0 0 .4em"><b>'+ct.total+' of '+ct.goal+'</b> correct answers, all together.</p><p class="note" style="margin:0">You added '+ct.mine+'. Each student counts up to 30 a day, so everyone’s effort matters equally. The class total includes a fictional sample class.</p></section>';
+  if(!PUBLIC_PRACTICE)h+='<section class="panel"><h3 style="margin:0 0 .3em">Class goal this week</h3><div class="bar" style="margin-bottom:6px"><i style="width:'+Math.min(100,pct(ct.total,ct.goal))+'%"></i></div><p style="margin:0 0 .4em"><b>'+ct.total+' of '+ct.goal+'</b> correct answers, all together.</p><p class="note" style="margin:0">You added '+ct.mine+'. Each student counts up to 30 a day, so everyone’s effort matters equally. The class total includes a fictional sample class.</p></section>';
   return h+'</div>';
 }
 /* ================= guided notes and quick checks ================= */
@@ -1839,7 +1839,7 @@ function gradeBlank(b,val){
 function writesHtml(seg){
   if(!seg.writes)return '';
   var draft=S.drafts.notes||{};
-  return '<div class="writes"><p class="note" style="margin:0 0 4px"><b>In your own words</b> (your instructor can read these)</p>'+seg.writes.map(function(w){return '<label class="wl" for="w-'+seg.id+'-'+w.id+'">'+(w.prefix==null?'Define: ':w.prefix)+esc(w.label)+'</label><textarea class="fld" rows="2" id="w-'+seg.id+'-'+w.id+'" data-key="w-'+seg.id+'-'+w.id+'" data-scope="e" data-ref="notes" aria-label="'+(w.prefix==null?'Define ':w.prefix)+esc(w.label)+'">'+esc(draft['w-'+seg.id+'-'+w.id]||'')+'</textarea>'}).join('')+'</div>';
+  return '<div class="writes"><p class="note" style="margin:0 0 4px"><b>In your own words</b> '+(PUBLIC_PRACTICE?"(saved on this device)":"(your instructor can read these)")+'</p>'+seg.writes.map(function(w){return '<label class="wl" for="w-'+seg.id+'-'+w.id+'">'+(w.prefix==null?'Define: ':w.prefix)+esc(w.label)+'</label><textarea class="fld" rows="2" id="w-'+seg.id+'-'+w.id+'" data-key="w-'+seg.id+'-'+w.id+'" data-scope="e" data-ref="notes" aria-label="'+(w.prefix==null?'Define ':w.prefix)+esc(w.label)+'">'+esc(draft['w-'+seg.id+'-'+w.id]||'')+'</textarea>'}).join('')+'</div>';
 }
 function chartHtml(seg){
   var rs=(S.notes[seg.id]||{}).res||null,draft=S.drafts.notes||{};
@@ -2000,7 +2000,7 @@ function wsField(ws,f,vals,res){
 }
 function wsStatusChip(ws){
   var st=S.ws[ws.id];
-  if(st&&st.sub)return '<span class="chip ok">Submitted'+(st.sub.total?': '+st.sub.correct+' of '+st.sub.total+' auto-graded':'')+'</span>';
+  if(st&&st.sub)return '<span class="chip ok">'+(PUBLIC_PRACTICE?"Saved and checked":"Submitted")+''+(st.sub.total?': '+st.sub.correct+' of '+st.sub.total+' auto-graded':'')+'</span>';
   var started=false;
   if(st){if(st.vals&&Object.keys(st.vals).some(function(k){return String(st.vals[k]).trim()}))started=true;if(st.tl&&(st.tl.pts||[]).some(function(p){return p.t}))started=true}
   return started?'<span class="chip warn">Draft saved</span>':'<span class="chip">Not started</span>';
@@ -2008,7 +2008,7 @@ function wsStatusChip(ws){
 function tabWs(){
   if(V.ws)return wsView(wsById(V.ws));
   var list=WS.filter(function(w){return String(w.lesson)===String(V.lesson)});
-  var h='<div class="sec"><h2 style="margin-bottom:.2em">Worksheets and projects</h2><p class="note">Your answers save as you type. Auto-graded answers get feedback when you submit, and they also feed your spaced review. Written responses go to your instructor. Worksheets do not trigger required practice.</p><div class="cards">';
+  var h='<div class="sec"><h2 style="margin-bottom:.2em">Worksheets and projects</h2><p class="note">Your answers save as you type. Auto-graded answers get feedback '+(PUBLIC_PRACTICE?"when you check your work":"when you submit")+', and they also feed your spaced review. '+(PUBLIC_PRACTICE?"Written responses stay on this device.":"Written responses go to your instructor.")+' Worksheets do not trigger required practice.</p><div class="cards">';
   list.forEach(function(w){h+='<div class="panel wscard">'+(w.code?'<div><b class="lat" style="font-size:1.05em">'+esc(w.code)+'</b></div>':'')+'<h3 style="margin:.2em 0 .3em">'+esc(w.title)+'</h3><p class="note" style="margin:0 0 .6em">'+esc(w.kind)+'</p><p style="margin:0 0 .7em">'+wsStatusChip(w)+'</p><button class="btn sm" data-act="ws-open" data-id="'+w.id+'">Open</button></div>'});
   h+='</div></div>';
   return h;
@@ -2018,7 +2018,7 @@ function wsView(ws){
   var h='<div class="crumb"><button class="link" data-act="ws-back">All worksheets</button></div><div class="sec"><div class="score"><div><h2 style="margin:0">'+(ws.code?'<span class="lat">'+esc(ws.code)+'</span> ':'')+esc(ws.title)+(ws.optional?' <span class="chip">Optional</span>':'')+'</h2><p class="note" style="margin:.4em 0 0;max-width:70ch">'+esc(ws.intro)+'</p></div>'+wsStatusChip(ws)+'</div></div>';
   if(st.sub){
     var texts=wsFields(ws).filter(function(f){return f.k==='text'&&String(vals[f.id]||'').trim()}).length;
-    h+='<div class="callout ok" role="status"><b>Submitted.</b> '+(st.sub.total?'Auto-graded answers: '+st.sub.correct+' of '+st.sub.total+' ('+pct(st.sub.correct,st.sub.total)+'%). These also joined your review cards. ':'')+(texts?texts+' written response'+(texts>1?'s':'')+' saved for your instructor. ':'')+'You can edit your answers and submit again.</div>';
+    h+='<div class="callout ok" role="status"><b>'+(PUBLIC_PRACTICE?"Saved and checked":"Submitted")+'.</b> '+(st.sub.total?'Auto-graded answers: '+st.sub.correct+' of '+st.sub.total+' ('+pct(st.sub.correct,st.sub.total)+'%). These also joined your review cards. ':'')+(texts?texts+' written response'+(texts>1?'s':'')+' '+(PUBLIC_PRACTICE?"saved on this device":"saved for your instructor")+'. ':'')+'You can edit your answers and '+(PUBLIC_PRACTICE?"check again":"submit again")+'.</div>';
   }
   var n=0;
   ws.items.forEach(function(it){
@@ -2032,7 +2032,7 @@ function wsView(ws){
     else h+='<div class="wsq"><p class="wsq-t">'+(it.q?'<b>'+(++n)+'.</b> '+esc(it.q):'<b>'+esc(it.t)+'</b>')+'</p><div class="wsf">'+it.f.map(function(f){return wsField(ws,f,vals,res)}).join('')+'</div></div>';
   });
   if(ws.noSubmit)return h+glossSheet();
-  h+='<div class="submitbar"><button class="btn" data-act="ws-submit" data-id="'+ws.id+'">'+(st.sub?'Submit again':(ws.optional?'Save and share with my instructor':'Submit worksheet'))+'</button><button class="btn ghost" data-act="ws-back">Back to the list</button></div>';
+  h+='<div class="submitbar"><button class="btn" data-act="ws-submit" data-id="'+ws.id+'">'+(st.sub?''+(PUBLIC_PRACTICE?"Save and check":"Submit again")+'':(ws.optional?''+(PUBLIC_PRACTICE?"Save and check":"Save and share with my instructor")+'':''+(PUBLIC_PRACTICE?"Save and check":"Submit worksheet")+''))+'</button><button class="btn ghost" data-act="ws-back">Back to the list</button></div>';
   return h;
 }
 
@@ -2297,7 +2297,7 @@ function aiCheck(id){
 }
 function translateBox(rd){
   var st=rdState(),m=S.settings.models,txt=(st.tr[rd.id]||'').trim(),peek=st.peek[rd.id],open=V.modelOpen&&V.modelOpen[rd.id],ai=S.settings.aiFeedback;
-  var h='<div class="sec"><label class="wl" for="tr-'+rd.id+'">Your translation</label><textarea class="fld" rows="'+(rd.kind==='long'?5:3)+'" id="tr-'+rd.id+'" data-rd="'+rd.id+'" data-trans="1">'+esc(st.tr[rd.id]||'')+'</textarea><p class="note" style="margin:.3em 0 0">Saved as you type. Your instructor can read it.</p><div class="submitbar">';
+  var h='<div class="sec"><label class="wl" for="tr-'+rd.id+'">Your translation</label><textarea class="fld" rows="'+(rd.kind==='long'?5:3)+'" id="tr-'+rd.id+'" data-rd="'+rd.id+'" data-trans="1">'+esc(st.tr[rd.id]||'')+'</textarea><p class="note" style="margin:.3em 0 0">Saved as you type. '+(PUBLIC_PRACTICE?"Your translation stays on this device.":"Your instructor can read it.")+'</p><div class="submitbar">';
   if(m!=='off')h+='<button class="btn ghost sm" data-act="model-show" data-rd="'+rd.id+'"'+((m==='after'&&!txt&&!peek)?' disabled':'')+'>'+(open?'Hide the model translation':'Show a model translation')+'</button>';
   if(ai){if(AIOK===false)h+='<span class="note">Feedback is not available in this view.</span>';else h+='<button class="btn sm" data-act="ai-check" data-rd="'+rd.id+'"'+((!txt||V.aiBusy)?' disabled':'')+'>Get feedback</button>'}
   h+='</div>';
@@ -2647,7 +2647,7 @@ function setItemHtml(id,i){
 }
 function tabSet(id){
   var T=TSETS[id],p=setProgress(id);
-  var h='<div class="sec"><div class="score"><div><h2 style="margin:0">'+esc(T.title)+'</h2><p class="note" style="margin:.3em 0 0">'+esc(T.intro)+' Your answers save as you type, and your instructor can read them.</p></div><span class="chip acc">'+p.n+' of '+p.t+' answered</span></div></div>';
+  var h='<div class="sec"><div class="score"><div><h2 style="margin:0">'+esc(T.title)+'</h2><p class="note" style="margin:.3em 0 0">'+esc(T.intro)+' '+(PUBLIC_PRACTICE?"Your answers save as you type on this device.":"Your answers save as you type, and your instructor can read them.")+'</p></div><span class="chip acc">'+p.n+' of '+p.t+' answered</span></div></div>';
   if(S.settings.models==='off')h+='<p class="note">Model answers are turned off for this class.</p>';
   if(T.dir==='la-en'||T.items.some(function(x){return x.d==='la-en'}))h+='<p class="note legend">Tap any Latin word for its meaning. Bold colored words have notes from your textbook.</p>';
   h+=T.items.map(function(_,i){return setItemHtml(id,i)}).join('');
@@ -3388,7 +3388,7 @@ function tabTrip(){
     });
     h+='</div>';
   });
-  return h+'<div class="submitbar"><button class="btn" data-act="trip-submit">'+(sub?'Submit again':'Submit answers')+'</button></div>';
+  return h+'<div class="submitbar"><button class="btn" data-act="trip-submit">'+(sub?''+(PUBLIC_PRACTICE?"Save and check":"Submit again")+'':'Submit answers')+'</button></div>';
 }
 function tripSubmit(){
   var q=tripState(),res={},c=0,t=0;
@@ -3843,7 +3843,7 @@ function wsView(ws,embed){
     :'<div class="crumb"><button class="link" data-act="ws-back">All worksheets</button></div><div class="sec"><div class="score"><div><h2 style="margin:0">'+(ws.code?'<span class="lat">'+esc(ws.code)+'</span> ':'')+esc(ws.title)+(ws.optional?' <span class="chip">Optional</span>':'')+'</h2><p class="note" style="margin:.4em 0 0;max-width:70ch">'+intro+'</p></div>'+wsStatusChip(ws)+'</div></div>';
   if(st.sub){
     var texts=wsFields(ws).filter(function(f){return f.k==='text'&&String(vals[f.id]||'').trim()}).length;
-    h+='<div class="callout ok" role="status"><b>Submitted.</b> '+(st.sub.total?'Auto-graded answers: '+st.sub.correct+' of '+st.sub.total+' ('+pct(st.sub.correct,st.sub.total)+'%). These also joined your review cards. ':'')+(texts?texts+' written response'+(texts>1?'s':'')+' saved for your instructor. ':'')+'You can edit your answers and submit again.</div>';
+    h+='<div class="callout ok" role="status"><b>'+(PUBLIC_PRACTICE?"Saved and checked":"Submitted")+'.</b> '+(st.sub.total?'Auto-graded answers: '+st.sub.correct+' of '+st.sub.total+' ('+pct(st.sub.correct,st.sub.total)+'%). These also joined your review cards. ':'')+(texts?texts+' written response'+(texts>1?'s':'')+' '+(PUBLIC_PRACTICE?"saved on this device":"saved for your instructor")+'. ':'')+'You can edit your answers and '+(PUBLIC_PRACTICE?"check again":"submit again")+'.</div>';
   }
   var n=0;
   ws.items.forEach(function(it){
@@ -3865,7 +3865,7 @@ function wsView(ws,embed){
     else h+='<div class="wsq"><p class="wsq-t">'+(it.qh?it.qh:(it.q?'<b>'+(++n)+'.</b> '+esc(it.q):'<b>'+esc(it.t)+'</b>'))+'</p><div class="wsf'+(it.stack?' stack':'')+'">'+(it.f||[]).map(function(f){return wsField(ws,f,vals,res)}).join('')+'</div></div>';
   });
   if(ws.noSubmit)return h+glossSheet();
-  h+='<div class="submitbar"><button class="btn" data-act="ws-submit" data-id="'+ws.id+'">'+(st.sub?'Submit again':(ws.optional?'Save and share with my instructor':'Submit worksheet'))+'</button>'+(embed?'':'<button class="btn ghost" data-act="ws-back">Back to the list</button>')+'</div>';
+  h+='<div class="submitbar"><button class="btn" data-act="ws-submit" data-id="'+ws.id+'">'+(st.sub?''+(PUBLIC_PRACTICE?"Save and check":"Submit again")+'':(ws.optional?''+(PUBLIC_PRACTICE?"Save and check":"Save and share with my instructor")+'':''+(PUBLIC_PRACTICE?"Save and check":"Submit worksheet")+''))+'</button>'+(embed?'':'<button class="btn ghost" data-act="ws-back">Back to the list</button>')+'</div>';
   return h;
 }
 function pdfCard(){
@@ -3875,7 +3875,7 @@ function pdfCard(){
 function tabWs(){
   if(V.ws)return wsView(wsById(V.ws));
   var list=WS.filter(function(w){return String(w.lesson)===String(V.lesson)&&!w.inNotes&&!w.inTab&&!w.project});
-  var h='<div class="sec"><h2 style="margin-bottom:.2em">Worksheets and projects</h2><p class="note">Your answers save as you type. Auto-graded answers get feedback when you submit, and they also feed your spaced review. Written responses go to your instructor. Worksheets do not trigger required practice.'+((V.lesson===2||V.lesson===3)?' The first worksheet of each lesson is part of the guided notes.':'')+'</p>'+pdfCard()+'<div class="cards">';
+  var h='<div class="sec"><h2 style="margin-bottom:.2em">Worksheets and projects</h2><p class="note">Your answers save as you type. Auto-graded answers get feedback '+(PUBLIC_PRACTICE?"when you check your work":"when you submit")+', and they also feed your spaced review. '+(PUBLIC_PRACTICE?"Written responses stay on this device.":"Written responses go to your instructor.")+' Worksheets do not trigger required practice.'+((V.lesson===2||V.lesson===3)?' The first worksheet of each lesson is part of the guided notes.':'')+'</p>'+pdfCard()+'<div class="cards">';
   list.forEach(function(w){h+='<div class="panel wscard">'+(w.code?'<div><b class="lat" style="font-size:1.05em">'+esc(w.code)+'</b></div>':'')+'<h3 style="margin:.2em 0 .3em">'+esc(w.title)+'</h3><p class="note" style="margin:0 0 .6em">'+esc(w.kind)+'</p><p style="margin:0 0 .7em">'+wsStatusChip(w)+'</p><button class="btn sm" data-act="ws-open" data-id="'+w.id+'">Open</button></div>'});
   h+='</div></div>';
   return h;
@@ -3927,7 +3927,7 @@ WS.push(
   CIR.forEach(function(q,i){items.push({qh:'<b>'+(i+1)+'.</b> '+q[0]+'<br><span class="lat">'+q[1]+'</span>',f:[MCF('ci'+i,q[3],q[2],'Choose')]})});
   items.push({ph:'Fill in the blank with the correct form of the underlined English noun to complete the Latin sentence.'});
   FIL.forEach(function(q,i){items.push({qh:q[0],f:[LF('fi'+i,[q[2]],q[1],'16ch')]})});
-  WS.push({id:'w32',lesson:3,inNotes:true,code:'III.2',title:'The First Declension: Recognition & Formation',kind:'Mixed, auto-graded',intro:'Choose or write the correct forms. Auto-graded answers are marked when you submit.',items:items});
+  WS.push({id:'w32',lesson:3,inNotes:true,code:'III.2',title:'The First Declension: Recognition & Formation',kind:'Mixed, auto-graded',intro:'Choose or write the correct forms. Auto-graded answers are marked '+(PUBLIC_PRACTICE?"when you check your work":"when you submit")+'.',items:items});
   var S8=[['<u>The girl</u> is in school.','Subject','Nominative singular','puella'],['We met <u>the girls</u> under the tree.','Direct object','Accusative plural','puellās'],['The <u>girl’s</u> hair was blond.','Possession (genitive)','Genitive singular','puellae'],['The reward <u>for the girls</u> was fair.','Indirect object','Dative plural','puellīs'],['<u>The girls</u> won’t do their homework.','Subject','Nominative plural','puellae'],['<u>The girls’</u> cars weren’t in the lot.','Possession (genitive)','Genitive plural','puellārum'],['We walked <u>with the girls</u> to school.','Adverbial (ablative)','Ablative plural','puellīs'],['<u>Girls</u>, please help me with this.','Direct address','Vocative plural','puellae']];
   var i3=[{ph:'For the sentences below, complete the following steps: a) indicate the grammatical function(s) of the underlined word(s); b) determine the case and number that would be used in Latin to express the word(s); c) write out the Latin form of the word(s):'},
    {html:'<div class="callout"><p class="note" style="margin:0 0 3px"><b>Example</b></p><p style="margin:0 0 4px">I see <u>the goddess</u> in the temple.</p><p style="margin:0" class="note">Function: Direct object<br>Case &amp; Number: Accusative &amp; Singular<br>Latin Form: <span class="lat">deam</span></p></div>'}];
@@ -4606,7 +4606,7 @@ KIND_LABELS.near='Nearness (accusative)';KIND_HINT.near='With ad or prope, “ne
  it.push({ph:'Fill in the blank with the correct form of the underlined English noun to complete the Latin sentence.'});
  F6.forEach(function(q,i){it.push({qh:q[0],f:[LF('f6'+i,[q[2]],q[1],'16ch')]})});
  it.push({qh:'I will bring <u>a battle</u> into <u>the fields</u>.',f:[LF('f65a',['proelium'],'Portābō ___________ …','14ch'),LF('f65b',['agrōs'],'… in ___________.','14ch')]});
- WS.push({id:'w61',lesson:6,inNotes:true,code:'VI.1',title:'The Second Declension: Basics (practice)',kind:'Mixed, auto-graded',intro:'Choose or write the correct forms. Auto-graded answers are marked when you submit.',items:it});
+ WS.push({id:'w61',lesson:6,inNotes:true,code:'VI.1',title:'The Second Declension: Basics (practice)',kind:'Mixed, auto-graded',intro:'Choose or write the correct forms. Auto-graded answers are marked '+(PUBLIC_PRACTICE?"when you check your work":"when you submit")+'.',items:it});
  var D=[['away from (my) friend','He ran <u>away from (my) friend</u>.','Place from which (ablative)','Ablative singular','ab amīcō'],['The friends’','The <u>friends’</u> plans were complicated.','Possession (genitive)','Genitive plural','amīcōrum'],['friend','My <u>friend</u> is tall.','Subject','Nominative singular','amīcus'],['land','I gave <u>land</u> to (my) friends.','Direct object','Accusative singular','terram'],['to (my) friends','I gave land <u>to (my) friends</u>.','Indirect object','Dative plural','amīcīs'],['friend','Did you see my <u>friend</u>, son?','Direct object','Accusative singular','amīcum'],['son','Did you see my friend, <u>son</u>?','Direct address','Vocative singular','fīlī'],['queen’s','The <u>queen’s</u> fields were dry.','Possession (genitive)','Genitive singular','rēgīnae'],['fields','The queen’s <u>fields</u> were dry.','Subject','Nominative plural','agrī'],['On the island','<u>On the island</u>, the field’s soil was fertile.','Place where (ablative)','Ablative singular','in īnsulā'],['field’s','On the island, the <u>field’s</u> soil was fertile.','Possession (genitive)','Genitive singular','agrī'],['The farmers','<u>The farmers</u> fought the war for the fields.','Subject','Nominative plural','agricolae'],['the war','The farmers fought <u>the war</u> for the fields.','Direct object','Accusative singular','bellum'],['for the fields','The farmers fought the war <u>for the fields</u>.','Indirect object','Dative plural','agrīs'],['fields','We need to buy new <u>fields</u>, master.','Direct object','Accusative plural','agrōs'],['master','We need to buy new fields, <u>master</u>.','Direct address','Vocative singular','domine'],['into war','We rushed <u>into war</u> after we lost the battle.','Place to which (accusative)','Accusative singular','in bellum'],['the battle','We rushed into war after we lost <u>the battle</u>.','Direct object','Accusative singular','proelium']];
  var di=[{ph:'For the sentences below, a) indicate the grammatical function(s) of the underlined word(s); b) determine the case and number that would be used in Latin to express the word(s); c) write out the Latin form of the word(s):'}];
  D.forEach(function(x,i){di.push({qh:'<b>'+(i+1)+'.</b> '+x[1],f:[MCF('d6'+i+'f',x[2],FN6,'Function'),MCF('d6'+i+'c',x[3],CN3,'Case & number'),LF('d6'+i+'l',[x[4]],'Latin form','14ch')]})});
@@ -6101,7 +6101,7 @@ function projWs(L){return WS.filter(function(w){return w.project&&String(w.lesso
 function tabProj(){
   if(V.ws)return wsView(wsById(V.ws));
   var list=projWs(V.lesson);
-  var h='<div class="sec"><h2 style="margin-bottom:.2em">Projects</h2><p class="note">Projects are larger assignments. Your work saves as you type, and your instructor reads it. They are not auto-graded.</p>';
+  var h='<div class="sec"><h2 style="margin-bottom:.2em">Projects</h2><p class="note">Projects are larger assignments. '+(PUBLIC_PRACTICE?"Your work saves as you type on this device.":"Your work saves as you type, and your instructor reads it.")+' They are not auto-graded.</p>';
   list.forEach(function(w){h+='<div class="panel wscard">'+(w.code?'<div><b class="lat" style="font-size:1.05em">'+esc(w.code)+'</b></div>':'')+'<h3 style="margin:.2em 0 .3em">'+esc(w.title)+'</h3><p class="note" style="margin:0 0 .6em">'+esc(w.kind)+'</p><p style="margin:0 0 .7em">'+wsStatusChip(w)+'</p><button class="btn" data-act="ws-open" data-id="'+w.id+'">Open</button></div>'});
   return h+'</div>';
 }
@@ -11653,7 +11653,7 @@ var screenBoard;
   h+='<h3>Reflect</h3><p class="note" style="max-width:72ch">How different would your life be if you lived in the Roman world? How often would you travel? How did the dangers and the opportunities of travel compare, then and now?</p>'+ta('reflect','');
   h+='<h3>Hand in your commission</h3>';
   if(o.final)h+='<div class="callout ok" role="status"><b>Commission completed.</b>'+(o.paid?' Your reward has been added to your denarii.':'')+'</div><p class="note">Copy this report and send it to your teacher.</p><textarea readonly rows="12" style="width:100%;max-width:46em;font-family:monospace;font-size:.85rem" onclick="this.select()">'+esc(report())+'</textarea>';
-  else h+='<p class="note" style="max-width:72ch">When your plan, your ORBIS results, and your reflection are filled in, submit your report. You can still edit your answers afterward.</p><p><button class="btn" data-act="ob-done">Submit my commission report</button> <span id="ob-msg" class="note" role="status"></span></p>';
+  else h+='<p class="note" style="max-width:72ch">When your plan, your ORBIS results, and your reflection are filled in, '+(PUBLIC_PRACTICE?"save your report on this device":"submit your report")+'. You can still edit your answers afterward.</p><p><button class="btn" data-act="ob-done">'+(PUBLIC_PRACTICE?"Save my commission report":"Submit my commission report")+'</button> <span id="ob-msg" class="note" role="status"></span></p>';
   return h+'</div>';
  }
  function report(){var o=ob(),a=S.av&&S.av.done?S.av:null,L=[];L.push('ORBIS commission report'+(a?' for '+a.name+' ('+a.calling+')':''));L.push('');L.push('Who I am: '+(o.who||''));L.push('Journey: '+(o.from||'')+' to '+(o.to||''));L.push('Purpose: '+(o.why||''));L.push('Priority and season: '+(o.pri||'')+', '+(o.season||''));L.push('Why I chose them: '+(o.choice||''));L.push('');L.push('Predicted: '+(o.pkm||'?')+' km, '+(o.pdays||'?')+' days, '+(o.pden||'?')+' '+(o.punit||''));L.push('ORBIS: '+(o.akm||'?')+' km, '+(o.adays||'?')+' days, '+(o.aden||'?')+' '+(o.aunit||'')+' (settings: '+(o.vars||'none noted')+')');L.push('What surprised me: '+(o.surprise||''));L.push('Were my predictions accurate: '+(o.accurate||''));L.push('Changed: '+(o.bvars||'')+' gave '+(o.bdays||'?')+' days and '+(o.bden||'?')+' '+(o.bunit||'')+'. '+(o.bnote||''));L.push('');L.push('Today: '+(o.mfrom||'')+' to '+(o.mto||'')+' by '+(o.mhow||'')+', '+(o.mdays||'?')+' days, $'+(o.musd||'?'));L.push('');L.push('Reflection: '+(o.reflect||''));return L.join('\n')}
@@ -12316,7 +12316,7 @@ window.__arenaAssets={"aurelia.webp": "data:image/webp;base64,UklGRtR2AABXRUJQVl
  }
  /* ---------- private record, shared ghost, checkpoint ---------- */
  function privPath(id){return 'data/users/'+id+'/arena'}
- function loadPriv(){
+ function loadPriv(){if(PUBLIC_PRACTICE)return Promise.resolve();
   return Promise.all([getDb(),myId()]).then(function(r){var db=r[0],id=r[1];if(!db||!id)return;return db.doc(privPath(id)).get().then(function(s){if(s.exists){var d=s.data()||{};AR.priv=d;var a=st();if(d.ranked)Object.keys(d.ranked).forEach(function(k){a.ranked[k]=d.ranked[k]});if(typeof d.rating==='number'&&Object.keys(d.ranked||{}).length)a.rating=d.rating;if(typeof d.share==='boolean')a.share=d.share}},function(){})}).catch(function(){});
  }
  function savePriv(){
@@ -12328,7 +12328,7 @@ window.__arenaAssets={"aurelia.webp": "data:image/webp;base64,UklGRtR2AABXRUJQVl
  }
  function unshare(){return Promise.all([getDb(),myId()]).then(function(r){var db=r[0],id=r[1];if(!db||!id)return;return db.doc('arena/'+id).delete().then(function(){},function(){})}).catch(function(){})}
  function defaultCp(){var r=nlePrng(hash('checkpoint-1'));return {id:'cp1',name:'Checkpoint 1',upto:3,ids:drawIds('hoplomachus',3,ROUNDS,r),default:true}}
- function loadCp(){
+ function loadCp(){if(PUBLIC_PRACTICE)return Promise.resolve();
   AR.cp=AR.cp||defaultCp();
   return Promise.all([getDb(),getUser()]).then(function(r){var db=r[0],u=r[1];if(!db)return;return Promise.all([db.doc('settings/arena').get().then(function(s){if(s.exists){var c=(s.data()||{}).cp;if(c&&c.ids&&c.ids.length>=4)AR.cp={id:String(c.id),name:c.name||'Checkpoint',upto:c.upto||3,ids:c.ids}}},function(){}),u?u.canEdit().then(function(v){AR.canEdit=!!v},function(){}):null])}).catch(function(){});
  }
@@ -12337,7 +12337,7 @@ window.__arenaAssets={"aurelia.webp": "data:image/webp;base64,UklGRtR2AABXRUJQVl
    return db.collection('arena').get().then(function(s){AR.all=s.docs.filter(function(d){return d.id!==me}).map(function(d){var x=d.data()||{};return {id:d.id,name:String(x.name||'Someone').slice(0,30),rating:Number(x.rating)||1000,practice:x.practice||null,ranked:x.ranked||null}})},function(e){AR.gerr=code(e)})
   });
  }
- function refreshAll(){
+ function refreshAll(){if(PUBLIC_PRACTICE)return;
   AR.busy=true;AR.gerr=null;render(true);
   Promise.all([loadCp(),loadPriv()]).then(loadGhosts).catch(function(e){AR.gerr=code(e)}).then(function(){AR.busy=false;render(true)});
  }
@@ -12437,14 +12437,15 @@ window.__arenaAssets={"aurelia.webp": "data:image/webp;base64,UklGRtR2AABXRUJQVl
   h+='<div class="panel"><h3 style="margin:0 0 .4em">1. Your lessons</h3><p style="margin:0">Questions from Lessons I to <select id="ar-upto" aria-label="Last lesson to include">'+(function(){var o='';for(var k=1;k<=57;k++)o+='<option value="'+k+'"'+(k===upto?' selected':'')+'>'+ROMAN[k-1]+'</option>';return o})()+'</select></p>';
   h+='<h3 style="margin:.8em 0 .4em">2. Choose your class or drill</h3><div class="seg" role="group" aria-label="Class" style="flex-wrap:wrap">'+CLASSES.filter(function(x){return !x.drill}).map(function(x){return '<button data-act="ar-cls" data-c="'+x.id+'" aria-pressed="'+(AR.cls===x.id)+'">'+x.n+'</button>'}).join('')+'</div><p class="note" style="margin:.5em 0 .2em"><b>Focused drills</b></p><div class="seg" role="group" aria-label="Focused drill" style="flex-wrap:wrap">'+CLASSES.filter(function(x){return x.drill&&(!x.since||x.since<=upto)}).map(function(x){return '<button data-act="ar-cls" data-c="'+x.id+'" aria-pressed="'+(AR.cls===x.id)+'">'+x.n+'</button>'}).join('')+'</div><p class="note" style="margin:.5em 0 0">'+c.d+'. <b>'+n+'</b> question'+(n===1?'':'s')+' can be drawn with these lessons.'+(n<30?' That is not many: repeated bouts will return to the same material. Choose more lessons to widen it.':'')+'</p>';
   h+='<h3 style="margin:.8em 0 .4em">3. The Ludus: practice against a trainer</h3><div class="seg" role="group" aria-label="Opponent" style="flex-wrap:wrap">'+LEVELS.map(function(l,i){return '<button data-act="ar-lv" data-l="'+i+'" aria-pressed="'+(AR.lv===i)+'">'+l.n+'</button>'}).join('')+'</div><p class="note" style="margin:.4em 0 0">The trainer answers '+LEVELS[AR.lv].lo+(LEVELS[AR.lv].hi>LEVELS[AR.lv].lo?' to '+LEVELS[AR.lv].hi:'')+' of the ten correctly, in a different order each bout.</p><p style="margin:.6em 0 0"><button class="btn" data-act="ar-ludus">Enter the Ludus</button> <span class="note">A win earns '+PAY.ludus.win+' denarii and a draw '+PAY.ludus.draw+', for up to '+LUDUS_PAID_MAX+' bouts a day.</span></p></div>';
-  h+=rankedPanel();
+  if(!PUBLIC_PRACTICE){h+=rankedPanel();
   h+='<div class="panel"><h3 style="margin:0 0 .3em">Practice against a ghost of your choice</h3><p class="note" style="margin:0 0 .5em;max-width:70ch">Choose a classmate who has shared a saved match, and answer the very same questions. A practice ghost bout does not change your rating. A win earns '+PAY.ghost.win+' denarii and a draw '+PAY.ghost.draw+', for up to '+GHOST_PAID_MAX+' paid ghost bouts a day, counting ranked ones.</p>';
   if(AR.busy)h+='<p class="note">Looking for ghosts…</p>';
   else if(AR.gerr)h+='<p class="note">'+(AR.gerr==='no-shared-storage'?'Ghost bouts need shared storage, which this view does not have. Sign in with Google and ask your instructor to approve your class membership.':'Could not reach the arena ('+AR.gerr+').')+'</p>';
   else if(AR.all){var pg=practiceGhosts();h+=pg.length?'<div class="ghostlist">'+pg.map(function(g,i){var c2=CLASSES.filter(function(x){return x.id===g.practice.cls})[0];return '<button class="ghostrow" data-act="ar-ghost" data-i="'+i+'"><b>'+esc(g.name)+'</b> <span class="note">· rating '+g.rating+(c2?' · '+c2.n.split(' ')[0]:'')+' · lessons I to '+ROMAN[Math.min(57,Math.max(1,g.practice.upto||1))-1]+'</span></button>'}).join('')+'</div>':'<p class="note">No classmate has shared a saved match yet.</p>'}
   h+='<p style="margin:.6em 0 0"><button class="btn ghost" data-act="ar-find">'+(AR.all?'Look again':'Find ghosts and the checkpoint')+'</button></p></div>';
+  }
   if(s.hist.length)h+='<div class="panel"><h3 style="margin:0 0 .3em">Your recent bouts <span class="note">(private)</span></h3><ul style="margin:0;padding-left:1.1em">'+s.hist.slice(-5).reverse().map(function(x){return '<li>'+(x.r===1?'Won':(x.r===.5?'Drew':'Lost'))+' '+x.me+' to '+x.op+' · '+({ludus:'the Ludus',ghost:'a ghost',ranked:'ranked',baseline:'a trainer, unrated'}[x.mode]||x.mode)+'</li>'}).join('')+'</ul></div>';
-  h+='<div class="panel"><h3 style="margin:0 0 .3em">The live Colosseum</h3><p class="note" style="margin:0">Your teacher will host live matches for the whole class. This opens after the ghost bouts have been tested.</p></div>';
+  if(!PUBLIC_PRACTICE)h+='<div class="panel"><h3 style="margin:0 0 .3em">The live Colosseum</h3><p class="note" style="margin:0">Your teacher will host live matches for the whole class. This opens after the ghost bouts have been tested.</p></div>';
   if(AR.msg)h+='<p class="note" role="status">'+esc(AR.msg)+'</p>';
   return h;
  }
@@ -13872,7 +13873,7 @@ window.__ART4={"bg_tablinum": "data:image/webp;base64,UklGRopbAQBXRUJQVlA4IH5bAQ
   return Promise.all([u.canEdit(),u.isOwner()]).then(function(p){DM.canEdit=!!(p[0]||p[1]);return db.doc('settings/tablinum').get().then(function(s){DM.settings=s.exists?(s.data()||{}):null},function(){DM.settings=null})})}).catch(function(e){DM.err=code(e)}).then(function(){DM.busy=false;DM.loaded=true;render(true)})}
  function assigned(){return (DM.settings&&DM.settings.assigned)||[]}
  function wsStatus(w){var st=(S.ws||{})[w.id];if(st&&st.sub)return 'done';if(st&&st.vals&&Object.keys(st.vals).some(function(k){return String(st.vals[k]||'').trim()}))return 'started';return 'new'}
- function chipFor(s){return s==='done'?'<span class="chip ok">Submitted</span>':(s==='started'?'<span class="chip acc">Started</span>':'<span class="chip">Not started</span>')}
+ function chipFor(s){return s==='done'?'<span class="chip ok">'+(PUBLIC_PRACTICE?"Saved and checked":"Submitted")+'</span>':(s==='started'?'<span class="chip acc">Started</span>':'<span class="chip">Not started</span>')}
  function lname(l){return (l==='intro'||l===0||l==='0')?'Introduction':'Lesson '+ROMAN[(+l)-1]}
  function plainWs(){return WS.filter(function(w){return !w.inNotes&&!w.inTab&&!w.project})}
  function projWs(){return WS.filter(function(w){return w.project})}
@@ -13887,12 +13888,12 @@ window.__ART4={"bg_tablinum": "data:image/webp;base64,UklGRopbAQBXRUJQVlA4IH5bAQ
  function subTabs(){var R=[['record','Your record'],['ws','Worksheets'],['proj','Projects']];return '<div class="seg" role="group" aria-label="Tablinum" style="margin:.2em 0 .8em">'+R.map(function(r){return '<button data-act="dm-sub" data-s="'+r[0]+'" aria-pressed="'+(DM.sub===r[0])+'">'+r[1]+'</button>'}).join('')+'</div>'}
  function record(){var h=screenVirtutes(),i=h.indexOf('</h1>'),j=h.lastIndexOf('</main>');return i>=0&&j>i?h.slice(i+5,j):h}
  function wsRow(w){var s=wsStatus(w),as=assigned().indexOf(w.id)>=0;return '<div class="dmrow"><div style="flex:1 1 220px"><b><span class="lat">'+esc(w.code||'')+'</span> '+esc(w.title)+'</b>'+(as?' <span class="chip warn">Assigned</span>':'')+'<div class="note">'+esc(w.kind||'')+'</div></div>'+chipFor(s)+'<button class="btn sm" data-act="ws-open" data-id="'+w.id+'">'+(s==='done'?'Review':'Open')+'</button>'+(DM.canEdit?'<button class="btn sm ghost" data-act="dm-assign" data-id="'+w.id+'" aria-pressed="'+as+'">'+(as?'Unassign':'Assign')+'</button>':'')+'</div>'}
- function wsList(){var all=plainWs(),as=all.filter(function(w){return assigned().indexOf(w.id)>=0}),h='<p class="note" style="max-width:72ch;margin:0 0 .6em">Every worksheet in the course is kept here, lesson by lesson. Your answers save as you type, and auto-graded answers get feedback when you submit.</p>';
+ function wsList(){var all=plainWs(),as=all.filter(function(w){return assigned().indexOf(w.id)>=0}),h='<p class="note" style="max-width:72ch;margin:0 0 .6em">Every worksheet in the course is kept here, lesson by lesson. Your answers save as you type, and auto-graded answers get feedback '+(PUBLIC_PRACTICE?"when you check your work":"when you submit")+'.</p>';
   if(as.length)h+='<h3 style="margin:.4em 0 .3em">Assigned by your teacher</h3>'+as.map(wsRow).join('');
   var by={},order=[];all.forEach(function(w){var k=String(w.lesson);if(!by[k]){by[k]=[];order.push(k)}by[k].push(w)});
   order.sort(function(a,b){var x=(a==='intro'?0:+a),y=(b==='intro'?0:+b);return x-y});
   var cur=DM.lf!=null?String(DM.lf):(V.lesson!=null?String(V.lesson):null);
-  h+='<h3 style="margin:.8em 0 .3em">All worksheets</h3>'+order.map(function(k){var list=by[k],d=list.filter(function(w){return wsStatus(w)==='done'}).length;return '<details class="dmles"'+(k===cur?' open':'')+'><summary><b>'+lname(k)+'</b> <span class="note">'+d+' of '+list.length+' submitted</span></summary>'+list.map(wsRow).join('')+'</details>'}).join('');
+  h+='<h3 style="margin:.8em 0 .3em">All worksheets</h3>'+order.map(function(k){var list=by[k],d=list.filter(function(w){return wsStatus(w)==='done'}).length;return '<details class="dmles"'+(k===cur?' open':'')+'><summary><b>'+lname(k)+'</b> <span class="note">'+d+' of '+list.length+''+(PUBLIC_PRACTICE?" checked</span>":" submitted</span>")+'</summary>'+list.map(wsRow).join('')+'</details>'}).join('');
   if(DM.canEdit)h+='<p class="note" style="margin-top:.6em">'+(DM.msg?esc(DM.msg)+' ':'')+'As the teacher, you can assign worksheets to the whole class; students see them at the top of this list.</p>';
   return h}
  function projList(){var h='<p class="note" style="max-width:72ch;margin:0 0 .6em">The projects of the course. Each opens in its own lesson.</p>';
@@ -14178,7 +14179,7 @@ var screenDomus;
   var led=[];Object.keys(AT.docs).forEach(function(k){(AT.docs[k].earned||[]).forEach(function(e){if(e.xp>0)led.push({uid:k,e:e})})});
   h+='<details class="panel atd"><summary><b>Atrium rewards</b> ('+led.length+' awards)</summary>'+(led.length?'<div class="tablewrap"><table class="apx-t" style="min-width:0"><tbody>'+led.slice(-80).reverse().map(function(x){return '<tr><td>'+esc(who(x.uid))+'</td><td>'+esc({reply:'Reply',helpful:'Marked helpful',patron:'Client finished Lesson '+R(x.e.lesson),followup:'Follow-up practice',baseline:'Starting balance (reviewed)'}[x.e.why]||x.e.why)+'</td><td>'+x.e.xp+' '+(x.e.v==='con'?'Cōnstantia':'Līberālitās')+'</td><td>'+esc(x.e.day||'')+'</td></tr>'}).join('')+'</tbody></table></div>':'<p class="note">None yet.</p>')+'</details>';
   return h}
- window.__atriumView=function(art){
+ window.__atriumView=function(art){if(PUBLIC_PRACTICE)return art+'<section class="panel"><h2>The Atrium</h2><p>In Roman homes, patrons received their clients here. Peer tutoring and shared messages are available in the classroom edition.</p><p>Your Public Practice work stays on this device.</p></section>';
   if(!AT.loaded&&!AT.busy&&!AT.err)setTimeout(load,0);
   var diag=window.RomanWayAtriumTiming||{};var h=art+(AT.loaded?'<details class="panel"><summary>Loading diagnostics</summary><pre>'+esc(JSON.stringify({discussionMs:AT.readMs,eligibilityMs:AT.syncing?'updating':AT.syncMs,database:diag},null,2))+'</pre></details>':'')+'<div class="panel"><h2 style="margin:0 0 .3em;font-size:1.3rem">The Atrium</h2><p style="margin:0;max-width:72ch">In the atrium a Roman <i>patrōnus</i> received his <i>clientēs</i> each morning. Here classmates help one another: send a question you are stuck on, answer one you have mastered, or pair up as patron and client.</p></div>';
   if(AT.err==='no-shared-storage')return h+'<div class="panel"><p style="margin:0"><span class="chip">Needs the class page</span> The Atrium works when everyone opens the class’s hosted page and signs in, so that questions and replies can be shared. Sign in with Google and ask your instructor to approve your membership, then select Refresh.</p></div>';
@@ -14193,13 +14194,13 @@ var screenDomus;
  function promptHtml(w,ctx){var low=w.acc!=null&&w.acc<60;
   return '<section class="panel prestprompt atprompt'+(low?' atlow':'')+'" role="status"><div style="flex:1 1 260px"><b>'+(low?'This one is hard going. You don’t have to work it out alone.':'Practice is still required here.')+'</b> <span class="note">'+(w.label?esc(w.label)+' · ':'')+(w.acc!=null?'your score '+w.acc+'%, below '+thr()+'%. ':'')+'A classmate who has mastered the lesson can explain it.</span></div><button class="btn sm" data-act="'+(ctx==='lesson'?'atr-ask':'at-go')+'" data-t="ask">Ask the Atrium</button><button class="link" data-act="at-later">Not now</button></section>'}
  function promptedToday(){var x=S.xp=S.xp||{};return (x.atrPromptDay||'')===new Date().toDateString()}
- var _jpAT=journeyPanel;journeyPanel=function(){var h=_jpAT();if(promptedToday())return h;
+ var _jpAT=journeyPanel;journeyPanel=function(){var h=_jpAT();if(PUBLIC_PRACTICE||promptedToday())return h;
   var w=worstReq(),b='';if(w)b=promptHtml(w,'home');
   else if(strong()&&!((AT.docs[AT.me]||{}).patron||{}).on)b='<section class="panel prestprompt"><div style="flex:1 1 260px"><b>Your classmates could use your help.</b> <span class="note">Answer a question in the Atrium, or volunteer as a patron. Helping earns Līberālitās.</span></div><button class="btn sm" data-act="at-go" data-t="queue">Visit the Atrium</button><button class="link" data-act="at-later">Not now</button></section>';
   if(!b)return h;var i=h.indexOf('<section class="panel avbar'),j=i>=0?h.indexOf('</section>',i):-1;return j>=0?h.slice(0,j+10)+b+h.slice(j+10):b+h};
  /* ---------- "Ask the Atrium" at the top of lessons, worksheets, and the Sentence Lab; a prompt on a lesson that needs practice ---------- */
  var _rAT=render;render=function(){var r=_rAT.apply(this,arguments);try{decorate()}catch(e){}return r};
- function decorate(){var main=document.querySelector('main');if(!main)return;var cr=main.querySelector('.crumb');if(!cr||cr.querySelector('.at-asklink'))return;
+ function decorate(){if(PUBLIC_PRACTICE)return;var main=document.querySelector('main');if(!main)return;var cr=main.querySelector('.crumb');if(!cr||cr.querySelector('.at-asklink'))return;
   if(V.screen==='domus'&&main.querySelector('[data-act="dm-room"][data-r="atrium"][aria-selected="true"]'))return;
   var ok=(V.screen==='lesson'&&V.lesson)||(V.screen==='domus'&&V.ws)||V.lab;if(!ok)return;
   var b=document.createElement('span');b.className='at-asklink';b.innerHTML=' · <button class="link" data-act="atr-ask">Ask the Atrium</button>';cr.appendChild(b);
@@ -15938,7 +15939,7 @@ function assignmentCatalog(){
 }
 function assignmentsPanel(){
  var h='<section class="panel"><h2>Assignments from the Tablinum and practice areas</h2><p>Assign to the class or one approved student. Existing worksheets and projects keep their answers and submission logic.</p><div class="pilot-fields"><label>Material<select id="pilot-assignment">'+assignmentCatalog().map(function(a){return '<option value="'+esc(a.id)+'">'+esc((a.lesson?'Lesson '+ROMAN[a.lesson-1]:'Introduction')+' · '+a.title)+'</option>'}).join('')+'</select></label><label>Due date (optional)<input type="date" id="pilot-due"></label><label>Audience<select id="pilot-audience"><option value="all">Whole class</option>'+CLOUD.rows.filter(function(r){return r.status==='active'}).map(function(r){return '<option value="'+esc(r.uid)+'">'+esc(r.displayName)+'</option>'}).join('')+'</select></label></div><button class="btn" data-act="pilot-assign">Publish assignment</button>';
- h+=table(['Assignment','Due','Audience','Submitted / completed','Actions'],CP.assignments.map(function(a){var applicable=CLOUD.rows.filter(function(r){return r.status==='active'&&(!a.audience.length||a.audience.indexOf(r.uid)>=0)}),done=applicable.filter(function(r){var s=r.profile&&r.profile.summary&&r.profile.summary.assignments&&r.profile.summary.assignments[a.id];return s==='submitted'||s==='completed'}).length;return [esc(a.title),esc(a.due||'—'),a.audience.length?esc((CLOUD.rows.find(function(r){return r.uid===a.audience[0]})||{}).displayName||'Selected student'):'Whole class',done+' / '+applicable.length,'<button class="btn sm ghost" data-act="pilot-unassign" data-id="'+esc(a.id)+'">Remove assignment</button>']}));
+ h+=table(['Assignment','Due','Audience',''+(PUBLIC_PRACTICE?"Saved and checked":"Submitted")+' / completed','Actions'],CP.assignments.map(function(a){var applicable=CLOUD.rows.filter(function(r){return r.status==='active'&&(!a.audience.length||a.audience.indexOf(r.uid)>=0)}),done=applicable.filter(function(r){var s=r.profile&&r.profile.summary&&r.profile.summary.assignments&&r.profile.summary.assignments[a.id];return s==='submitted'||s==='completed'}).length;return [esc(a.title),esc(a.due||'—'),a.audience.length?esc((CLOUD.rows.find(function(r){return r.uid===a.audience[0]})||{}).displayName||'Selected student'):'Whole class',done+' / '+applicable.length,'<button class="btn sm ghost" data-act="pilot-unassign" data-id="'+esc(a.id)+'">Remove assignment</button>']}));
  return h+'<p class="note">Removing an assignment keeps all student work. Completion updates on each student’s next online save.</p></section>';
 }
 function selectField(id,label,value,options){return '<label>'+esc(label)+'<select id="'+id+'">'+options.map(function(o){return '<option value="'+esc(o[0])+'"'+(String(value)===String(o[0])?' selected':'')+'>'+esc(o[1])+'</option>'}).join('')+'</select></label>'}
@@ -15998,7 +15999,7 @@ function eligibleFor(questions){var trained=window.__circusAPI?window.__circusAP
 function roomList(){
  return '<section class="panel"><h2>Live rounds</h2>'+(!CP.settings.circus.liveEnabled?'<p>Your instructor has paused live rounds.</p>':CP.rooms.length?CP.rooms.map(function(r){var ended=r.startsAt&&classroom().now()>=r.startsAt.toMillis()+120000,can=eligibleFor(r.questions||[]),open=r.status==='lobby'?'Open lobby':r.status==='cancelled'?'Cancelled':ended?'Results':'In progress';return '<div class="dmrow"><div style="flex:1 1 210px"><b>'+esc(r.title)+'</b><div class="note">'+esc(open)+' · '+esc(r.event)+'</div></div>'+(r.status==='cancelled'?'':'<button class="btn sm ghost" data-act="pilot-room-open" data-id="'+esc(r.id)+'"'+(!CLOUD.teacher&&!can?' disabled':'')+'>'+esc(open)+'</button>')+'</div>'+(!CLOUD.teacher&&!can?'<p class="note">Train the lessons in this round to enter.</p>':'')}).join(''):'<p>No live round is open. Your instructor can open one from Teacher → Circus & factions.</p>')+'</section>';
 }
-function sharedCircusMenu(){
+function sharedCircusMenu(){if(PUBLIC_PRACTICE)return '';
  if(!CP.started)return '<section class="panel"><h2>Classmate races</h2><p>Join your class under Account and wait for instructor approval to open shared races. Trainer races remain available.</p></section>';
  var ghosts=CP.ghosts.filter(function(g){return g.uid!==AUTH.uid&&eligibleFor(g.questions||[])});
  var recentPoints=(S.pilot&&S.pilot.lastRacePoints)||60;
@@ -16114,14 +16115,14 @@ setInterval(function(){
  }
  var e=document.getElementById('pilot-seconds'),bar=document.getElementById('pilot-time');if(e)e.textContent=Math.max(0,Math.ceil((12000-elapsed)/1000));if(bar)bar.style.width=Math.max(0,100*(12000-elapsed)/12000)+'%';
 },200);
-window.__pilotTrainerFinished=function(R){
+window.__pilotTrainerFinished=function(R){if(PUBLIC_PRACTICE)return;
  if(!PC||!AUTH.uid||!R||!R.done||R.pilotGhost)return;
  var pack=PC.questionPack(R.ids||[],function(id){return R.items[(R.ids||[]).indexOf(id)]});if(pack.length!==8)return;
  R.pilotGhost=true;var pending={id:crypto.randomUUID().replace(/-/g,''),alias:alias(),event:R.ev,questions:pack,answers:R.log.map(function(a){return {choice:a.choice,ms:Math.min(12000,Math.round(a.ms))}})};
  var p=S.pilot=S.pilot||{};(p.pendingGhosts=p.pendingGhosts||[]).push(pending);persist();publishPendingGhosts();
 };
 var publishingGhosts=false;
-async function publishPendingGhosts(){
+async function publishPendingGhosts(){if(PUBLIC_PRACTICE)return;
  if(!CP.started||publishingGhosts||!CP.settings.circus.ghostEnabled)return;
  publishingGhosts=true;try{var pending=S.pilot&&S.pilot.pendingGhosts||[];while(pending.length){await classroom().publishGhost(pending[0]);pending.shift();persist();}}catch(e){pilotError(e)}finally{publishingGhosts=false}
 }
@@ -16799,6 +16800,33 @@ if (PUBLIC_PRACTICE) {
   window.addEventListener('pagehide',function(){if(S.user)persist()});
   document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden'&&S.user)persist()});
   if (localStore.issue) localStatus();
+  var publicPracticeMarkup=function(h) {
+    return h
+      .replace(/<details[^>]*><summary>Have a class code from your teacher\?[\s\S]*?<\/details>/g,'')
+      .replace(/<button[^>]*data-act="open-board"[^>]*>[\s\S]*?<\/button>/g,'')
+      .replace(/<div class="speccard">(?:(?!<div class="speccard">)[\s\S])*?<b[^>]*>Victories<\/b>[\s\S]*?<\/div><\/div>/g,'')
+      .replace(/<button[^>]*data-act="(?:ai-check|lab-ai|set-ai)"[^>]*>[\s\S]*?<\/button>/g,'')
+      .replace(/against trainers, ghosts, and classmates/g,'against trainers')
+      .replace(/The record of victories is kept here too\./g,'Your game records stay on this device.')
+      .replace(/; the Atrium is where students help one another/g,'; the Atrium introduces Roman patronage')
+      .replace(/and 10 for each lesson you finish while you have a patron in the Atrium\./g,'.')
+      .replace(/Helping classmates in the Atrium \([\s\S]*?service your teacher assigns\./g,'Peer tutoring rewards are available in the classroom edition.')
+      .replace(/Līberālitās can come from tutoring in the Atrium or from service your teacher assigns\./g,'Peer tutoring rewards are available in the classroom edition.')
+      .replace(/The final rank, which opens in the full course, asks for balance:[\s\S]*?six virtues\./g,'')
+      .replace(/The first \d+ Ludus bouts and \d+ ghost bouts each day pay/g,'The first 5 Ludus bouts each day pay');
+  }
+  screenTeacherCloud=screenSignin;
+  screenBoard=function(){return screenSignin()};
+  /* Disable hidden/stale classroom actions as well as their visible controls. */
+  Object.keys(ACT).forEach(function(k){
+    if (/^(teacher-|class-|board-|at-|atr-|pilot-(?:room-|ghost-|race-|assign|unassign|save-|faction|finish-|open-assignment)|auth-|cloud-)/.test(k) ||
+        ['ar-find','ar-ghost','ar-ranked','ar-baseline','ar-share','ar-cp-publish','forum-code','dm-assign','cir-mode','bb-mode','bb-task','bb-paid','ai-check','lab-ai','set-ai'].indexOf(k)>=0) {
+      ACT[k]=function(){return false};
+    }
+  });
+  ACT['open-board']=function(){V.screen='signin';render(true)};
+  window.__pilotTrainerFinished=function(){};
+
 }
 
 render();

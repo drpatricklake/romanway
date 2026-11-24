@@ -42,4 +42,10 @@ jobs:
       - name: Browser interaction and mobile Circus presentation
         run: npm run test:browser
         working-directory: developer/tests
+      - name: Public Practice static isolation and browser response storage
+        if: github.ref_name == 'public-practice' || github.head_ref == 'public-practice'
+        run: |
+          node scripts/build-public-practice.mjs
+          node developer/tests/public-isolation.test.mjs
+          node developer/tests/public-browser.test.mjs
 
