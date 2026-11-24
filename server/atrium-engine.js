@@ -20,6 +20,8 @@ export const RULES = Object.freeze({
   minSubstantive: 50,       // characters of trimmed reply text
   maxReplyText: 1200,
   repliesPerDay: 3,         // rewarded replies per helper per local day
+  xpQuestion: 5,            // substantive help request, once per student and lesson, Cōnstantia
+  minQuestionExplanation: 50,
   xpReply: 5,
   xpHelpful: 10,            // once per question and helper
   dailyCombined: 30,        // reply + helpful XP per helper per local day
@@ -177,6 +179,15 @@ export function createAtriumRewards({ store, now = () => Date.now(), ownerUid = 
     const lesson = Number(qd.value?.lesson);
     if (!Number.isInteger(lesson) || lesson < 1 || lesson > 57) return;
     const q = { id: qid, data: qd, lesson };
+    // Reward help-seeking, not copying the exercise prompt. Stable lesson key prevents farming.
+    const v=qd.value||{},tried=typeof v.tried==='string'?v.tried.replace(/\s+/g,' ').trim():'',dont=typeof v.dont==='string'?v.dont.replace(/\s+/g,' ').trim():'';
+    if(qid===`${qd.owner}_${v.id}` && typeof v.q==='string' && v.q.trim() && tried && dont
+      && tried.length<=200 && dont.length<=250 && (tried+' '+dont).length>=RULES.minQuestionExplanation){
+      const asker=await person(ctx,qd.owner);
+      if(asker.active&&!asker.staff && (!qd.audience||qd.audience==='all'||await pairingOk(ctx,qd.owner,qd.audience))){
+        await apply(ctx,{kind:'question',v:'con',uid:qd.owner,key:`ask:${lesson}`,tMs:snap.createMs,qid,lesson,xp:RULES.xpQuestion});
+      }
+    }
     const replies = (await store.list(`${base}/atriumQuestions/${qid}/replies`, { limit: LIMITS.repliesPerQuestion })).sort((a, b) => a.createMs - b.createMs);
     const thanks = (await store.list(`${base}/atriumQuestions/${qid}/thanks`, { limit: 200 })).sort((a, b) => a.createMs - b.createMs);
     const ok = new Map();

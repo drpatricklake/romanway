@@ -338,3 +338,39 @@ function world(opts = {}) {
 }
 
 console.log('PASS atrium-engine: eligibility from stored data, caps, once-only awards, two tabs, simultaneous requests, forced retries, repeated marks, kept awards, private questions, class boundaries, bounded work, rate limit, and local days.');
+
+// Help-seeking is separate from helper XP and follow-up XP; repeated questions never multiply it.
+{
+ const w=world();const q=w.q('alice','help');
+ const path=`${w.root}/atriumQuestions/${q}`;
+ const data=w.store.data(path);
+ data.value.tried='I tried using the dative ending after this preposition.';
+ data.value.dont='I do not understand why motion changes which case to use.';
+ w.store.seed(path,data,NOON);
+ await Promise.all([w.settle('alice',{questions:[q]}),w.settle('alice',{questions:[q]})]);
+ assert.equal(w.xp('alice','con'),5);
+ const q2=w.q('alice','again');w.store.seed(`${w.root}/atriumQuestions/${q2}`,{...data,value:{...data.value,id:'again'}},NOON+MIN);
+ await w.settle('alice',{questions:[q2,q]});assert.equal(w.xp('alice','con'),5);
+ const q3=w.q('alice','next',{lesson:6});const d3=w.store.data(`${w.root}/atriumQuestions/${q3}`);d3.value={...d3.value,tried:data.value.tried,dont:data.value.dont};w.store.seed(`${w.root}/atriumQuestions/${q3}`,d3,NOON);
+ await w.settle('alice',{questions:[q3]});assert.equal(w.xp('alice','con'),10);
+ w.store.seed(path,{...data,deleted:true},NOON);await w.settle('alice',{questions:[q]});assert.equal(w.xp('alice','con'),10);
+}
+for(const mode of ['short','empty','teacher','declined','hidden','old','private','padding']){
+ const w=world();const owner=mode==='teacher'?'teach':mode==='declined'?'erin':'alice';
+ const q=w.q(owner,'help',{hidden:mode==='hidden',audience:mode==='private'?'bob':'all'}),path=`${w.root}/atriumQuestions/${q}`,d=w.store.data(path);
+ d.value.tried=mode==='empty'?'':mode==='short'?'Dative':'I attempted to identify the noun case after this preposition.';
+ d.value.dont=mode==='short'?'Why?':'I do not understand how the direction affects the case.';
+ if(mode==='padding'){d.value.tried='Why'+ ' '.repeat(100);d.value.dont='Case?'}
+ w.store.seed(path,d,mode==='old'?NOON-7200000:NOON);
+ await w.settle('teach',{questions:[q]});assert.equal(w.xp(owner,'con'),0,mode);
+}
+console.log('PASS help-request Cōnstantia: once per lesson, concurrent retries, next lesson, preserved awards, explanation and enrollment gates.');
+
+{
+ const w=world(),q=w.q('alice','cycle'),path=`${w.root}/atriumQuestions/${q}`,d=w.store.data(path);
+ d.value.tried='I tried to identify the case using the preposition.';d.value.dont='I do not understand why a different case is needed here.';
+ w.store.seed(path,d,NOON);w.reply(q,'bob','hint');
+ w.store.seed(`${w.root}/atriumFollowups/alice_5`,{uid:'alice',lesson:5},NOON+MIN);
+ await w.settle('alice',{questions:[q],followups:[5]});assert.equal(w.xp('alice','con'),15);
+ await w.settle('alice',{questions:[q],followups:[5]});assert.equal(w.xp('alice','con'),15);
+}
