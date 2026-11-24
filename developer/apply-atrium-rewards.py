@@ -40,7 +40,7 @@ replace_once("""  var add=newAwards();if(add.length)changed=true;
   if(!changed){totals();return Promise.resolve()}
   return save(function(x){x.done=done;x.mastered=mu;x.earned=(x.earned||[]).concat(add)},true)}""",
 """  if(!changed){totals();settleMine();return Promise.resolve()}
-  return save(function(x){x.done=done;x.mastered=mu},true).then(function(saved){if(saved!==false)settleMine()})}""")
+  return save(function(x){x.done=done;x.mastered=mu},true).then(function(saved){if(saved!==false)settleMine();return saved})}""")
 replace_between(" function totals(){", " /* ---------- capturing what the student is stuck on", """ function totals(){var lib=0,con=0;(mine().earned||[]).forEach(function(e){if(e.v==='lib')lib+=e.xp;else if(e.v==='con')con+=e.xp});var x=S.xp=S.xp||{};x.atr={lib:lib,con:con,src:'ledger',t:Date.now()};persist()}
  function award(){return Promise.resolve()}
  function friendlyErr(e){var c=e&&(e.code||e.status);if(c==='permission-denied')return 'Your account could not access this Atrium item. Reload and try again; if it continues, contact your instructor.';if(c===429)return 'Please wait a moment and try again.';return 'Something went wrong. Try again in a moment.'}
@@ -110,4 +110,21 @@ replace_once("function(e){AT.err=code(e)})}).then(function(){if(!quiet)render(tr
              "function(e){AT.err='';AT.msg=friendlyErr(e);return false})}).then(function(saved){if(!quiet)render(true);return saved})}")
 replace_once("}).then(function(){AT.reply=null;AT.msg='';return sync()}).then(function(){render(true)})};",
              "}).then(function(saved){if(!saved){render(true);return}AT.reply=null;AT.msg='';return sync()}).then(function(){render(true)})};")
+(repo / 'index.html').write_text(s)
+
+# Discussion reads are the loading boundary. Progress writes and real-name lookup follow in the background.
+replace_once(".then(function(){AT.loaded=true;return sync()}).then(function(){", ".then(function(){AT.loaded=true;AT.syncing=true;var me=AT.me,social=window.RomanWayData&&window.RomanWayData.social;var started=Date.now();Promise.resolve().then(sync).catch(function(){return false}).then(function(saved){if(AT.me!==me||!window.RomanWayData||window.RomanWayData.social!==social)return;AT.syncing=saved===false?'failed':false;AT.syncMs=Date.now()-started;if(!AT.reply&&AT.tab!=='ask')render(true)});return null}).then(function(){")
+replace_once("if(AT.canEdit&&u.profiles)return u.profiles(Object.keys(AT.docs)).then(function(ps){AT.real={};Object.keys(ps||{}).forEach(function(k){AT.real[k]=(ps[k]&&ps[k].name)||''})},function(){})", "if(AT.canEdit&&u.profiles){var me=AT.me,social=window.RomanWayData&&window.RomanWayData.social;u.profiles(Object.keys(AT.docs)).then(function(ps){if(AT.me!==me||!window.RomanWayData||window.RomanWayData.social!==social)return;AT.real={};Object.keys(ps||{}).forEach(function(k){AT.real[k]=(ps[k]&&ps[k].name)||''});if(!AT.reply&&AT.tab!=='ask')render(true)},function(){})}")
+replace_once("A['at-reply']=function(t){AT.reply=", "A['at-reply']=function(t){if(AT.syncing&&!AT.canEdit){AT.msg=AT.syncing==='failed'?'Your lesson eligibility could not be updated. Select Refresh to retry.':'Updating your lesson eligibility. Please wait a moment.';render();return}AT.reply=")
+# Keep the queue visible, but do not start a claim before the mastery profile reaches Firebase.
+replace_once("else if(!open)ex+=", "else if(AT.syncing&&!AT.canEdit)ex+='<p class=\"note\">'+(AT.syncing==='failed'?'Your lesson eligibility could not be updated. Select Refresh to retry.':'Updating your lesson eligibility…')+'</p>';else if(!open)ex+=")
+# On-device timing contains durations and operation labels only, never names, answers or identifiers.
+replace_once("if(AT.busy)return;AT.busy=true;AT.err=null;", "if(AT.busy)return;AT.busy=true;AT.err=null;AT.openedAt=Date.now();")
+replace_once(".then(function(){AT.busy=false;render(true)})}", ".then(function(){AT.busy=false;AT.readMs=Date.now()-AT.openedAt;render(true)})}")
+replace_once("var h=art+'<div class=\"panel\"><h2 style=\"margin:0 0 .3em;font-size:1.3rem\">The Atrium", "var diag=window.RomanWayAtriumTiming||{};var h=art+(AT.loaded?'<details class=\"panel\"><summary>Loading diagnostics</summary><pre>'+esc(JSON.stringify({discussionMs:AT.readMs,eligibilityMs:AT.syncing?'updating':AT.syncMs,database:diag},null,2))+'</pre></details>':'')+'<div class=\"panel\"><h2 style=\"margin:0 0 .3em;font-size:1.3rem\">The Atrium")
+# Ignore late save callbacks after sign-out/account changes.
+replace_once("return db.doc('atrium/'+AT.me).set(d).then(function(){AT.docs[AT.me]=d;",
+             "var savingMe=AT.me,savingSocial=window.RomanWayData&&window.RomanWayData.social;return db.doc('atrium/'+savingMe).set(d).then(function(){if(AT.me!==savingMe||!window.RomanWayData||window.RomanWayData.social!==savingSocial)return false;AT.docs[savingMe]=d;")
+replace_once("function(e){AT.err='';AT.msg=friendlyErr(e);return false}",
+             "function(e){if(AT.me!==savingMe||!window.RomanWayData||window.RomanWayData.social!==savingSocial)return false;AT.err='';AT.msg=friendlyErr(e);return false}")
 (repo / 'index.html').write_text(s)

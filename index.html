@@ -13999,25 +13999,25 @@ var screenDomus;
  function hidden(key){return !!(AT.set.hidden&&AT.set.hidden[key])}
  /* ---------- loading and saving ---------- */
  function load(){
-  if(AT.busy)return;AT.busy=true;AT.err=null;
+  if(AT.busy)return;AT.busy=true;AT.err=null;AT.openedAt=Date.now();
   Promise.all([getDb(),getUser()]).then(function(r){var db=r[0],u=r[1];if(!db||!u){AT.err='no-shared-storage';return}
    return Promise.all([u.id(),u.canEdit(),u.isOwner()]).then(function(p){AT.me=p[0];AT.canEdit=!!(p[1]||p[2]);if(!AT.me){AT.err='no-shared-storage';return}
     return Promise.all([db.doc('settings/atrium').get().then(function(s){var d=s.exists?(s.data()||{}):{};AT.set={approve:d.approve!==false,ok:d.ok||{},hidden:d.hidden||{},rewardsFrom:d.rewardsFrom}},function(){}),
-     db.collection('atrium').get().then(function(q){var o={};q.docs.forEach(function(d){o[d.id]=d.data()||{}});AT.docs=o})]).then(function(){AT.loaded=true;return sync()}).then(function(){
-      if(AT.canEdit&&u.profiles)return u.profiles(Object.keys(AT.docs)).then(function(ps){AT.real={};Object.keys(ps||{}).forEach(function(k){AT.real[k]=(ps[k]&&ps[k].name)||''})},function(){})})})})
-  .catch(function(e){AT.err=code(e)}).then(function(){AT.busy=false;render(true)})}
+     db.collection('atrium').get().then(function(q){var o={};q.docs.forEach(function(d){o[d.id]=d.data()||{}});AT.docs=o})]).then(function(){AT.loaded=true;AT.syncing=true;var me=AT.me,social=window.RomanWayData&&window.RomanWayData.social;var started=Date.now();Promise.resolve().then(sync).catch(function(){return false}).then(function(saved){if(AT.me!==me||!window.RomanWayData||window.RomanWayData.social!==social)return;AT.syncing=saved===false?'failed':false;AT.syncMs=Date.now()-started;if(!AT.reply&&AT.tab!=='ask')render(true)});return null}).then(function(){
+      if(AT.canEdit&&u.profiles){var me=AT.me,social=window.RomanWayData&&window.RomanWayData.social;u.profiles(Object.keys(AT.docs)).then(function(ps){if(AT.me!==me||!window.RomanWayData||window.RomanWayData.social!==social)return;AT.real={};Object.keys(ps||{}).forEach(function(k){AT.real[k]=(ps[k]&&ps[k].name)||''});if(!AT.reply&&AT.tab!=='ask')render(true)},function(){})}})})})
+  .catch(function(e){AT.err=code(e)}).then(function(){AT.busy=false;AT.readMs=Date.now()-AT.openedAt;render(true)})}
  /* keep my record current: name, progress, the first time each lesson was finished, and any newly earned rewards */
  function sync(){
   var d=mine(),f=furthest(),mu=masteredUpTo(),changed=!AT.docs[AT.me]||d.name!==myName()||d.furthest!==f||d.mastered!==mu,done=Object.assign({},d.done||{});
   for(var n=1;n<=57;n++)if(complete(n)&&!done[n]){done[n]=Date.now();changed=true}
   if(!changed){totals();settleMine();return Promise.resolve()}
-  return save(function(x){x.done=done;x.mastered=mu},true).then(function(saved){if(saved!==false)settleMine()})}
+  return save(function(x){x.done=done;x.mastered=mu},true).then(function(saved){if(saved!==false)settleMine();return saved})}
  function save(mut,quiet){
   return getDb().then(function(db){if(!db||!AT.me){AT.err='no-shared-storage';return}
    var d=JSON.parse(JSON.stringify(mine()));d.asks=d.asks||[];d.replies=d.replies||[];d.thanks=d.thanks||[];d.reports=d.reports||[];d.earned=d.earned||[];d.hist=d.hist||[];d.clients=d.clients||[];d.done=d.done||{};
    mut(d);d.name=myName();d.furthest=furthest();d.mastered=masteredUpTo();d.t=Date.now();
    d.asks=prune(d.asks,MAXASK);d.replies=d.replies.slice(-MAXREP);d.thanks=d.thanks.slice(-300);d.reports=d.reports.slice(-100);d.hist=d.hist.slice(-50);
-   return db.doc('atrium/'+AT.me).set(d).then(function(){AT.docs[AT.me]=d;AT.err='';AT.msg='';totals();return true},function(e){AT.err='';AT.msg=friendlyErr(e);return false})}).then(function(saved){if(!quiet)render(true);return saved})}
+   var savingMe=AT.me,savingSocial=window.RomanWayData&&window.RomanWayData.social;return db.doc('atrium/'+savingMe).set(d).then(function(){if(AT.me!==savingMe||!window.RomanWayData||window.RomanWayData.social!==savingSocial)return false;AT.docs[savingMe]=d;AT.err='';AT.msg='';totals();return true},function(e){if(AT.me!==savingMe||!window.RomanWayData||window.RomanWayData.social!==savingSocial)return false;AT.err='';AT.msg=friendlyErr(e);return false})}).then(function(saved){if(!quiet)render(true);return saved})}
  function prune(a,max){if(a.length<=max)return a;var keep=a.slice();while(keep.length>max){var i=keep.findIndex(function(x){return x.deleted||!x.open});keep.splice(i>=0?i:0,1)}return keep}
  function saveSettings(mut){return getDb().then(function(db){if(!db)return;var s=JSON.parse(JSON.stringify(AT.set));mut(s);return db.doc('settings/atrium').set(s).then(function(){AT.set=s},function(e){AT.err=code(e)})}).then(function(){render(true)})}
  /* ---------- pairing: one active client per patron in the pilot ---------- */
@@ -14104,7 +14104,7 @@ var screenDomus;
    var ex=(cl.length?'<p class="note" style="margin:.3em 0 0"><span class="chip">'+cl.map(function(c){return esc(nameOf(c.uid))}).join(', ')+' '+(cl.length>1?'are':'is')+' helping with this</span> (started '+ago(cl[0].t)+'). You can still add a reply, or choose another question.</p>':'')+
     '<details class="atd"><summary>'+(x.n?x.n+' repl'+(x.n>1?'ies':'y')+' so far':'No replies yet')+'</summary>'+repliesHtml(x.uid,a,false)+'</details>';
    if(!can)ex+='<p class="note" style="margin:.4em 0 0">This opens to you once you have mastered Lesson '+R(a.lesson)+'.</p>';
-   else if(!open)ex+='<p style="margin:.5em 0 0"><button class="btn sm" data-act="at-reply" data-u="'+x.uid+'" data-a="'+a.id+'">'+(already?'Add another reply':'I’ll help with this')+'</button></p>';
+   else if(AT.syncing&&!AT.canEdit)ex+='<p class="note">'+(AT.syncing==='failed'?'Your lesson eligibility could not be updated. Select Refresh to retry.':'Updating your lesson eligibility…')+'</p>';else if(!open)ex+='<p style="margin:.5em 0 0"><button class="btn sm" data-act="at-reply" data-u="'+x.uid+'" data-a="'+a.id+'">'+(already?'Add another reply':'I’ll help with this')+'</button></p>';
    else{var k=AT.reply.kind||'';
     ex+='<p style="margin:.6em 0 .2em"><b>How will you help?</b></p><div class="seg" role="group" aria-label="Kind of reply">'+KINDS.map(function(y){return '<button data-act="at-kind" data-v="'+y[0]+'" aria-pressed="'+(k===y[0])+'">'+y[1]+'</button>'}).join('')+'</div>'+
      '<label class="wl" for="at-rtext">Your reply</label><textarea class="fld" rows="4" id="at-rtext" maxlength="'+MAXTXT+'" placeholder="'+(k==='hint'?'For example: “Look at what kind of word comes after ad.”':(k==='check'?'For example: “You chose the dative because… but notice that…”':'For example: “Ad takes the accusative, so the noun after it ends in -am or -um.”'))+'">'+esc(AT.reply.text||'')+'</textarea>'+(AT.msg?'<p class="fb-no" role="status">'+esc(AT.msg)+'</p>':'')+
@@ -14174,7 +14174,7 @@ var screenDomus;
   return h}
  window.__atriumView=function(art){
   if(!AT.loaded&&!AT.busy&&!AT.err)setTimeout(load,0);
-  var h=art+'<div class="panel"><h2 style="margin:0 0 .3em;font-size:1.3rem">The Atrium</h2><p style="margin:0;max-width:72ch">In the atrium a Roman <i>patrōnus</i> received his <i>clientēs</i> each morning. Here classmates help one another: send a question you are stuck on, answer one you have mastered, or pair up as patron and client.</p></div>';
+  var diag=window.RomanWayAtriumTiming||{};var h=art+(AT.loaded?'<details class="panel"><summary>Loading diagnostics</summary><pre>'+esc(JSON.stringify({discussionMs:AT.readMs,eligibilityMs:AT.syncing?'updating':AT.syncMs,database:diag},null,2))+'</pre></details>':'')+'<div class="panel"><h2 style="margin:0 0 .3em;font-size:1.3rem">The Atrium</h2><p style="margin:0;max-width:72ch">In the atrium a Roman <i>patrōnus</i> received his <i>clientēs</i> each morning. Here classmates help one another: send a question you are stuck on, answer one you have mastered, or pair up as patron and client.</p></div>';
   if(AT.err==='no-shared-storage')return h+'<div class="panel"><p style="margin:0"><span class="chip">Needs the class page</span> The Atrium works when everyone opens the class’s hosted page and signs in, so that questions and replies can be shared. Sign in with Google and ask your instructor to approve your membership, then select Refresh.</p></div>';
   if(AT.err)return h+'<div class="panel"><p class="fb-no" style="margin:0">'+(AT.err==='permission-denied'?'Your account could not access this Atrium item. Reload and try again; if it continues, contact your instructor.':'The Atrium could not be loaded ('+esc(AT.err)+').')+' <button class="link" data-act="at-refresh">Try again</button></p></div>';
   if(!AT.loaded)return h+'<p class="note">Opening the Atrium…</p>';
@@ -14213,7 +14213,7 @@ var screenDomus;
    if(!tried||!dont){AT.msg='Fill in what you tried and what you don’t understand, so your helper knows where to start.';render();return}
    var pt=myPatron(),to=(AT.aud==='patron'&&pt&&pairActive(AT.me,pt))?pt:'all';
    save(function(d){d.asks=d.asks.concat([{id:uid(),t:Date.now(),lesson:L,where:D.where||'',q:q,mine:mineA,exp:exp,tried:tried,because:because,dont:dont,to:to,open:true}])}).then(function(){AT.draft=null;AT.form=null;AT.pick=null;AT.aud='all';AT.tab='mine';render(true)})};
-  A['at-reply']=function(t){AT.reply={uid:t.dataset.u,id:t.dataset.a,text:'',kind:''};AT.msg='';render();save(function(d){d.claim={asker:t.dataset.u,ask:t.dataset.a,t:Date.now()}},true)};
+  A['at-reply']=function(t){if(AT.syncing&&!AT.canEdit){AT.msg=AT.syncing==='failed'?'Your lesson eligibility could not be updated. Select Refresh to retry.':'Updating your lesson eligibility. Please wait a moment.';render();return}AT.reply={uid:t.dataset.u,id:t.dataset.a,text:'',kind:''};AT.msg='';render();save(function(d){d.claim={asker:t.dataset.u,ask:t.dataset.a,t:Date.now()}},true)};
   A['at-kind']=function(t){if(!AT.reply)return;var e=document.getElementById('at-rtext');if(e)AT.reply.text=e.value;AT.reply.kind=t.dataset.v;AT.msg='';render()};
   A['at-cancel']=function(){AT.reply=null;AT.msg='';clearClaim();render()};
   A['at-send']=function(t){var e=document.getElementById('at-rtext'),txt=clean(e?e.value:'',MAXTXT);if(AT.reply)AT.reply.text=txt;
