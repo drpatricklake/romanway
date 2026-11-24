@@ -14010,8 +14010,8 @@ var screenDomus;
  function sync(){
   var d=mine(),f=furthest(),mu=masteredUpTo(),changed=!AT.docs[AT.me]||d.name!==myName()||d.furthest!==f||d.mastered!==mu,done=Object.assign({},d.done||{});
   for(var n=1;n<=57;n++)if(complete(n)&&!done[n]){done[n]=Date.now();changed=true}
-  if(!changed){totals();return settleMine()}
-  return save(function(x){x.done=done;x.mastered=mu},true).then(function(){return settleMine()})}
+  if(!changed){totals();settleMine();return Promise.resolve()}
+  return save(function(x){x.done=done;x.mastered=mu},true).then(function(saved){if(saved!==false)settleMine()})}
  function save(mut,quiet){
   return getDb().then(function(db){if(!db||!AT.me){AT.err='no-shared-storage';return}
    var d=JSON.parse(JSON.stringify(mine()));d.asks=d.asks||[];d.replies=d.replies||[];d.thanks=d.thanks||[];d.reports=d.reports||[];d.earned=d.earned||[];d.hist=d.hist||[];d.clients=d.clients||[];d.done=d.done||{};
@@ -14035,7 +14035,13 @@ var screenDomus;
  function serverSettle(h){var s=window.RomanWayData&&window.RomanWayData.social;return s&&s.settle?s.settle(h):Promise.resolve({awarded:[],applied:0})}
  var SETTLING=false;
  function settleMine(extra){
-  if(SETTLING||!AT.me)return Promise.resolve();
+  var social=window.RomanWayData&&window.RomanWayData.social;
+  if(!AT.me)return Promise.resolve();
+  if(SETTLING&&SETTLING.me===AT.me&&SETTLING.social===social){
+   var pending=SETTLING;return pending.promise.then(function(){
+    if(AT.me===pending.me&&window.RomanWayData&&window.RomanWayData.social===social)return settleMine(extra)
+   })
+  }
   var qs={},cl={},me=AT.me;
   (mine().asks||[]).slice(-5).forEach(function(a){qs[me+'_'+a.id]=1});
   (mine().replies||[]).slice(-5).forEach(function(r){qs[r.to+'_'+r.ask]=1});
@@ -14043,9 +14049,16 @@ var screenDomus;
   if(myPatron())cl[me]=1;
   var h={questions:Object.keys(qs).slice(0,10),clients:Object.keys(cl).slice(0,2),followups:(extra&&extra.followups)||[]};
   if(!h.questions.length&&!h.clients.length&&!h.followups.length)return Promise.resolve();
-  SETTLING=true;
-  return serverSettle(h).then(function(r){SETTLING=false;return r&&r.applied>0?reloadLedger():null},function(e){SETTLING=false;return null})}
- function reloadLedger(){return getDb().then(function(db){return db?db.collection('atrium').get():null}).then(function(q){if(!q)return;var o={};q.docs.forEach(function(d){o[d.id]=d.data()||{}});AT.docs=o;totals();render(true)})}
+  var task={me:me,social:social};SETTLING=task;
+  task.promise=serverSettle(h).then(function(r){if(SETTLING===task)SETTLING=false;
+   if(AT.me!==me||!window.RomanWayData||window.RomanWayData.social!==social)return null;
+   return r&&r.applied>0?reloadLedger(me,social):null
+  },function(e){if(SETTLING===task)SETTLING=false;return null}).catch(function(){return null});return task.promise}
+ function reloadLedger(me,social){return social.db.collection('atrium-ledger').get().then(function(q){
+  if(AT.me!==me||!window.RomanWayData||window.RomanWayData.social!==social)return;
+  Object.keys(AT.docs).forEach(function(k){AT.docs[k].earned=[]});
+  q.docs.forEach(function(d){var o=AT.docs[d.id]||(AT.docs[d.id]={});o.earned=(d.data()||{}).earned||[]});totals();if(!AT.reply&&AT.tab!=='ask')render(true)
+ })}
  /* ---------- capturing what the student is stuck on ---------- */
  function capture(){
   var main=document.querySelector('main');if(!main)return null;

@@ -11,21 +11,27 @@ export function createSocial(db,identity){
  const snap=(value,id)=>({id,exists:!!value,data:()=>value});
  async function settings(name){const r=classRef(`socialSettings/${name}`);let s=await getDoc(r);if(name==='atrium'&&!s.exists()&&(loaded?teacher:await role())){await setDoc(r,{approve:true,ok:{},hidden:{}});s=await getDoc(r);}return s;}
  async function privateRecord(who){return getDoc(ref(`users/${who}/social/atrium`));}
+ async function ledgerRecords(){
+  if(!loaded)await role();
+  const ledger=collection(db,`${ROOT}/atriumLedger`),out={};
+  const led=await getDocs(teacher?ledger:query(ledger,where('uid','==',uid)));
+  led.docs.forEach(e=>{const x=e.data();(out[x.uid]||(out[x.uid]={earned:[]})).earned.push({...x,t:millis(x.t)});});
+  ensure();return {docs:Object.entries(out).map(([id,d])=>snap(d,id))};
+ }
  async function records(){
   if(!loaded)await role();
-  const profiles=await getDocs(collection(db,`${ROOT}/atriumProfiles`));const out={};
+  const threadRead=teacher?getDocs(collection(db,`${ROOT}/atriumQuestions`)).then(q=>q.docs):Promise.all([
+   getDocs(query(collection(db,`${ROOT}/atriumQuestions`),where('readers','array-contains-any',['all',uid]))),
+   getDocs(query(collection(db,`${ROOT}/atriumQuestions`),where('owner','==',uid)))
+  ]).then(qs=>[...new Map(qs.flatMap(q=>q.docs).map(d=>[d.id,d])).values()]);
+  // Independent reads share one network phase; rewards never trigger another thread scan.
+  const [profiles,own,threads,led]=await Promise.all([
+   getDocs(collection(db,`${ROOT}/atriumProfiles`)),privateRecord(uid),threadRead,ledgerRecords()
+  ]),out={};
   profiles.docs.forEach(p=>out[p.id]={...p.data(),asks:[],replies:[],thanks:[],reports:[],earned:[],hist:[]});
-  const own=await privateRecord(uid);out[uid]={...(out[uid]||{}),...(own.data()||{})};
-  delete out[uid].earned;   // XP written by a browser is not an XP source. Earlier totals return only as reviewed baseline entries in the server ledger.
+  out[uid]={...(out[uid]||{}),...(own.data()||{})};
+  delete out[uid].earned;
   delete out[uid].legacyEarned;
-  let threads;
-  if(teacher)threads=(await getDocs(collection(db,`${ROOT}/atriumQuestions`))).docs;
-  else{
-   const qs=await Promise.all([
-    getDocs(query(collection(db,`${ROOT}/atriumQuestions`),where('readers','array-contains-any',['all',uid]))),
-    getDocs(query(collection(db,`${ROOT}/atriumQuestions`),where('owner','==',uid)))
-   ]);threads=[...new Map(qs.flatMap(q=>q.docs).map(d=>[d.id,d])).values()];
-  }
   await Promise.all(threads.map(async t=>{
    const q=t.data(),owner=out[q.owner]||(out[q.owner]={asks:[],replies:[],thanks:[]});
    owner.asks=(owner.asks||[]).filter(a=>a.id!==q.value.id).concat([q.value]);
@@ -44,10 +50,8 @@ export function createSocial(db,identity){
    }
   }));
   if(teacher){await Promise.all(Object.keys(out).map(async who=>{let s;try{s=await privateRecord(who)}catch(e){if(e.code==='permission-denied')return;throw e}const d=s.data();if(d)out[who]={...out[who],reports:d.reports||[],hist:d.hist||[],asks:d.asks||out[who].asks};}));}
-  // XP: only from the server ledger (a student sees their own entries; the instructor sees the class)
-  const ledger=collection(db,`${ROOT}/atriumLedger`);
-  const led=await getDocs(teacher?ledger:query(ledger,where('uid','==',uid)));
-  led.docs.forEach(e=>{const x=e.data(),o=out[x.uid]||(out[x.uid]={asks:[],replies:[],thanks:[]});o.earned=(o.earned||[]).concat([{...x,t:millis(x.t)}]);});
+  // Never use an old private XP array; only merge the server ledger fetched above.
+  led.docs.forEach(e=>{const o=out[e.id]||(out[e.id]={asks:[],replies:[],thanks:[]});o.earned=e.data().earned;});
   ensure();return {docs:Object.entries(out).map(([id,d])=>snap(d,id))};
  }
  async function saveRecord(who,value){
@@ -60,11 +64,11 @@ export function createSocial(db,identity){
   const profile={};for(const k of ['name','furthest','mastered','done','patron','client','clients','declined'])if(d[k]!==undefined)profile[k]=d[k];
   batch.set(classRef(`atriumProfiles/${uid}`),profile);
   // a lesson newly completed gets a server-time record, which lets the server tell whether it came after a tutoring reply
-  for(const L of Object.keys(d.done||{})){
-   if((prev.done||{})[L]!==undefined)continue;
+  await Promise.all(Object.keys(d.done||{}).map(async L=>{
+   if((prev.done||{})[L]!==undefined)return;
    const c=classRef(`atriumCompletions/${uid}_${L}`);
    if(!(await getDoc(c)).exists())batch.set(c,{uid,lesson:Number(L),t:serverTimestamp()});
-  }
+  }));
   for(const a of d.asks||[]){
    const prior=(prev.asks||[]).find(x=>x.id===a.id);
    if(JSON.stringify(a)===JSON.stringify(prior))continue;
@@ -111,7 +115,7 @@ export function createSocial(db,identity){
    async set(value){ensure();if(path.startsWith('settings/'))return saveSettings(path.split('/')[1],value);if(path.startsWith('followups/')){const lesson=Number(path.split('/')[1]),f=ref(`${ROOT}/atriumFollowups/${uid}_${lesson}`);if((await getDoc(f)).exists())return;return setDoc(f,{uid,lesson,t:serverTimestamp()});}if(path.startsWith('atrium/'))return saveRecord(path.slice(7),value);const p=translate(path);if(!p)throw new Error('Unknown shared path');return setDoc(ref(p),clone(value));},
    async delete(){const p=translate(path);if(!p)throw new Error('Unknown shared path');return deleteDoc(ref(p));}
   }},
-  collection(path){return {async get(){if(path==='atrium')return records();if(path==='scores'){const s=await getDocs(collection(db,`${ROOT}/socialScores`));ensure();return {docs:s.docs.map(d=>snap(d.data(),d.id))};}if(path==='arena'){const s=await getDocs(query(collection(db,`${ROOT}/arenaGhosts`),limit(100)));ensure();return {docs:s.docs.map(d=>snap(d.data(),d.id))};}throw new Error('Unknown shared collection');}};}
+  collection(path){return {async get(){if(path==='atrium')return records();if(path==='atrium-ledger')return ledgerRecords();if(path==='scores'){const s=await getDocs(collection(db,`${ROOT}/socialScores`));ensure();return {docs:s.docs.map(d=>snap(d.data(),d.id))};}if(path==='arena'){const s=await getDocs(query(collection(db,`${ROOT}/arenaGhosts`),limit(100)));ensure();return {docs:s.docs.map(d=>snap(d.data(),d.id))};}throw new Error('Unknown shared collection');}};}
  };
  async function settle(hints={}){
   const token=identity.getToken?await identity.getToken():null;
