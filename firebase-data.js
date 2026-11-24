@@ -1,11 +1,21 @@
 /* Roman Way pilot storage. Roles are enforced by firestore.rules, never by local state. */
 import {
-  getFirestore, doc, collection, getDoc, getDocs, setDoc, updateDoc,
+  initializeFirestore, doc, collection, getDoc, getDocs, setDoc, updateDoc,
   runTransaction, onSnapshot, serverTimestamp, query, orderBy,
 } from 'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js';
 
 import {createSocial} from './firebase-social.js';
 import {createClassroom} from './firebase-classroom.js';
+
+// Safari/WebKit can buffer streaming Firestore responses until a ~30 s heartbeat.
+// https://github.com/firebase/firebase-js-sdk/issues/9789
+// Use the documented immediate-response transport on Apple browsers, including iOS Chrome.
+export function firestoreTransportSettings(userAgent='') {
+  const appleMobile=/iPhone|iPad|iPod/i.test(userAgent);
+  const safari=/AppleWebKit/i.test(userAgent) && /Safari/i.test(userAgent)
+    && !/Chrome|Chromium|Edg|OPR|Android/i.test(userAgent);
+  return appleMobile || safari ? {experimentalForceLongPolling:true} : {};
+}
 
 export const OWNER_UID = 'ZU5goPmM28X40rVridJLtZ9JcBu2';
 const CHUNK_SIZE = 120000;
@@ -14,7 +24,7 @@ const conflict = () => Object.assign(new Error('Another device saved newer work.
 
 export function createStore(firebaseApp, identity, hooks, runtime = {localStorage, window, crypto}) {
   const {localStorage, window, crypto}=runtime;
-  const db = runtime.db || getFirestore(firebaseApp);
+  const db = runtime.db || initializeFirestore(firebaseApp,firestoreTransportSettings(window.navigator?.userAgent || ''));
   const CLASS=identity.classId || 'pilot';
   const classroom=createClassroom(db,identity);
   const social=createSocial(db,identity);
