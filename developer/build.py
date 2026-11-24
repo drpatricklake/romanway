@@ -56,3 +56,6 @@ s=(repo/'index.html').read_text()
 s=s.replace('<h2>Welcome</h2><p>Sign in with your Google account', '<h2>Welcome</h2><p><a href="/register.html">New classroom and account options</a></p><p>Sign in with your Google account',1)
 s=s.replace('<h1>Account</h1><section class="panel"><h2>Google sign-in</h2>', '<h1>Account</h1><p><a href="/register.html">Manage classrooms and account options</a></p><section class="panel"><h2>Google sign-in</h2>',1)
 (repo/'index.html').write_text(s)
+
+# Select a shared-code edition and add account-free browser saving.
+runpy.run_path(str(root/'apply-public-practice.py'),run_name='__main__')

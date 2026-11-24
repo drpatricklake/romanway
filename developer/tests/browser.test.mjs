@@ -25,8 +25,9 @@ app.setStatus('ready','');
 `;
 const server=http.createServer((req,res)=>{
  const name=(req.url||'/').split('?')[0];
+ if(name==='/app-config.js'){res.setHeader('Content-Type','text/javascript');res.end("window.RomanWayConfig={edition:'classroom'};");return}
  if(name==='/firebase-auth.js'){res.setHeader('Content-Type','text/javascript');res.end(mock);return}
- if(name==='/'||/^\/(pilot-core|word-forms)\.js$/.test(name)){
+ if(name==='/'||/^\/(pilot-core|word-forms|local-progress|app-bootstrap)\.js$/.test(name)){
   try{res.setHeader('Content-Type',name==='/'?'text/html':'text/javascript');res.end(readFileSync(new URL(name==='/'?'index.html':name.slice(1),root)));return}catch{}
  }
  res.statusCode=404;res.end('Not found');

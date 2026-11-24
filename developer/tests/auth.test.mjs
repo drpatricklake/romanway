@@ -87,6 +87,7 @@ function harness(filename) {
     atob: s => Buffer.from(s, 'base64').toString('binary'),
     fetch: async () => { throw new Error('Offline test'); },
   };
+  context.RomanWayConfig = {edition:'classroom'};
   context.window = context;
   context.self = context;
   vm.createContext(context);

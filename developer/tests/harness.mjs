@@ -34,7 +34,7 @@ function element() {
   };
 }
 
-function harness(filename) {
+function harness(filename, options = {}) {
   const exactHtml = readFileSync(filename, 'utf8');
   const scripts = Array.from(exactHtml.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi), (m) => m[1]);
   const app = scripts.find(s => s.includes('latin-proto-lesson1-v1') && s.includes('function render('));
@@ -46,7 +46,7 @@ function harness(filename) {
   const intervals=new Map();let nextInterval=1;
   hostNodes.get('nick').value = 'Review Student';
   const saved = new Map();
-  for(const [key,value] of Object.entries(globalThis.seedStorage || {}))saved.set(key,value);
+  for(const [key,value] of Object.entries(options.seedStorage || globalThis.seedStorage || {}))saved.set(key,value);
   let at = Date.parse('2026-11-18T16:00:00Z');
   class Clock extends Date {
     constructor(...args) { super(...(args.length ? args : [at])); }
@@ -88,9 +88,12 @@ function harness(filename) {
     atob: s => Buffer.from(s, 'base64').toString('binary'),
     fetch: async () => { throw new Error('Offline test'); },
   };
+  context.RomanWayConfig = {edition: options.edition || 'classroom'};
   context.window = context;
   context.self = context;
+  if(options.configure)options.configure(context, hostNodes, saved);
   vm.createContext(context);
+  vm.runInContext(readFileSync(new URL('../../local-progress.js',import.meta.url),'utf8'),context,{filename:'local-progress.js'});
   const getOptional = names => names.map(name => `${name}:typeof ${name}==='undefined'?null:${name}`).join(',');
   const hook = `
 window.probe = {get state(){return S},get view(){return V},actions:ACT,render:render,lessonTabs:lessonTabs,
@@ -246,8 +249,8 @@ function labRoundTrip(probe, known) {
   action(probe,'lab2-finish');
   assert.equal(model.labState(id).done,true);
   assert.equal(model.labState(id).tr2,translation);
-  const persisted = JSON.parse(probe.saved.get('latin-proto-lesson1-v1'+(probe.model.state.user.uid?':firebase:'+probe.model.state.user.uid:'')));
-  assert.equal(persisted.lab[id].tr2,translation);
+  const persisted = JSON.parse(probe.saved.get(probe.context.RomanWayConfig.edition==='public-practice'?'romanway:public-practice:progress:v1':'latin-proto-lesson1-v1'+(probe.model.state.user.uid?':firebase:'+probe.model.state.user.uid:'')));
+  assert.equal((persisted.progress||persisted).lab[id].tr2,translation);
   action(probe,'lab2-pref',{v:'full'});
   action(probe,'lab-back',{id});
   return {id, rejectedWrongType:true, acceptedCorrectType:true, acceptedVerbs:true, savedTranslation:true};
@@ -310,8 +313,8 @@ function games(probe) {
   }
   const arenaReward = context.__fc.coins() - balance;
   assert.equal(model.state.arena.w - previousWins,1);
-  const persisted = JSON.parse(probe.saved.get('latin-proto-lesson1-v1'+(probe.model.state.user.uid?':firebase:'+probe.model.state.user.uid:'')));
-  assert.equal(persisted.arena.w,model.state.arena.w);
+  const persisted = JSON.parse(probe.saved.get(probe.context.RomanWayConfig.edition==='public-practice'?'romanway:public-practice:progress:v1':'latin-proto-lesson1-v1'+(probe.model.state.user.uid?':firebase:'+probe.model.state.user.uid:'')));
+  assert.equal((persisted.progress||persisted).arena.w,model.state.arena.w);
   return {forumReward, rounds, won:true, arenaReward, savedWin:true};
 }
 
@@ -327,4 +330,4 @@ function run(filename) {
 }
 
 
-export {harness,action,grading,sentenceLab,lessons,plain,element};
+export {harness,action,grading,sentenceLab,lessons,plain,element,games};
