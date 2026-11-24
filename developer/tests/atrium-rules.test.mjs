@@ -43,6 +43,10 @@ try {
   assert.equal((await getDocs(query(collection(a, `${P}/atriumLedger`), where('uid', '==', 'alice')))).size, 1);
   await assertFails(getDocs(query(collection(a, `${P}/atriumLedger`), where('uid', '==', 'bob'))));
   assert.equal((await getDocs(collection(t, `${P}/atriumLedger`))).size, 2);
+  const ownLedger=await createSocial(a,{uid:'alice'}).db.collection('atrium-ledger').get();
+  assert.deepEqual(ownLedger.docs.map(d=>d.id),['alice']);
+  assert.equal(ownLedger.docs[0].data().earned[0].xp,5);
+  assert.equal((await createSocial(t,{uid:OWNER}).db.collection('atrium-ledger').get()).docs.length,2);
   for (const closed of ['atriumDaily/bob_2026-11-20', 'atriumRate/bob']) {                              // server bookkeeping is closed to every page
     await assertFails(getDoc(doc(b, `${P}/${closed}`)));
     await assertFails(setDoc(doc(b, `${P}/${closed}`), {replies: 0, xp: 0}));

@@ -39,8 +39,8 @@ replace_between(" function newAwards(){", " function totals(){", " function newA
 replace_once("""  var add=newAwards();if(add.length)changed=true;
   if(!changed){totals();return Promise.resolve()}
   return save(function(x){x.done=done;x.mastered=mu;x.earned=(x.earned||[]).concat(add)},true)}""",
-"""  if(!changed){totals();return settleMine()}
-  return save(function(x){x.done=done;x.mastered=mu},true).then(function(){return settleMine()})}""")
+"""  if(!changed){totals();settleMine();return Promise.resolve()}
+  return save(function(x){x.done=done;x.mastered=mu},true).then(function(saved){if(saved!==false)settleMine()})}""")
 replace_between(" function totals(){", " /* ---------- capturing what the student is stuck on", """ function totals(){var lib=0,con=0;(mine().earned||[]).forEach(function(e){if(e.v==='lib')lib+=e.xp;else if(e.v==='con')con+=e.xp});var x=S.xp=S.xp||{};x.atr={lib:lib,con:con,src:'ledger',t:Date.now()};persist()}
  function award(){return Promise.resolve()}
  function friendlyErr(e){var c=e&&(e.code||e.status);if(c==='permission-denied')return 'Your account could not access this Atrium item. Reload and try again; if it continues, contact your instructor.';if(c===429)return 'Please wait a moment and try again.';return 'Something went wrong. Try again in a moment.'}
@@ -48,7 +48,13 @@ replace_between(" function totals(){", " /* ---------- capturing what the studen
  function serverSettle(h){var s=window.RomanWayData&&window.RomanWayData.social;return s&&s.settle?s.settle(h):Promise.resolve({awarded:[],applied:0})}
  var SETTLING=false;
  function settleMine(extra){
-  if(SETTLING||!AT.me)return Promise.resolve();
+  var social=window.RomanWayData&&window.RomanWayData.social;
+  if(!AT.me)return Promise.resolve();
+  if(SETTLING&&SETTLING.me===AT.me&&SETTLING.social===social){
+   var pending=SETTLING;return pending.promise.then(function(){
+    if(AT.me===pending.me&&window.RomanWayData&&window.RomanWayData.social===social)return settleMine(extra)
+   })
+  }
   var qs={},cl={},me=AT.me;
   (mine().asks||[]).slice(-5).forEach(function(a){qs[me+'_'+a.id]=1});
   (mine().replies||[]).slice(-5).forEach(function(r){qs[r.to+'_'+r.ask]=1});
@@ -56,9 +62,16 @@ replace_between(" function totals(){", " /* ---------- capturing what the studen
   if(myPatron())cl[me]=1;
   var h={questions:Object.keys(qs).slice(0,10),clients:Object.keys(cl).slice(0,2),followups:(extra&&extra.followups)||[]};
   if(!h.questions.length&&!h.clients.length&&!h.followups.length)return Promise.resolve();
-  SETTLING=true;
-  return serverSettle(h).then(function(r){SETTLING=false;return r&&r.applied>0?reloadLedger():null},function(e){SETTLING=false;return null})}
- function reloadLedger(){return getDb().then(function(db){return db?db.collection('atrium').get():null}).then(function(q){if(!q)return;var o={};q.docs.forEach(function(d){o[d.id]=d.data()||{}});AT.docs=o;totals();render(true)})}
+  var task={me:me,social:social};SETTLING=task;
+  task.promise=serverSettle(h).then(function(r){if(SETTLING===task)SETTLING=false;
+   if(AT.me!==me||!window.RomanWayData||window.RomanWayData.social!==social)return null;
+   return r&&r.applied>0?reloadLedger(me,social):null
+  },function(e){if(SETTLING===task)SETTLING=false;return null}).catch(function(){return null});return task.promise}
+ function reloadLedger(me,social){return social.db.collection('atrium-ledger').get().then(function(q){
+  if(AT.me!==me||!window.RomanWayData||window.RomanWayData.social!==social)return;
+  Object.keys(AT.docs).forEach(function(k){AT.docs[k].earned=[]});
+  q.docs.forEach(function(d){var o=AT.docs[d.id]||(AT.docs[d.id]={});o.earned=(d.data()||{}).earned||[]});totals();if(!AT.reply&&AT.tab!=='ask')render(true)
+ })}
 """)
 
 # 4. XP counts toward the virtues only when it came from the ledger; the old local total is ignored
