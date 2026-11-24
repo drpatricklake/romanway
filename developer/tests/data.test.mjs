@@ -7,8 +7,20 @@ writeFileSync(new URL('./classroom-under-test.mjs',import.meta.url),classroomSou
 writeFileSync(new URL('./social-under-test.mjs',import.meta.url),readFileSync(new URL('../../firebase-social.js',import.meta.url),'utf8').replace("'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js'","'firebase/firestore'"));
 const source=readFileSync(new URL('../../firebase-data.js',import.meta.url),'utf8').replace("'https://www.gstatic.com/firebasejs/13.4.0/firebase-firestore.js'","'firebase/firestore'");
 writeFileSync(new URL('./data-under-test.mjs',import.meta.url),source.replace("'./firebase-classroom.js'","'./classroom-under-test.mjs'").replace("'./firebase-social.js'","'./social-under-test.mjs'"));
-const {createStore,OWNER_UID}=await import('./data-under-test.mjs');
+const {createStore,OWNER_UID,firestoreTransportSettings}=await import('./data-under-test.mjs');
 const env=await initializeTestEnvironment({projectId:'demo-romanway',firestore:{host:'127.0.0.1',port:8180,rules:readFileSync(new URL('../../firestore.rules',import.meta.url),'utf8')}});
+// Safari on macOS/iPadOS and every iOS browser need the transport workaround.
+for(const ua of [
+ 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_5 like Mac OS X) AppleWebKit/605.1.15 Version/26.5 Mobile/15E148 Safari/604.1',
+ 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/26.4 Safari/605.1.15',
+ 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_4 like Mac OS X) AppleWebKit/605.1.15 CriOS/140.0 Mobile/15E148 Safari/604.1',
+ 'Mozilla/5.0 (iPad; CPU OS 26_4 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148'
+]) assert.equal(firestoreTransportSettings(ua).experimentalForceLongPolling,true);
+for(const ua of [
+ 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/140.0 Safari/537.36',
+ 'Mozilla/5.0 (Linux; Android 16) AppleWebKit/537.36 Chrome/140.0 Mobile Safari/537.36',
+ 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15) Gecko/20100101 Firefox/140.0', ''
+]) assert.deepEqual(firestoreTransportSettings(ua),{});
 const stores=[];
 function make(uid,state={},saved=new Map()){
  const claims={email:`${uid}@example.edu`,email_verified:true,firebase:{sign_in_provider:'google.com'}};
