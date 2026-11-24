@@ -31,7 +31,7 @@ try{
  await page.goto(base);
  await page.getByRole('button',{name:'Start or resume practice'}).click();
  await page.locator('[data-act="open-lesson"][data-l="1"]').first().click();
- await page.locator('[data-act="tab"][data-tab="notes"]').click();
+ await page.getByRole('tab',{name:'Guided notes',exact:true}).click();
  // Include interface-like wording to catch accidental rewriting of learner text.
  const answer='Submitted — Your instructor can read it. Local audit 824619.';
  await page.locator('#w-s1-conj').fill(answer);
@@ -40,7 +40,7 @@ try{
  await page.reload();
  await page.getByRole('button',{name:'Start or resume practice'}).click();
  await page.locator('[data-act="open-lesson"][data-l="1"]').first().click();
- await page.locator('[data-act="tab"][data-tab="notes"]').click();
+ await page.getByRole('tab',{name:'Guided notes',exact:true}).click();
  assert.equal(await page.locator('#w-s1-conj').inputValue(),answer);
  assert.doesNotMatch(await page.locator('body').innerText(),/your instructor can read these/i);
  await page.locator('[data-act="home"]').first().click();
