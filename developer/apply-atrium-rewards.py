@@ -98,7 +98,7 @@ replace_once("AT.set={approve:d.approve!==false,ok:d.ok||{},hidden:d.hidden||{}}
 replace_once("Account names appear only in this tab.</p></div>';",
              "Account names appear only in this tab.</p>'+(AT.set.rewardsFrom?'':'<p class=\"note\" style=\"margin:.5em 0 0\"><b>Server rewards have not started.</b> No XP is paid until the developer reviews the starting balances and sets the start time (see docs/atrium-mapping.md).</p>')+'</div>';")
 replace_once("(AT.docs[k].earned||[]).forEach(function(e){led.push({uid:k,e:e})})", "(AT.docs[k].earned||[]).forEach(function(e){if(e.xp>0)led.push({uid:k,e:e})})")
-replace_once("followup:'Follow-up practice'}[x.e.why]", "followup:'Follow-up practice',baseline:'Starting balance (reviewed)'}[x.e.why]")
+replace_once("followup:'Follow-up practice'}[x.e.why]", "followup:'Follow-up practice',baseline:'Starting balance (reviewed)',question:'Asked for help'}[x.e.why]")
 
 # 9. Permission failures do not by themselves prove that a page is outdated.
 replace_once("The Atrium could not be loaded ('+esc(AT.err)+').",
@@ -127,4 +127,11 @@ replace_once("return db.doc('atrium/'+AT.me).set(d).then(function(){AT.docs[AT.m
              "var savingMe=AT.me,savingSocial=window.RomanWayData&&window.RomanWayData.social;return db.doc('atrium/'+savingMe).set(d).then(function(){if(AT.me!==savingMe||!window.RomanWayData||window.RomanWayData.social!==savingSocial)return false;AT.docs[savingMe]=d;")
 replace_once("function(e){AT.err='';AT.msg=friendlyErr(e);return false}",
              "function(e){if(AT.me!==savingMe||!window.RomanWayData||window.RomanWayData.social!==savingSocial)return false;AT.err='';AT.msg=friendlyErr(e);return false}")
+(repo / 'index.html').write_text(s)
+
+# Settle the new question immediately; a rejected save keeps its form intact.
+replace_once("}).then(function(){AT.draft=null;AT.form=null;AT.pick=null;AT.aud='all';AT.tab='mine';render(true)})};",
+             "}).then(function(saved){if(!saved)return;AT.draft=null;AT.form=null;AT.pick=null;AT.aud='all';AT.tab='mine';render(true);settleMine()})};")
+replace_once("Stuck on a question? Send it to the Atrium.",
+             "Earn 5 Cōnstantia XP for a help request explaining what you tried and what you don’t understand (at least 50 characters combined), once per lesson. Shorter requests are welcome too. Stuck on a question? Send it to the Atrium.")
 (repo / 'index.html').write_text(s)
