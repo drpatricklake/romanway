@@ -1,6 +1,5 @@
 // Atrium rules and adapter, against the Firestore emulator.
-// Run through `npm test` (it starts the emulator). NOT RUN when this file was written: the emulator could not be downloaded in the
-// authoring environment, so these assertions have not yet been executed. Run them before deploying, and fix any that are wrong.
+// Run through `npm test` (it starts the emulator).
 import {readFileSync, writeFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {initializeTestEnvironment, assertFails, assertSucceeds} from '@firebase/rules-unit-testing';
@@ -162,5 +161,21 @@ try {
   await Promise.all([B.db.doc('atrium/bob').set(reopen),B.db.doc('atrium/bob').set(reopen)]);
   assert.equal((await getDoc(claimRef)).exists(),true);
 
+  // A shared reply can outlive an older private snapshot (another tab or legacy data).
+  await reset();
+  const savedRef=doc(b,`${P}/atriumQuestions/alice_a1/replies/bob_r1`);
+  const savedReply=(await getDoc(savedRef)).data();
+  await assertSucceeds(setDoc(savedRef,savedReply));
+  for(const change of [{value:{...savedReply.value,text:'Altered reply text'}},{value:{...savedReply.value,t:999}},{hidden:true},{author:'carol'}]){
+    await assertFails(setDoc(savedRef,{...savedReply,...change}));
+  }
+  await assertFails(setDoc(doc(c,`${P}/atriumQuestions/alice_a1/replies/bob_r1`),savedReply));
+  const stale={...prof(5),asks:[],replies:[],thanks:[],reports:[],hist:[],claim:null};
+  await admin(d=>setDoc(doc(d,'users/bob/social/atrium'),stale));
+  const fromShared=(await B.db.collection('atrium').get()).docs.find(x=>x.id==='bob').data();
+  await B.db.doc('atrium/bob').set({...fromShared,claim:{asker:'alice',ask:'a1',t:Date.now()}});
+  await B.db.doc('atrium/bob').set({...fromShared,claim:null,replies:fromShared.replies.concat([{id:'new_reply',ask:'a1',to:'alice',kind:'rule',text:'The preposition takes the accusative when it expresses motion toward a place.',t:Date.now()}])});
+
+  assert.deepEqual((await getDoc(savedRef)).data(),savedReply,'Retry preserves the original reply');
   console.log('PASS atrium-rules: server-only ledger, the strict transition switch, marks, claims, completions, follow-ups, protected settings, and the migration display policy.');
 } finally { await env.cleanup(); }

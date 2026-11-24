@@ -305,7 +305,11 @@ service cloud.firestore {
             && request.resource.data.value.to == parent().owner && request.resource.data.value.ask == parent().value.id
             && request.resource.data.value.kind in ['hint','rule','check']
             && request.resource.data.value.text is string && request.resource.data.value.text.size() >= 10 && request.resource.data.value.text.size() <= 1200;
-          allow update: if classTeacher(classId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden']);
+          // An old private snapshot may re-send a reply already saved in this thread.
+          // Permit only an exact no-op by its author; text, kind, visibility and time remain immutable.
+          // Firestore createTime (the reward event time) is unchanged, so retries cannot earn again.
+          allow update: if (classTeacher(classId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hidden']))
+            || (visibleQuestion(parent()) && self(resource.data.author) && request.resource.data == resource.data);
         }
         // "I'm helping with this": a temporary claim by a helper who has mastered the lesson; expires in the app after 20 minutes.
         match /claims/{uid} {
