@@ -14017,7 +14017,7 @@ var screenDomus;
    var d=JSON.parse(JSON.stringify(mine()));d.asks=d.asks||[];d.replies=d.replies||[];d.thanks=d.thanks||[];d.reports=d.reports||[];d.earned=d.earned||[];d.hist=d.hist||[];d.clients=d.clients||[];d.done=d.done||{};
    mut(d);d.name=myName();d.furthest=furthest();d.mastered=masteredUpTo();d.t=Date.now();
    d.asks=prune(d.asks,MAXASK);d.replies=d.replies.slice(-MAXREP);d.thanks=d.thanks.slice(-300);d.reports=d.reports.slice(-100);d.hist=d.hist.slice(-50);
-   return db.doc('atrium/'+AT.me).set(d).then(function(){AT.docs[AT.me]=d;AT.err='';AT.msg='';totals()},function(e){AT.err=code(e)})}).then(function(){if(!quiet)render(true)})}
+   return db.doc('atrium/'+AT.me).set(d).then(function(){AT.docs[AT.me]=d;AT.err='';AT.msg='';totals();return true},function(e){AT.err='';AT.msg=friendlyErr(e);return false})}).then(function(saved){if(!quiet)render(true);return saved})}
  function prune(a,max){if(a.length<=max)return a;var keep=a.slice();while(keep.length>max){var i=keep.findIndex(function(x){return x.deleted||!x.open});keep.splice(i>=0?i:0,1)}return keep}
  function saveSettings(mut){return getDb().then(function(db){if(!db)return;var s=JSON.parse(JSON.stringify(AT.set));mut(s);return db.doc('settings/atrium').set(s).then(function(){AT.set=s},function(e){AT.err=code(e)})}).then(function(){render(true)})}
  /* ---------- pairing: one active client per patron in the pilot ---------- */
@@ -14207,7 +14207,7 @@ var screenDomus;
    if(!AT.reply||!AT.reply.kind){AT.msg='Choose how you are helping: a hint, an explanation of the rule, or a check of their reasoning.';render();return}
    if(txt.length<10){AT.msg='Write your reply in the box.';render();return}
    var asker=t.dataset.u,ask=t.dataset.a,a=((AT.docs[asker]||{}).asks||[]).filter(function(x){return x.id===ask})[0];if(!a||(!AT.canEdit&&!mastered(+a.lesson)))return;
-   var kind=AT.reply.kind;save(function(d){d.replies=d.replies.concat([{id:uid(),t:Date.now(),ask:ask,to:asker,text:txt,kind:kind}]);d.claim=null}).then(function(){AT.reply=null;AT.msg='';return sync()}).then(function(){render(true)})};
+   var kind=AT.reply.kind;save(function(d){d.replies=d.replies.concat([{id:uid(),t:Date.now(),ask:ask,to:asker,text:txt,kind:kind}]);d.claim=null}).then(function(saved){if(!saved){render(true);return}AT.reply=null;AT.msg='';return sync()}).then(function(){render(true)})};
   A['at-thank']=function(t){var r=t.dataset.r,h=t.dataset.h,a=t.dataset.a;save(function(d){if(!d.thanks.some(function(x){return x.ask===a&&x.helper===h}))d.thanks=d.thanks.concat([{reply:r,helper:h,ask:a,t:Date.now()}])}).then(function(){return settleMine()})};
   A['at-report']=function(t){var r=t.dataset.r,h=t.dataset.h,a=t.dataset.a;save(function(d){if(!d.reports.some(function(x){return x.reply===r}))d.reports=d.reports.concat([{reply:r,helper:h,ask:a,t:Date.now()}])})};
   A['at-close']=function(t){var id=t.dataset.a;save(function(d){d.asks.forEach(function(a){if(a.id===id){a.open=false;a.closed=Date.now()}})})};
