@@ -1,0 +1,50 @@
+name: Integrate recovered assets into Forum preview
+on:
+  push:
+    branches: [fix/restore-graphical-assets]
+    paths: ['.github/workflows/integrate-forum-assets.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: romanway-forum-asset-integration
+  cancel-in-progress: false
+jobs:
+  integrate-forum:
+    if: github.ref == 'refs/heads/fix/restore-graphical-assets'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Verify Classroom source before sharing assets
+        run: python3 scripts/verify-assets.py --deployment .
+      - name: Integrate into isolated Forum branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_commit=$(git rev-parse HEAD)
+          git fetch origin public-practice
+          git switch -c fix/restore-forum-assets origin/public-practice
+          git checkout "$source_commit" -- assets scripts/apply-assets.py scripts/verify-assets.py .github/workflows/asset-integrity.yml
+          python3 scripts/apply-assets.py
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/build-public-practice.mjs')
+          s = p.read_text()
+          assert 'copyFileSync}' in s
+          s = s.replace('copyFileSync}', 'copyFileSync,cpSync}')
+          marker = "writeFileSync(resolve(output,'static/404.html')"
+          assert s.count(marker) == 1
+          s = s.replace(marker, "cpSync(resolve(root,'assets'),resolve(output,'static/assets'),{recursive:true});\n"+marker)
+          p.write_text(s)
+          PY
+          python3 scripts/verify-assets.py --deployment .
+          node scripts/build-public-practice.mjs
+          python3 scripts/verify-assets.py --deployment .vercel/output/static
+          test ! -d .vercel/output/functions
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- assets scripts/apply-assets.py scripts/verify-assets.py scripts/build-public-practice.mjs index.html .github/workflows/asset-integrity.yml
+          git commit -m "Integrate verified shared assets into isolated Forum preview"
+          git push origin HEAD:refs/heads/fix/restore-forum-assets
