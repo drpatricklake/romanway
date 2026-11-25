@@ -1,0 +1,57 @@
+name: Apply avatar UX refinements
+on:
+  push:
+    branches: [fix/restore-graphical-assets, fix/restore-forum-assets]
+    paths: ['.github/workflows/avatar-ux-refinement.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  refine:
+    if: github.ref == 'refs/heads/fix/restore-graphical-assets' || github.ref == 'refs/heads/fix/restore-forum-assets'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Apply checked source transformations
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          def replace(old,new):
+              global s
+              assert s.count(old)==1, 'Expected exactly one match: '+old[:100]
+              s=s.replace(old,new)
+          replace(' function setup(){\n  var a=A(),h=', ''' function selectionFigure(id,a,cls){
+            var candidate={calling:id,pres:a.pres||'f',origin:a.origin},f=artFor(candidate);
+            if(f)return sp(f.key,cls);
+            var u=selArt(id,candidate.origin,candidate.pres);
+            return u?'<img class="'+cls+'" src="'+u+'" alt="">':'';
+           }
+           function artDiagnostics(){return new URLSearchParams(window.location.search).get('devArt')==='1'}
+           function setup(){
+            var a=A(),h=''')
+          replace("im=selArt(c.id,a.origin,a.pres||'f'),","")
+          replace("""(im?'<img class="avc-img" src="'+im+'" alt="">':'')""","selectionFigure(c.id,a,'avc-img')")
+          replace("""(selArt(c.id,a.origin,a.pres)?'<img src="'+selArt(c.id,a.origin,a.pres)+'" alt="">':'')""","selectionFigure(c.id,a,'avsel-img')")
+          replace('.avsel img{','.avsel .avsel-img{')
+          replace('.avcard .avc-img{','.avcard .sp.avc-img{aspect-ratio:auto}.avsel .sp.avsel-img{height:auto;flex:none}.avcard .avc-img{')
+          replace(".concat([['art','Art status']])",".concat(artDiagnostics()?[['art','Art status']]:[])")
+          replace('>Scene</button>','>Scene with tutēla</button>')
+          replace("var a=A();\n  if(!a.done)return setup();","var a=A();\n  if(!artDiagnostics()&&V.avTab==='art')V.avTab='portrait';\n  if(!a.done)return setup();")
+          replace("Ac['av-tab']=function(t){V.avTab=t.dataset.t;go()};","Ac['av-tab']=function(t){V.avTab=t.dataset.t==='art'&&!artDiagnostics()?'portrait':t.dataset.t;go()};")
+          p.write_text(s,encoding='utf-8')
+          print('Applied avatar selection consistency, scene label and opt-in art diagnostics')
+          PY
+          python3 scripts/verify-assets.py --deployment .
+          if [ -f scripts/build-public-practice.mjs ]; then
+            node scripts/build-public-practice.mjs
+            python3 scripts/verify-assets.py --deployment .vercel/output/static
+          fi
+      - name: Commit verified refinements
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m "Align avatar selection art and simplify student navigation"
+          git push origin HEAD:${GITHUB_REF}
