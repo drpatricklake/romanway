@@ -1,5 +1,5 @@
 // Explicit static-only Vercel Build Output API: no account pages, adapters, or functions.
-import {readFileSync,writeFileSync,mkdirSync,rmSync,copyFileSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync,rmSync,copyFileSync,cpSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
@@ -18,6 +18,7 @@ assert.ok(!html.includes('href="https://fonts.'),'No third-party font requests')
 rmSync(output,{recursive:true,force:true});mkdirSync(resolve(output,'static'),{recursive:true});
 writeFileSync(resolve(output,'static/index.html'),html);
 for(const file of ['app-config.js','app-bootstrap.js','local-progress.js','pilot-core.js','word-forms.js'])copyFileSync(resolve(root,file),resolve(output,'static',file));
+cpSync(resolve(root,'assets'),resolve(output,'static/assets'),{recursive:true});
 writeFileSync(resolve(output,'static/404.html'),'<!doctype html><meta charset="utf-8"><title>Public Practice</title><h1>Page unavailable</h1><p>This edition needs no account or classroom connection.</p><a href="/">Return to Public Practice</a>');
 writeFileSync(resolve(output,'config.json'),JSON.stringify({version:3,routes:[
  {src:'/(.*)',headers:{'Content-Security-Policy':csp,'Referrer-Policy':'no-referrer','X-Content-Type-Options':'nosniff','Cache-Control':'no-cache'},continue:true},
