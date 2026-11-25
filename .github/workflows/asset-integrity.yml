@@ -2,21 +2,38 @@ name: RomanWay asset integrity
 on:
   pull_request:
   push:
-    branches: [main, public-practice, fix/restore-graphical-assets]
+    branches: [main, public-practice, fix/restore-graphical-assets, fix/restore-forum-assets]
+  merge_group:
 permissions:
   contents: read
 jobs:
   asset-integrity:
+    name: asset-integrity
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Verify release assets and classroom static tree (fail closed)
+      - name: Verify source and deployed asset routes
         run: python3 scripts/verify-assets.py --deployment .
-      - name: Verify actual Forum output when present
+      - name: Negative tests (missing and altered asset must fail)
+        shell: bash
+        run: |
+          set -euo pipefail
+          file=assets/sprites/wpose.webp
+          cp "$file" "$RUNNER_TEMP/wpose.webp"
+          trap 'cp "$RUNNER_TEMP/wpose.webp" "$file"' EXIT
+          rm "$file"
+          if python3 scripts/verify-assets.py --deployment .; then exit 1; fi
+          cp "$RUNNER_TEMP/wpose.webp" "$file"
+          printf x >> "$file"
+          if python3 scripts/verify-assets.py --deployment .; then exit 1; fi
+          cp "$RUNNER_TEMP/wpose.webp" "$file"
+          python3 scripts/verify-assets.py --deployment .
+      - name: Verify Forum build and static-only isolation
         run: |
           if [ -f scripts/build-public-practice.mjs ]; then
             node scripts/build-public-practice.mjs
             python3 scripts/verify-assets.py --deployment .vercel/output/static
+            test ! -d .vercel/output/functions
           fi
