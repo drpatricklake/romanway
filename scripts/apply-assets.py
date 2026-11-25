@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply the reviewed assets to generated HTML without changing activity logic."""
+"""Apply the reviewed assets to the generated HTML, without changing activity logic."""
 import base64
 import json
 import re
@@ -19,7 +19,7 @@ def apply(html):
         html = html.replace("im.src='/_blob/'+SHEETS[s]", 'im.src=SHEETS[s]')
     else:
         assert old == [f'/assets/textbook/sheets/sheet{i:02d}.jpg' for i in range(14)], 'unexpected sheet map'
-    for key, path in mapping.items():
+    for key, path in (mapping | manifest['legacy_worksheet_routes']).items():
         html = html.replace('/_blob/' + key, '/' + path)
     remaining = set(re.findall(r'/_blob/([0-9a-f]{32})', html))
     assert remaining <= set(manifest['unresolved_worksheet_blob_ids']), 'unrecognized legacy URLs: ' + str(remaining)
