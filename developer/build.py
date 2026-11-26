@@ -59,3 +59,8 @@ s=s.replace('<h1>Account</h1><section class="panel"><h2>Google sign-in</h2>', '<
 
 # Resolve shared, version-controlled assets after all edition transformations.
 runpy.run_path(str(repo / "scripts/apply-assets.py"), run_name="__main__")
+
+# Retain verified asset and avatar fixes in regenerated output.
+runpy.run_path(str(repo/'scripts/apply-assets.py'),run_name='__main__')
+runpy.run_path(str(root/'apply-avatar-ux.py'),run_name='__main__')
+runpy.run_path(str(root/'apply-persona-continuity.py'),run_name='__main__')
