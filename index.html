@@ -11181,21 +11181,34 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
  function wkey(i){return WSLOT[i.id]||i.slot}
  function isWorn(a,i){return wornIds(a).indexOf(i.id)>=0}
  function dressed(a){
-  var ph=PHID[PH[phaseIdx()].id],ids=wornIds(a).filter(function(id){return WSLOT[id]}),key=[a.calling,a.pres,ph,String(a.patron||'').toLowerCase(),ids.slice().sort().join(',')].join('|');
+  var ph=PHID[PH[phaseIdx()].id],ids=wornIds(a).filter(function(id){return WSLOT[id]}),pose=a.calling+'-'+(a.pres==='f'?'female':'male'),patron=String(a.patron||'').toLowerCase(),key=[pose,ph,patron,ids.slice().sort().join(',')].join('|');
   if(WC[key])return WC[key];
-  var ent=WC[key]={state:'loading'},r=wr();
-  if(!r){ent.state='error';ent.err='renderer missing';return ent}
-  r.render(a.calling+'-'+(a.pres==='f'?'female':'male'),ids,{lesson:57,phase:ph,patron:String(a.patron||'').toLowerCase()}).then(function(c){ent.url=c.toDataURL('image/png');ent.state='ok';if(V.screen==='avatar')render(true)},function(e){ent.state='error';ent.err=String(e&&e.message||e).slice(0,90);if(V.screen==='avatar')render(true)});
+  var ent=WC[key]={state:'loading',token:'persona-'+(++personaSerial)},r=wr();
+  function refresh(){
+   document.querySelectorAll('[data-persona-render="'+ent.token+'"]').forEach(function(im){
+    if(ent.state==='ok'){im.src=im.dataset.personaBust==='1'?ent.bust:ent.url;im.alt=''}
+    else if(ent.state==='error'){im.removeAttribute('src');im.alt='Persona image unavailable'}
+   });
+  }
+  if(!r){ent.state='error';ent.err='renderer missing';ent.ready=Promise.resolve(null);return ent}
+  ent.ready=Promise.resolve().then(function(){return r.render(pose,ids,{lesson:57,phase:ph,patron:patron})}).then(function(c){
+   ent.url=c.toDataURL('image/png');
+   var b=document.createElement('canvas');b.width=b.height=140;b.getContext('2d').drawImage(c,(c.width-140)/2,4,140,140,0,0,140,140);ent.bust=b.toDataURL('image/png');
+   ent.state='ok';refresh();return ent.url;
+  }).catch(function(e){ent.state='error';ent.err=String(e&&e.message||e).slice(0,90);refresh();return null});
   return ent;
+ }
+ var personaSerial=0;
+ function personaFigure(a,cls,bustOnly,extra){
+  var e=dressed(a),u=bustOnly?e.bust:e.url;
+  return '<img class="'+cls+'" data-persona-render="'+e.token+'"'+(bustOnly?' data-persona-bust="1"':'')+(u?' src="'+u+'" alt=""':' alt="'+(e.state==='error'?'Persona image unavailable':'Fitting persona…')+'"')+(extra||'')+'>';
  }
  function canWearItem(a,i){var pose=WD.poses.filter(function(p){return p.id===a.calling+'-'+(a.pres==='f'?'female':'male')})[0],wi=WD.items.filter(function(x){return x.id===i.id})[0];return !!(pose&&wi&&window.RomanWardrobe.canWear(pose,wi,57))}
  var WLABEL={garment:'Garment',footwear:'Footwear',mantle:'Mantle or cloak',clasp:'Clasp',emblem:'Patron emblem',apron:'Apron',belt:'Belt',sash:'Sash',ring:'Ring',headpiece:'Headpiece',wraps:'Leg wraps'};
  function tabWardrobe(a){
   var s=stageOf(a),ent=dressed(a),own=D.items.filter(function(i){return WSLOT[i.id]&&a.owned[i.id]&&canWearItem(a,i)});
   var h='<p class="note" style="max-width:72ch">Your figure for the <b>'+esc(s.ph.n)+'</b> stage, ready for fitting. Wear the pieces you own: a belt or apron goes under a mantle, and a clasp or emblem over it. Buy more in the Market.</p><div class="avlayout"><div class="avleft">';
-  if(ent.state==='ok')h+='<div class="avport big wd" role="img" aria-label="'+esc(a.name)+' in the pieces you wear">'+backdrop(a,s.k)+'<img class="avdr" src="'+ent.url+'" alt=""></div>';
-  else if(ent.state==='error')h+='<div class="panel"><p class="note" style="margin:0">The fitting preview could not run in this view ('+esc(ent.err)+'). Your items are saved and will show when it can.</p></div>';
-  else h+='<div class="panel"><p class="note" style="margin:0">Fitting your figure…</p></div>';
+  h+='<div class="avport big wd" role="img" aria-label="'+esc(a.name)+' in the pieces you wear">'+backdrop(a,s.k)+personaFigure(a,'avdr')+'</div>';
   h+='</div><div style="flex:1;min-width:260px">';
   var by={};own.forEach(function(i){(by[WSLOT[i.id]]=by[WSLOT[i.id]]||[]).push(i)});
   var order=Object.keys(WLABEL).filter(function(k){return by[k]});
@@ -11258,39 +11271,26 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
  function backdrop(a,k){var bd=worn(a,'Setting');if(bd&&AT['shop_'+bd.id])return sp('shop_'+bd.id,'avbd');if(AT['sc_'+PHID[PH[k].id]])return sp('sc_'+PHID[PH[k].id],'avbd');return ART.bg_atrium?'<img class="avbg" src="'+ART.bg_atrium+'" alt="">':'<div class="avbg plain"></div>'}
  function figKey(a){var s=stageOf(a),f=artFor(a);if(!f)return null;return {key:f.key,k:f.k,old:f.k<s.k}}
  function portrait(a,big){
-  var s=stageOf(a),f=figKey(a),fr=worn(a,'Frame'),cp=worn(a,'Companion');
+  var s=stageOf(a),fr=worn(a,'Frame');
   var h='<div class="avport'+(big?' big':'')+'" role="img" aria-label="'+esc(a.name)+', '+esc(s.st.t)+'">'+backdrop(a,s.k);
-  var fitted=wornIds(a).some(function(id){return WSLOT[id]})?dressed(a):null;
-  var pz=prestigeImg(a);if(pz)h+='<img class="avfig prest" src="'+pz+'" alt=""'+(a.__reveal?(delete a.__reveal,' data-cue="portrait-reveal"'):'')+'>';else if(fitted&&fitted.state==='ok')h+='<img class="avfig dressed" src="'+fitted.url+'" alt="">';
-  else if(f){h+=sp(f.key,'avfig')+(f.old?'<span class="avribbon">Portrait for '+esc(PH[s.k].n)+' to come</span>':'')}
-  else if(selArt(a.calling,a.origin,a.pres))h+='<img class="avfig selart" src="'+selArt(a.calling,a.origin,a.pres)+'" alt="">';else h+='<div class="avph"><div class="avph-l lat">'+esc(s.c.latin)+'</div><div class="avph-t">'+esc(s.st.t)+'</div><div class="avph-s">Portrait to come</div></div>';
-  h+=compSprite(a,3/4,0.94,'right');
+  var cue=a.__reveal?' data-cue="portrait-reveal"':'';if(a.__reveal)delete a.__reveal;
+  h+=personaFigure(a,'avfig dressed',false,cue)+compSprite(a,3/4,0.94,'right');
   if(fr&&AT['shop_'+fr.id])h+=sp('shop_'+fr.id,'avframe');
   return h+'</div>';
  }
  function scene(a){
-  var s=stageOf(a),f=figKey(a),cp=worn(a,'Companion'),pk=pkey(a),bd=worn(a,'Setting');
+  var s=stageOf(a),pk=pkey(a),bd=worn(a,'Setting');
   var bg=(bd&&AT['shop_'+bd.id])?sp('shop_'+bd.id,'avsbd'):(AT['sc_'+PHID[PH[s.k].id]]?sp('sc_'+PHID[PH[s.k].id],'avsbd'):'');
-  return '<div class="avscene" role="img" aria-label="'+esc(a.name)+(pk?' with '+esc(a.patron):'')+'">'+bg+(AT['pc_'+pk]?sp('pc_'+pk,'avspat'):'')+(function(){var ents=wornIds(a).filter(function(id){return WSLOT[id]}).length?dressed(a):null;if(ents&&ents.state==='ok')return '<img class="avsfig dressed" src="'+ents.url+'" alt="">';var pz=prestigeImg(a);if(pz)return '<img class="avsfig prest" src="'+pz+'" alt="">';return f?sp(f.key,'avsfig'):(selArt(a.calling,a.origin,a.pres)?'<img class="avsfig selart" src="'+selArt(a.calling,a.origin,a.pres)+'" alt="">':'')})()+compSprite(a,16/9,0.92,'mid')+'</div>';
+  return '<div class="avscene" role="img" aria-label="'+esc(a.name)+(pk?' with '+esc(a.patron):'')+'">'+bg+(AT['pc_'+pk]?sp('pc_'+pk,'avspat'):'')+personaFigure(a,'avsfig dressed')+compSprite(a,16/9,0.92,'mid')+'</div>';
  }
-
- var FIGC={};
- window.__avatarFigure=function(){
-  var a=S.av;if(!a||!a.done)return Promise.resolve(null);
-  if(wornIds(a).filter(function(id){return WSLOT[id]}).length){var ent=dressed(a);if(ent.state==='ok')return Promise.resolve(ent.url)}
-  var pz0=prestigeImg(a)||(!artFor(a)&&selArt(a.calling,a.origin,a.pres));if(pz0)return Promise.resolve(pz0);var f=artFor(a),e=f&&AT[f.key];if(!e)return Promise.resolve(null);
-  if(FIGC[f.key])return Promise.resolve(FIGC[f.key]);
-  return new Promise(function(res){var im=new Image();im.onload=function(){try{var c=document.createElement('canvas');c.width=e[3];c.height=e[4];c.getContext('2d').drawImage(im,e[1],e[2],e[3],e[4],0,0,e[3],e[4]);FIGC[f.key]=c.toDataURL('image/webp',.9);res(FIGC[f.key])}catch(x){res(null)}};im.onerror=function(){res(null)};im.src=SH[e[0]].u});
- };
- window.__avatarBust=function(sz){var a=S.av;if(!a||!a.done)return '';var f=artFor(a);var ini=esc((a.name||'?').charAt(0));return '<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;overflow:hidden;background:#e9dcb8;border:2px solid #fff;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font:700 14px Georgia,serif;color:#6a5a3a">'+(function(){var u=prestigeImg(a)||(!f&&selArt(a.calling,a.origin,a.pres));return u?'<img src="'+u+'" alt="" style="width:100%;height:100%;object-fit:cover;object-position:top">':(f?bust(f.key,sz-4):ini)})()+'</div>'};
+ window.__avatarFigure=function(){var a=S.av;if(!a||!a.done)return Promise.resolve(null);return dressed(a).ready};
+ window.__avatarBust=function(sz){var a=S.av;if(!a||!a.done)return '';return '<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;overflow:hidden;background:#e9dcb8;border:2px solid #fff;box-sizing:border-box;display:flex;align-items:center;justify-content:center">'+personaFigure(a,'persona-bust',true,' style="width:100%;height:100%;object-fit:contain"')+'</div>'};
  /* ---------- setup ---------- */
  V.avStep=V.avStep||1;V.avTab=V.avTab||'portrait';
  function pickName(c,pres){var i=Math.floor(Math.random()*NOM.length),cg=COG[c.id][pres==='f'?1:0];return pres==='f'?(NOM[i][1]+' '+cg):(PRAE[Math.floor(Math.random()*PRAE.length)]+' '+NOM[i][0]+' '+cg)}
  function selectionFigure(id,a,cls){
-  var candidate={calling:id,pres:a.pres||'f',origin:a.origin},f=artFor(candidate);
-  if(f)return sp(f.key,cls);
-  var u=selArt(id,candidate.origin,candidate.pres);
-  return u?'<img class="'+cls+'" src="'+u+'" alt="">':'';
+  var c=cal(id),candidate={calling:id,pres:a.pres||'f',origin:a.origin,patron:(c.patron||'').split(/[ \/·(]/)[0],worn:{}};
+  return personaFigure(candidate,cls,false,' style="object-fit:contain;aspect-ratio:352/432;height:auto"');
  }
  function artDiagnostics(){return new URLSearchParams(window.location.search).get('devArt')==='1'}
  function setup(){
@@ -11351,7 +11351,7 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
  function tabKeepsake(a){
   var fin=V.avFin||'fresco',O=fin==='fresco'?{l:11.1,t:7.4,w:77.7,h:85.1}:{l:13.1,t:9,w:73.6,h:82},pk=pkey(a),k=5,f=artFor(a),cpk=compOf(a)||CBY[(ccalling(a)||{}).starter||'tawny-hound'],emb=AT['emb_L03-A_'+pk]?'emb_L03-A_'+pk:'';
   var h='<p class="note" style="max-width:72ch">Your <b>Legacy portrait</b> is the keepsake of your whole journey: your avatar, companion, and patron emblem on a painted fresco or a stone mosaic. Choose a finish.</p><div class="seg" role="group" aria-label="Finish" style="margin-bottom:10px"><button data-act="av-fin" data-f="fresco" aria-pressed="'+(fin==='fresco')+'">Painted fresco</button><button data-act="av-fin" data-f="mosaic" aria-pressed="'+(fin==='mosaic')+'">Stone mosaic</button></div>';
-  h+='<div class="avkeep" role="img" aria-label="Legacy portrait of '+esc(a.name)+'">'+sp('lg_'+fin+'_plate','kpl')+'<div class="kop" style="left:'+O.l+'%;top:'+O.t+'%;width:'+O.w+'%;height:'+O.h+'%">'+(f?sp(f.key,'kfig'):'')+(function(){if(!cpk||!AT['cp_'+cpk.id])return '';var r=cpk.rect,asp=(O.w/O.h)*0.8,Hc=1/asp,S=cpk.avatarHeightRatio*0.94*Hc*512/r.height;if(S*r.width/512>0.4)S=0.4*512/r.width;var wp=S*100,hp=S/Hc*100,bottom=0-((512-cpk.base)/512)*hp;return sp('cp_'+cpk.id,'kcompn','position:absolute;width:'+wp.toFixed(2)+'%;left:'+(1-(r.x/512)*wp).toFixed(2)+'%;bottom:'+bottom.toFixed(2)+'%')})()+(emb?sp(emb,'kemb'):'')+'<div class="kname">'+esc(a.name)+'</div></div>'+sp('lg_'+fin+'_frame','kfr')+'</div>';
+  h+='<div class="avkeep" role="img" aria-label="Legacy portrait of '+esc(a.name)+'">'+sp('lg_'+fin+'_plate','kpl')+'<div class="kop" style="left:'+O.l+'%;top:'+O.t+'%;width:'+O.w+'%;height:'+O.h+'%">'+personaFigure(a,'kfig dressed')+(function(){if(!cpk||!AT['cp_'+cpk.id])return '';var r=cpk.rect,asp=(O.w/O.h)*0.8,Hc=1/asp,S=cpk.avatarHeightRatio*0.94*Hc*512/r.height;if(S*r.width/512>0.4)S=0.4*512/r.width;var wp=S*100,hp=S/Hc*100,bottom=0-((512-cpk.base)/512)*hp;return sp('cp_'+cpk.id,'kcompn','position:absolute;width:'+wp.toFixed(2)+'%;left:'+(1-(r.x/512)*wp).toFixed(2)+'%;bottom:'+bottom.toFixed(2)+'%')})()+(emb?sp(emb,'kemb'):'')+'<div class="kname">'+esc(a.name)+'</div></div>'+sp('lg_'+fin+'_frame','kfr')+'</div>';
   return h;
  }
  screenAvatar=function(){
