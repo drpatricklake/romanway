@@ -62,3 +62,8 @@ runpy.run_path(str(root/'apply-public-practice.py'),run_name='__main__')
 
 # Hide shared features and close public cloud actions after the common integrations.
 runpy.run_path(str(root/'apply-public-isolation.py'),run_name='__main__')
+
+# Retain verified asset and avatar fixes in regenerated output.
+runpy.run_path(str(repo/'scripts/apply-assets.py'),run_name='__main__')
+runpy.run_path(str(root/'apply-avatar-ux.py'),run_name='__main__')
+runpy.run_path(str(root/'apply-persona-continuity.py'),run_name='__main__')
