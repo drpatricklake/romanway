@@ -43,3 +43,6 @@ jobs:
         run: npm run test:browser
         working-directory: developer/tests
 
+      - name: About and feedback preview browser checks
+        run: node about-preview.test.mjs
+        working-directory: developer/tests
