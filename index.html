@@ -10747,6 +10747,7 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
     const imageCache = new Map();
     const recolorCache = new Map();
     const footwearCache = new Map();
+    const poseSilhouettes = new Map();
     const starterCache = new Map();
     const path = (name) => {
       if (!imageCache.has(name)) {
@@ -10843,6 +10844,10 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
 
     async function starter(pose, phase, includeSandals = true) {
       const base = await path(pose.image);
+      if (!poseSilhouettes.has(pose.id)) {
+        const native = surface(); native.context.drawImage(base, 0, 0);
+        poseSilhouettes.set(pose.id, native.context.getImageData(0, 0, ...dimensions));
+      }
       const style = pose.phase_poses[phase];
       if (!style) throw new Error(`Unknown phase ${phase}`);
       const key = `${pose.id}:${phase}:${includeSandals}`;
@@ -10903,7 +10908,25 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
         const h = isHigh ? 51 : 43;
         const y = base + 1 - h;
         const { canvas, flip } = shoePiece(art, foot, item, side);
-        proportional(context, canvas, (left + right) / 2, y, w, h, 0, flip);
+        const piece = surface();
+        proportional(piece.context, canvas, (left + right) / 2, y, w, h, 0, flip);
+        // The art includes a donor ankle. Keep its upper section inside the
+        // actual leg silhouette; retain the shoe's own outline below the strap.
+        // Pose images are loaded before footwear is composed.
+        const silhouette = poseSilhouettes.get(pose.id);
+        if (silhouette) {
+          const pixels = piece.context.getImageData(0, 0, ...dimensions);
+          const native = silhouette.data;
+          for (let py = Math.max(0, Math.floor(y)); py < Math.min(dimensions[1], y + h * .62); py++) {
+            const blend = clamp((py - y - h * .36) / (h * .26), 0, 1);
+            for (let px = Math.max(0, Math.floor(left - 3)); px < Math.min(dimensions[0], right + 4); px++) {
+              const i = (py * dimensions[0] + px) * 4;
+              pixels.data[i + 3] *= blend + (1 - blend) * native[i + 3] / 255;
+            }
+          }
+          piece.context.putImageData(pixels, 0, 0);
+        }
+        context.drawImage(piece.canvas, 0, 0);
       }
       footwearCache.set(key, layer);
       return layer;
@@ -11012,6 +11035,7 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
       const art = Object.fromEntries(await Promise.all(Object.entries(outfit).map(async ([slot, item]) => [
         slot, await path(item.variants?.[pose.persona] || item.art),
       ])));
+      await starter(pose, phase, false);
       const base = outfit.garment ? await path(pose.image) : await starter(pose, phase, false);
       const { canvas, context } = surface();
       const isTravel = outfit.mantle && travelCloaks.includes(outfit.mantle.id);
@@ -11040,6 +11064,19 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
         if (!outfit[slot]) continue;
         const emblem = slot === 'emblem' && outfit[slot].patron_art?.[patron];
         fitFront(context, pose, outfit[slot], art[slot], outfit, emblem ? await path(emblem) : null);
+      }
+      if (pose.id === 'musician-male') {
+        const corrected = surface();
+        corrected.context.drawImage(canvas, 0, 83, dimensions[0], dimensions[1] - 83, 0, 83, dimensions[0], dimensions[1] - 83);
+        const cx = center(pose.anchors.head), scale = .88, top = 10;
+        for (let row = 0; row < 83; row++) {
+          const t = clamp((row - 64) / 19, 0, 1);
+          const sx = scale + (1 - scale) * t;
+          const destY = top + row * (83 - top) / 83;
+          corrected.context.drawImage(canvas, 0, row, dimensions[0], 1,
+            cx * (1 - sx), destY, dimensions[0] * sx, (83 - top) / 83 + .1);
+        }
+        return corrected.canvas;
       }
       return canvas;
     }
@@ -13441,6 +13478,7 @@ var screenSpectacula;
     const imageCache = new Map();
     const recolorCache = new Map();
     const footwearCache = new Map();
+    const poseSilhouettes = new Map();
     const starterCache = new Map();
     const path = (name) => {
       if (!imageCache.has(name)) {
@@ -13537,6 +13575,10 @@ var screenSpectacula;
 
     async function starter(pose, phase, includeSandals = true) {
       const base = await path(pose.image);
+      if (!poseSilhouettes.has(pose.id)) {
+        const native = surface(); native.context.drawImage(base, 0, 0);
+        poseSilhouettes.set(pose.id, native.context.getImageData(0, 0, ...dimensions));
+      }
       const style = pose.phase_poses[phase];
       if (!style) throw new Error(`Unknown phase ${phase}`);
       const key = `${pose.id}:${phase}:${includeSandals}`;
@@ -13597,7 +13639,25 @@ var screenSpectacula;
         const h = isHigh ? 51 : 43;
         const y = base + 1 - h;
         const { canvas, flip } = shoePiece(art, foot, item, side);
-        proportional(context, canvas, (left + right) / 2, y, w, h, 0, flip);
+        const piece = surface();
+        proportional(piece.context, canvas, (left + right) / 2, y, w, h, 0, flip);
+        // The art includes a donor ankle. Keep its upper section inside the
+        // actual leg silhouette; retain the shoe's own outline below the strap.
+        // Pose images are loaded before footwear is composed.
+        const silhouette = poseSilhouettes.get(pose.id);
+        if (silhouette) {
+          const pixels = piece.context.getImageData(0, 0, ...dimensions);
+          const native = silhouette.data;
+          for (let py = Math.max(0, Math.floor(y)); py < Math.min(dimensions[1], y + h * .62); py++) {
+            const blend = clamp((py - y - h * .36) / (h * .26), 0, 1);
+            for (let px = Math.max(0, Math.floor(left - 3)); px < Math.min(dimensions[0], right + 4); px++) {
+              const i = (py * dimensions[0] + px) * 4;
+              pixels.data[i + 3] *= blend + (1 - blend) * native[i + 3] / 255;
+            }
+          }
+          piece.context.putImageData(pixels, 0, 0);
+        }
+        context.drawImage(piece.canvas, 0, 0);
       }
       footwearCache.set(key, layer);
       return layer;
@@ -13709,6 +13769,7 @@ var screenSpectacula;
       const art = Object.fromEntries(await Promise.all(Object.entries(outfit).map(async ([slot, item]) => [
         slot, await path(fitted[slot] || item.variants?.[pose.persona] || item.art),
       ])));
+      await starter(pose, phase, false);
       const base = outfit.garment ? await path(pose.image) : await starter(pose, phase, false);
       const { canvas, context } = surface();
       const isTravel = outfit.mantle && !fitted.mantle && travelCloaks.includes(outfit.mantle.id);
@@ -13740,6 +13801,19 @@ var screenSpectacula;
         if (fitted[slot]) { context.drawImage(art[slot], 0, 0); continue; }
         const emblem = slot === 'emblem' && outfit[slot].patron_art?.[patron];
         fitFront(context, pose, outfit[slot], art[slot], outfit, emblem ? await path(emblem) : null);
+      }
+      if (pose.id === 'musician-male') {
+        const corrected = surface();
+        corrected.context.drawImage(canvas, 0, 83, dimensions[0], dimensions[1] - 83, 0, 83, dimensions[0], dimensions[1] - 83);
+        const cx = center(pose.anchors.head), scale = .88, top = 10;
+        for (let row = 0; row < 83; row++) {
+          const t = clamp((row - 64) / 19, 0, 1);
+          const sx = scale + (1 - scale) * t;
+          const destY = top + row * (83 - top) / 83;
+          corrected.context.drawImage(canvas, 0, row, dimensions[0], 1,
+            cx * (1 - sx), destY, dimensions[0] * sx, (83 - top) / 83 + .1);
+        }
+        return corrected.canvas;
       }
       return canvas;
     }

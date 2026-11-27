@@ -67,3 +67,6 @@ runpy.run_path(str(root/'apply-public-isolation.py'),run_name='__main__')
 runpy.run_path(str(repo/'scripts/apply-assets.py'),run_name='__main__')
 runpy.run_path(str(root/'apply-avatar-ux.py'),run_name='__main__')
 runpy.run_path(str(root/'apply-persona-continuity.py'),run_name='__main__')
+
+# Fit shoes to native legs and normalize the musician's head proportions.
+runpy.run_path(str(root/'apply-avatar-fitting.py'),run_name='__main__')
