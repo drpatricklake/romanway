@@ -12702,9 +12702,9 @@ var screenArena;
  }
  function forumOptions(){
   if(!PUBLIC_PRACTICE)return '';
-  return '<fieldset class="panel bb-options"><legend>How would you like to work?</legend><div class="seg">'+options.map(function(option){
+  return '<section class="panel bb-options" role="group" aria-label="Reading and exercise options"><p style="margin:0 0 .75rem;font-weight:600">How would you like to work?</p><div class="seg">'+options.map(function(option){
    return '<button type="button" data-act="bb-forum-task" data-k="'+option[0]+'" aria-pressed="'+(task()===option[0])+'">'+option[1]+'</button>';
-  }).join('')+'</div><p class="note">Your choice and work are saved on this device.</p></fieldset>';
+  }).join('')+'</div><p class="note">Your choice and work are saved on this device.</p></section>';
  }
  function needsTranslation(t){return t==='tr'||t==='both'}
  function needsQuestions(t){return t==='mc'||t==='both'}
