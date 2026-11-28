@@ -17348,7 +17348,10 @@ function summarizeLessonParts(parts, total) {
     var awards=legacy.match(/<section class="panel (?:prestprompt|xppromo)"[^>]*>[\s\S]*?<\/section>/g)||[];
     var practice=legacy.match(/<div class="alert" role="status">[\s\S]*?<\/div>/);
     var review=reviewCounts();
-    return '<main class="wrap fh">'+(setup?setup[0].replace('Choose your calling','Choose your Persōna'):'')+
+    var onboarding=setup?setup[0].replace(/<div class="avlinks">[\s\S]*?<\/div>/,'')
+      .replace('Choose your calling','Choose your Persōna')
+      .replace('your calling grows','your Persōna grows'):'';
+    return '<main class="wrap fh">'+onboarding+
       '<section class="fh-hero"><div><p class="fh-date lat" aria-label="Roman date">'+esc(window.__civicForum.date())+'</p><h1>Forum</h1>'+
       (S.av&&S.av.done?'<p class="fh-greeting">Salvē, '+esc(S.av.name)+'.</p>':'')+'</div>'+
       (!setup?primary:'')+'</section>'+
