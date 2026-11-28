@@ -34,6 +34,21 @@ once(
     "return t==='both'?(mc&&trOK(id)):(t==='tr'?trOK(id):mc)",
     "return t==='read'?!!((bs().read||{})[id]||mc||trOK(id)):(t==='both'?(mc&&trOK(id)):(t==='tr'?trOK(id):mc))",
 )
+# A legacy ladder requirement must not lock the supplementary scroll it points to.
+once(
+    " function lessonComplete(n){try{var i=window.__rinfo(n);return !!(i&&i.live&&i.total&&i.done>=i.total)}catch(e){return false}}",
+    """ function lessonComplete(n){
+  try{
+   var i=window.__rinfo(n);
+   if(!i||!i.live||!i.total)return false;
+   if(i.done>=i.total)return true;
+   var parts=lessonProgress(n).parts;
+   if(!parts||!parts.some(function(p){return p.kind==='ladder'}))return false;
+   var core=parts.filter(function(p){return p.kind!=='ladder'});
+   return core.length>0&&core.every(function(p){return p.done});
+  }catch(e){return false}
+ }""",
+)
 # Preserve a previously opened Forum scroll when the learner switches activities.
 once("if(isDone(r.id))return true;var m=mode();", "if(isDone(r.id)||(PUBLIC_PRACTICE&&bs().seen[r.id]))return true;var m=mode();")
 # Reading alone records completion without creating a new reward rule. Initialize existing credits
@@ -82,4 +97,5 @@ once("  A['bb-read']=function(t){var b=bs();", """  A['bb-read']=function(t){var
 once("<h1 style=\"font-size:2.1rem;margin-bottom:.1em\">Biblioteca</h1>", "<h1 style=\"font-size:2.1rem;margin-bottom:.1em\">Bibliothēca</h1>")
 # Normalize the existing instructor option labels while retaining its saved keys.
 once("['mc','Questions'],['tr','Translation'],['both','Both']", "['mc','Multiple choice'],['tr','Translation'],['both','Translation and multiple choice']")
+once("'Opens when you finish Lesson '+ROMAN[r.L-1]", "'Opens after the core work in Lesson '+ROMAN[r.L-1]")
 page.write_text(source, encoding='utf-8')

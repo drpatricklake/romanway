@@ -57,4 +57,16 @@ for(const [task,tr,mc] of [['tr',true,false],['mc',false,true],['both',true,true
  action(c,'bb-forum-task',{k:'read'});
  assert.equal(c.model.state.biblio.forumTask,undefined);
 }
-console.log('PASS Bibliothēca modes, local reload, exercise completion and one-time rewards');
+const gated=open('public-practice');
+let coreDone=false;
+gated.context.__rinfo=()=>({live:true,total:2,done:Number(coreDone)});
+gated.model.LREG[r.L].progress=()=>({total:2,done:Number(coreDone),parts:[
+ {kind:'notes',done:coreDone},{kind:'ladder',done:false}
+]});
+action(gated,'open-biblioteca');
+action(gated,'bb-read',{id:r.id});
+assert.equal(gated.model.state.ladderOpen,null);
+coreDone=true;
+action(gated,'bb-read',{id:r.id});
+assert.equal(gated.model.state.ladderOpen,r.id,'A scroll must not require its own completion to open');
+console.log('PASS Bibliothēca modes, local reload, exercise completion, one-time rewards and scroll access');
