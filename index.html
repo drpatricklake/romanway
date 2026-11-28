@@ -10917,11 +10917,17 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
         if (silhouette) {
           const pixels = piece.context.getImageData(0, 0, ...dimensions);
           const native = silhouette.data;
-          for (let py = Math.max(0, Math.floor(y)); py < Math.min(dimensions[1], y + h * .62); py++) {
-            const blend = clamp((py - y - h * .36) / (h * .26), 0, 1);
+          const tailored = /^(herder|stoneworker|textile|service)-male$/.test(pose.id);
+          const fadeStart = tailored ? .58 : .36;
+          const fadeEnd = tailored ? .80 : .62;
+          for (let py = Math.max(0, Math.floor(y)); py < Math.min(dimensions[1], y + h * fadeEnd); py++) {
+            const blend = clamp((py - y - h * fadeStart) / (h * (fadeEnd - fadeStart)), 0, 1);
             for (let px = Math.max(0, Math.floor(left - 3)); px < Math.min(dimensions[0], right + 4); px++) {
               const i = (py * dimensions[0] + px) * 4;
-              pixels.data[i + 3] *= blend + (1 - blend) * native[i + 3] / 255;
+              const overlap = native[i + 3] / 255;
+              // Reveal the strap over the native foot before revealing the sole outside it.
+              const inside = tailored ? clamp((py - y - h * .31) / (h * .29), 0, 1) : 1;
+              pixels.data[i + 3] *= blend + (1 - blend) * overlap * inside;
             }
           }
           piece.context.putImageData(pixels, 0, 0);
@@ -11150,9 +11156,9 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
  function prestigeLabel(a){var p=a.prestige;if(!p)return '';if(p.r==='stay')return (a.pres==='f'?'Magistra':'Magister')+' of the craft';return prTitle(p.alt||p.r,a)}
  function prestPanel(a){if(!a.done||!done(38))return '';var p=a.prestige;
   if(p)return '<div class="panel prestdone"><b>Your path from Lesson XXXVIII:</b> <span class="lat">'+esc(prestigeLabel(a))+'</span>'+(p.r!=='stay'?' <span class="note">(“'+esc(PR[p.alt||p.r][2])+'”)</span>':'')+' <button class="link" data-act="av-prest-reset">Choose a different path</button></div>';
-  var rs=ROUTES[a.calling]||[],al=ALTS[a.calling]||{},h='<div class="panel prestpick"><h3 style="margin:0 0 .2em">Lesson XXXVIII: Rome reaches Greece</h3><p class="note" style="margin:0 0 .6em;max-width:70ch">Your life can grow with Rome. Choose one of the two paths open to your calling, or stay and rise within your own craft. Your purchases stay yours, and your tutēla stays with you.</p><div class="prestgrid">';
-  rs.forEach(function(r){h+='<div class="prestcard"><img src="'+A3('pre_'+r+'-'+(a.pres==='m'?'m':'f'))+'" alt=""><b class="lat">'+esc(prTitle(r,a))+'</b><span class="note">'+esc(PR[r][2])+'</span><button class="btn sm" data-act="av-prest" data-r="'+r+'">Choose</button>'+(al[r]?'<button class="link" data-act="av-prest" data-r="'+r+'" data-alt="'+al[r]+'">or as '+esc(prTitle(al[r],a))+' (“'+esc(PR[al[r]][2])+'”)</button>':'')+'</div>'});
-  h+='<div class="prestcard"><img src="'+selArt(a.calling,a.origin,a.pres)+'" alt=""><b class="lat">'+esc(ctitle(a))+'</b><span class="note">stay, and rise in your own craft</span><button class="btn sm ghost" data-act="av-prest" data-r="stay">Choose</button></div>';
+  var rs=ROUTES[a.calling]||[],al=ALTS[a.calling]||{},h='<div class="panel prestpick"><h3 style="margin:0 0 .2em">Lesson XXXVIII: Rome reaches Greece</h3><p class="note" style="margin:0 0 .6em;max-width:70ch">Your life can grow with Rome. Choose one of the two paths open to your calling, or stay and rise within your own craft. Your purchases stay yours, and your tutēla stays with you.</p><div class="prestid">'+personaFigure(a,'prest-bust',true)+'<b>'+esc(a.name)+'</b></div><div class="prestgrid">';
+  rs.forEach(function(r){h+='<div class="prestcard"><b class="lat">'+esc(prTitle(r,a))+'</b><span class="note">'+esc(PR[r][2])+'</span><button class="btn sm" data-act="av-prest" data-r="'+r+'">Choose</button>'+(al[r]?'<button class="link" data-act="av-prest" data-r="'+r+'" data-alt="'+al[r]+'">or as '+esc(prTitle(al[r],a))+' (“'+esc(PR[al[r]][2])+'”)</button>':'')+'</div>'});
+  h+='<div class="prestcard"><b class="lat">'+esc(ctitle(a))+'</b><span class="note">stay, and rise in your own craft</span><button class="btn sm ghost" data-act="av-prest" data-r="stay">Choose</button></div>';
   return h+'</div></div>'}
  window.__tutelaHtml=function(){var a=S.av;if(!a||!a.patron)return '';var k=String(a.patron).toLowerCase();return AT['pp_'+k]?sp('pp_'+k,'patimg'):(A3('gd_'+k)?'<img class="patimg" src="'+A3('gd_'+k)+'" alt="">':'')};
  window.__prestigePrompt=function(){var a=S.av;if(!a||!a.done||a.prestige||!done(38))return '';return '<section class="panel prestprompt"><div style="flex:1 1 240px"><b>Lesson XXXVIII: a new path is open.</b> <span class="note">Rome reaches Greece, and your calling can grow. Choose your path in your avatar’s portrait.</span></div><button class="btn sm" data-act="open-avatar">Choose your path</button></section>'};
@@ -11160,7 +11166,7 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
  var _laPR=labActs;labActs=function(Ac){_laPR(Ac);
   Ac['av-prest']=function(t){var a=A();a.prestige={r:t.dataset.r,alt:t.dataset.alt||null,t:Date.now()};a.__reveal=1;persist();V.avTab='portrait';render(true)};
   Ac['av-prest-reset']=function(){var a=A();delete a.prestige;persist();render(true)}};
- var cs3=document.createElement('style');cs3.textContent='.avcard .sp.avc-img{aspect-ratio:auto}.avsel .sp.avsel-img{height:auto;flex:none}.avcard .avc-img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block;margin-bottom:6px;background:#efe6cf}.avsel{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.avsel .avsel-img{width:150px;height:150px;object-fit:cover;border-radius:10px;border:1px solid var(--line,#d3d8de)}.avfig.selart,.avsfig.selart{object-fit:contain;object-position:bottom}.avfig.prest,.avsfig.prest{object-fit:contain;object-position:bottom}.prestgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.prestcard{border:1px solid var(--line,#d3d8de);border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;background:var(--surface,#fff)}.prestcard img{height:170px;width:100%;object-fit:contain;background:#f4f1e8;border-radius:6px}.prestpick,.prestprompt{border:2px solid #8a5f0d;background:#fffaf0}.prestprompt{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.prestdone{font-size:.95rem}';document.head.appendChild(cs3);
+ var cs3=document.createElement('style');cs3.textContent='.avcard .sp.avc-img{aspect-ratio:auto}.avsel .sp.avsel-img{height:auto;flex:none}.avcard .avc-img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block;margin-bottom:6px;background:#efe6cf}.avsel{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.avsel .avsel-img{width:150px;height:150px;object-fit:cover;border-radius:10px;border:1px solid var(--line,#d3d8de)}.avfig.selart,.avsfig.selart{object-fit:contain;object-position:bottom}.avfig.prest,.avsfig.prest{object-fit:contain;object-position:bottom}.prestgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.prestcard{border:1px solid var(--line,#d3d8de);border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;background:var(--surface,#fff)}.prestid{display:flex;align-items:center;gap:10px;margin:0 0 10px}.prest-bust{width:64px;aspect-ratio:1;object-fit:contain;border-radius:50%;background:#f4f1e8}.prestpick,.prestprompt{border:2px solid #8a5f0d;background:#fffaf0}.prestprompt{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.prestdone{font-size:.95rem}';document.head.appendChild(cs3);
 
  var NOM=[['Cornēlius','Cornēlia'],['Iūlius','Iūlia'],['Valerius','Valeria'],['Fabius','Fabia'],['Claudius','Claudia'],['Aemilius','Aemilia'],['Līvius','Līvia'],['Sempronius','Semprōnia']],PRAE=['Gaius','Lūcius','Mārcus','Quīntus','Pūblius','Titus','Aulus','Tiberius'];
  function A(){var a=S.av=S.av||{};a.owned=a.owned||{};a.worn=a.worn||{};Object.keys(LEG0).forEach(function(o){if(a.owned[o]){a.owned[LEG0[o]]=1}if(a.worn.Companion===o)a.worn.Companion=LEG0[o]});return a}
@@ -11376,9 +11382,18 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
    h+='</div>'});
   return h;
  }
+ function patronCardArt(k){
+  if(AT['pp_'+k])return sp('pp_'+k,'patimg');
+  var url=A3('gd_'+k);
+  if(!url)return '';
+  // Match the painted busts in this chooser. Keep full figures in their other views.
+  var crop={pales:[158,86],fortuna:[137,69],janus:[126,61]}[k];
+  if(!crop)return '<img class="patimg" src="'+url+'" alt="">';
+  return '<span class="patimg" style="display:block;position:relative;overflow:hidden;aspect-ratio:192/224" aria-hidden="true"><img src="'+url+'" alt="" style="position:absolute;max-width:none;width:'+crop[0]+'%;height:auto;left:'+(50-crop[1])+'%;top:0"></span>';
+ }
  function tabPatron(a){
   var c=cal(a.calling),pk=pkey(a);
-  var h='<div class="panel"><h3 style="margin:0 0 .3em">Tutēla</h3><p class="note" style="margin:0 0 .6em;max-width:70ch">The guardian deity of your calling is <b>'+esc(c.patron)+'</b>. You may choose any of the gods as your <i>tutēla</i>. A tutēla gives you an identity, an emblem, and a themed daily challenge, not an advantage.</p><div class="patgrid">'+PATRONS.map(function(p){var k=p.toLowerCase(),on=a.patron===p;return '<button class="patcard'+(on?' sel':'')+'" data-act="av-patron" data-p="'+p+'" aria-pressed="'+on+'">'+(AT['pp_'+k]?sp('pp_'+k,'patimg'):'<img class="patimg" src="'+A3('gd_'+k)+'" alt="" style="object-fit:contain">')+'<span class="pat-n">'+p+'</span><span class="pat-m">'+esc(MOTIF[k]||'')+'</span></button>'}).join('')+'</div></div>';
+  var h='<div class="panel"><h3 style="margin:0 0 .3em">Tutēla</h3><p class="note" style="margin:0 0 .6em;max-width:70ch">The guardian deity of your calling is <b>'+esc(c.patron)+'</b>. You may choose any of the gods as your <i>tutēla</i>. A tutēla gives you an identity, an emblem, and a themed daily challenge, not an advantage.</p><div class="patgrid">'+PATRONS.map(function(p){var k=p.toLowerCase(),on=a.patron===p;return '<button class="patcard'+(on?' sel':'')+'" data-act="av-patron" data-p="'+p+'" aria-pressed="'+on+'">'+patronCardArt(k)+'<span class="pat-n">'+p+'</span><span class="pat-m">'+esc(MOTIF[k]||'')+'</span></button>'}).join('')+'</div></div>';
   h+='<div class="panel"><p class="note" style="margin:0">Your companions have their own tab: <button class="link" data-act="av-tab" data-t="comp">Companions</button>.</p></div>';
   return h;
  }
@@ -13648,11 +13663,17 @@ var screenSpectacula;
         if (silhouette) {
           const pixels = piece.context.getImageData(0, 0, ...dimensions);
           const native = silhouette.data;
-          for (let py = Math.max(0, Math.floor(y)); py < Math.min(dimensions[1], y + h * .62); py++) {
-            const blend = clamp((py - y - h * .36) / (h * .26), 0, 1);
+          const tailored = /^(herder|stoneworker|textile|service)-male$/.test(pose.id);
+          const fadeStart = tailored ? .58 : .36;
+          const fadeEnd = tailored ? .80 : .62;
+          for (let py = Math.max(0, Math.floor(y)); py < Math.min(dimensions[1], y + h * fadeEnd); py++) {
+            const blend = clamp((py - y - h * fadeStart) / (h * (fadeEnd - fadeStart)), 0, 1);
             for (let px = Math.max(0, Math.floor(left - 3)); px < Math.min(dimensions[0], right + 4); px++) {
               const i = (py * dimensions[0] + px) * 4;
-              pixels.data[i + 3] *= blend + (1 - blend) * native[i + 3] / 255;
+              const overlap = native[i + 3] / 255;
+              // Reveal the strap over the native foot before revealing the sole outside it.
+              const inside = tailored ? clamp((py - y - h * .31) / (h * .29), 0, 1) : 1;
+              pixels.data[i + 3] *= blend + (1 - blend) * overlap * inside;
             }
           }
           piece.context.putImageData(pixels, 0, 0);
