@@ -308,7 +308,10 @@ onLoad();
    function next(){
     if(k>=list.length){LOADED[s]=1;delete PEND[s];im=null;sweep();return}
     var n=list[k++],a=AM[n],c=document.createElement('canvas');c.width=a[3];c.height=a[4];
-    c.getContext('2d').drawImage(im,a[1],a[2],a[3],a[4],0,0,a[3],a[4]);
+    var ctx=c.getContext('2d');
+    // Rotate the Lesson XI Taberna crop 180 degrees before encoding the image.
+    if(n===39)ctx.setTransform(-1,0,0,-1,c.width,c.height);
+    ctx.drawImage(im,a[1],a[2],a[3],a[4],0,0,a[3],a[4]);
     c.toBlob(function(b){if(b)URLS[n]=URL.createObjectURL(b);if(k%12===0)sweep();next()},'image/jpeg',.93);
    }
    next();
