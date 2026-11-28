@@ -53,6 +53,22 @@ assert "tab:'orbis'" in source[start:end]
 source = source[:start] + source[end+1:]
 once("The projects of the course. Each opens in its own lesson.", "Open a project to work on it here.")
 once(
+    """ var _sl=screenLesson;screenLesson=function(){var h=_sl();if(V.screen!=='lesson')return h;var l=V.lesson,n=plainWs().filter(function(w){return String(w.lesson)===String(l)}).length;if(!n)return h;
+  var b='<div class="panel dmlesson" role="region" aria-label="Worksheets in the Tablinum"><div style="flex:1 1 240px"><b>This lesson’s worksheets are in the Tablinum.</b> <span class="note">'+n+' worksheet'+(n===1?'':'s')+'.</span></div><button class="btn sm ghost" data-act="dm-ws" data-l="'+l+'">Open the Tablinum</button></div>';""",
+    """ var _sl=screenLesson;screenLesson=function(){
+  var h=_sl();
+  if(V.screen!=='lesson')return h;
+  var l=String(V.lesson),worksheets=plainWs().filter(function(w){return String(w.lesson)===l}).length;
+  var hasProjects=projWs().some(function(w){return String(w.lesson)===l})||
+   TABLINUM_PROJECTS.some(function(p){return String(p.l)===l});
+  if(!worksheets&&!hasProjects)return h;
+  var materials=worksheets?(hasProjects?'worksheets and projects':'worksheets'):'projects';
+  var b='<div class="panel dmlesson" role="region" aria-label="Lesson materials in the Tablinum">'+
+   '<div style="flex:1 1 240px"><b>This lesson’s '+materials+' are in the Tablinum.</b></div>'+
+   (worksheets?'<button class="btn sm ghost" data-act="dm-ws" data-l="'+l+'">'+(hasProjects?'Open worksheets':'Open the Tablinum')+'</button>':'')+
+   (hasProjects?'<button class="btn sm ghost" data-act="dm-project-list">Open projects</button>':'')+'</div>';""",
+)
+once(
     """  var rows=EXTRA.map(function(e){return {l:e.l,n:e.n,done:e.done(),act:'data-act="dm-proj" data-l="'+e.l+'" data-tab="'+e.tab+'"'}}).concat(projWs().map(function(w){return {l:w.lesson,n:(w.code?w.code+' ':'')+w.title,done:wsStatus(w)==='done',act:'data-act="ws-open" data-id="'+w.id+'"'}}));""",
     """  var rows=TABLINUM_PROJECTS.map(function(p){
    return {l:p.l,n:p.name,status:p.done()?'done':'new',act:'data-act="dm-proj" data-l="'+p.l+'" data-tab="'+p.tab+'"'};
@@ -100,6 +116,7 @@ once(
   A['dm-room']=function(t){DM.room=t.dataset.r;clearTablinumItem();render(true)};
   A['dm-sub']=function(t){DM.sub=t.dataset.s;clearTablinumItem();render(true)};
   A['dm-ws']=function(t){DM.lf=t.dataset.l;enterTablinum('ws');if(!DM.loaded)load();render(true)};
+  A['dm-project-list']=function(){enterTablinum('proj');if(!DM.loaded)load();render(true)};
   A['dm-proj']=function(t){
    var w=wsById(t.dataset.id);
    var p=TABLINUM_PROJECTS.find(function(p){return p.l===+t.dataset.l&&p.tab===t.dataset.tab});
@@ -122,6 +139,21 @@ once(
 once(
     """if(window.__domus.room==='tablinum'&&!V.ws){var assigned=pilotAssignments();""",
     """if(window.__domus.room==='tablinum'&&!V.ws&&!window.__domus.project){var assigned=pilotAssignments();""",
+)
+
+# Distinguish overall frequency from frequency in demonstrative use. Keep both
+# guided-note blank IDs, accepted answers, and any previously saved work.
+once(
+    "The demonstratives ~hic~ and ~ille~ are __ (stronger or weaker) than ~is~ and are __ (more commonly or less commonly) used.",
+    "In demonstrative use, ~hic~ and ~ille~ are __ (stronger or weaker) than ~is~. In that same use, ~is~ occurs __ (more commonly or less commonly) than ~hic~ and ~ille~. Overall, ~is~ occurs more often because it frequently serves as a third-person pronoun.",
+)
+once(
+    """P('The demonstratives '+L('hic')+' and '+L('ille')+' are stronger and more commonly used than the demonstrative '+L('is')+'. '""",
+    """P('In demonstrative use, '+L('hic')+' and '+L('ille')+' are stronger and more frequent than '+L('is')+'. Overall, '+L('is')+' occurs more often because it frequently serves as a third-person pronoun. '""",
+)
+once(
+    "This is for you; your instructor will score your presentation with the rubric.'});",
+    """'+(PUBLIC_PRACTICE?'After you present, use the same rubric to score your work and identify one improvement.':'This is for you; your instructor will score your presentation with the rubric.')});""",
 )
 
 page.write_text(source, encoding='utf-8')

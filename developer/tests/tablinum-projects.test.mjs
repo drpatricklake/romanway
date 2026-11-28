@@ -38,7 +38,23 @@ for (const edition of ['public-practice', 'classroom']) {
     assert.equal(p.model.view.screen, 'lesson');
     assert.ok(p.model.lessonTabs().every(([key]) => !retiredTabs.has(key)), 'Lesson ' + lesson);
     assert.doesNotMatch(p.markup(), /data-act="tab" data-tab="(?:proj|grimm|crossword|orbis)"/);
+    const hasProjects = p.model.worksheets.some(w => w.project && String(w.lesson) === String(lesson)) ||
+      activities.some(({ l }) => l === String(lesson));
+    const hasWorksheets = p.model.worksheets.some(w => !w.project && !w.inNotes && !w.inTab && String(w.lesson) === String(lesson));
+    if (hasProjects) {
+      assert.ok(plain(p.markup()).includes("This lesson’s " + (hasWorksheets ? 'worksheets and projects' : 'projects') + ' are in the Tablinum.'));
+      action(p, 'dm-project-list');
+      assertInProjects(p);
+    } else if (hasWorksheets) {
+      assert.match(plain(p.markup()), /This lesson’s worksheets are in the Tablinum\./);
+    }
   }
+
+  action(p, 'open-lesson', { l: '13' });
+  assert.match(plain(p.markup()), /In demonstrative use, hic and ille are stronger and more frequent than is/);
+  const notes = Object.values(p.model.notes).flat().find(segment => segment.id === 'p3b');
+  assert.match(notes.lines[0], /In that same use, ~is~ occurs __ .* than ~hic~ and ~ille~/);
+  assert.equal(notes.blanks[1].a[0], 'less commonly');
 
   action(p, 'open-domus', { r: 'tablinum' });
   action(p, 'dm-sub', { s: 'ws' });
@@ -54,6 +70,11 @@ for (const edition of ['public-practice', 'classroom']) {
     assertInProjects(p);
     assert.equal(p.model.view.ws, id);
     assert.ok(plain(p.markup()).includes(worksheet.title), id);
+    if (id === 'w125') {
+      assert.ok(plain(p.markup()).includes(edition === 'public-practice'
+        ? 'use the same rubric to score your work'
+        : 'your instructor will score your presentation'));
+    }
     assert.match(p.markup(), /data-act="ws-back">All projects/);
     action(p, 'ws-back');
     assertInProjects(p);
