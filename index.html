@@ -2310,8 +2310,8 @@ function readerHead(rd){
   return '<div class="sec"><div class="score"><div>'+(rd.kind==='long'?'<h2 style="margin:0">'+esc(rd.title)+'</h2>':'<h3 style="margin:0">'+esc(AUTHORS[rd.author].name)+', in Lesson '+esc(rd.lesson)+'</h3>')+'</div><button class="btn ghost sm" data-act="help-toggle" aria-pressed="'+st.help+'">'+(st.help?'Help is on':'Read without help')+'</button></div></div>';
 }
 function contextBox(rd){return '<div class="callout ctx"><p class="note" style="margin:0 0 3px"><b>Where this comes from</b></p><p style="margin:0">'+esc(rd.context)+'</p></div>'}
-function readingCard(rd){
-  return '<section class="rcard" id="rd-'+rd.id+'">'+attribution(rd)+(rd.noIntro?'':(rd.intro?introBox(rd):contextBox(rd)))+readerHead(rd)+latinText(rd)+lookedList(rd)+translateBox(rd)+'</section>';
+function readingCard(rd, options){
+  return '<section class="rcard" id="rd-'+rd.id+'">'+attribution(rd)+(rd.noIntro?'':(rd.intro?introBox(rd):contextBox(rd)))+readerHead(rd)+latinText(rd)+lookedList(rd)+(options&&options.translation===false?'':translateBox(rd))+'</section>';
 }
 function screenReadings(){
   var h='<main class="wrap"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1 style="font-size:2.2rem;margin-bottom:.2em">Readings <span class="chip">Prototype</span></h1><p class="lede" style="margin:0 0 .8em">A preview of how a lesson’s Readings tab could work, using passages from your Volumes I and II.</p>';
@@ -12695,7 +12695,20 @@ var screenArena;
 (function(){
  var BI={loaded:false,busy:false,settings:null,canEdit:false,err:null,msg:''},PAY=3;
  function capPaid(){var n=BI.settings?parseInt(BI.settings.paid,10):NaN;return (n>=0&&n<=50)?n:5}
- function task(){var t=BI.settings&&BI.settings.task;return (t==='tr'||t==='both')?t:'mc'}
+ var options=[['read','Reading only'],['tr','Translation'],['mc','Multiple choice'],['both','Translation and multiple choice']];
+ function task(){
+  var t=PUBLIC_PRACTICE?(S.biblio||{}).forumTask:BI.settings&&BI.settings.task;
+  return (t==='tr'||t==='both'||(PUBLIC_PRACTICE&&t==='read'))?t:'mc';
+ }
+ function forumOptions(){
+  if(!PUBLIC_PRACTICE)return '';
+  return '<fieldset class="panel bb-options"><legend>How would you like to work?</legend><div class="seg">'+options.map(function(option){
+   return '<button type="button" data-act="bb-forum-task" data-k="'+option[0]+'" aria-pressed="'+(task()===option[0])+'">'+option[1]+'</button>';
+  }).join('')+'</div><p class="note">Your choice and work are saved on this device.</p></fieldset>';
+ }
+ function needsTranslation(t){return t==='tr'||t==='both'}
+ function needsQuestions(t){return t==='mc'||t==='both'}
+ function translationMinimum(r){return Math.max(8,Math.round(r.lines.join(' ').split(/\s+/).length*0.4))}
  function trOK(id){var b=bs();return !!(b.tr&&b.tr[id])}
  window.__biblioteca=BI;window.__bibRungs=function(){return LADDER.slice()};
  var dbP=null,userP=null;
@@ -12706,17 +12719,20 @@ var screenArena;
  function mode(){var m=BI.settings&&BI.settings.mode;return (m==='all'||m==='through')?m:'sequence'}
  function through(){return Math.max(0,Math.min(57,parseInt(BI.settings&&BI.settings.through,10)||0))}
  function lessonComplete(n){try{var i=window.__rinfo(n);return !!(i&&i.live&&i.total&&i.done>=i.total)}catch(e){return false}}
- function isDone(id){var mc=false;try{mc=!!nleState(id).done}catch(e){}var t=task();return t==='both'?(mc&&trOK(id)):(t==='tr'?trOK(id):mc)}
- function unlocked(r){if(window.__pilotReadingAssigned&&window.__pilotReadingAssigned(r.id))return true;if(isDone(r.id))return true;var m=mode();if(m==='all')return true;if(m==='through'&&r.L<=through())return true;return lessonComplete(r.L)}
+ function isDone(id){var mc=false;try{mc=!!nleState(id).done}catch(e){}var t=task();return t==='read'?!!((bs().read||{})[id]||mc||trOK(id)):(t==='both'?(mc&&trOK(id)):(t==='tr'?trOK(id):mc))}
+ function unlocked(r){if(window.__pilotReadingAssigned&&window.__pilotReadingAssigned(r.id))return true;if(isDone(r.id)||(PUBLIC_PRACTICE&&bs().seen[r.id]))return true;var m=mode();if(m==='all')return true;if(m==='through'&&r.L<=through())return true;return lessonComplete(r.L)}
  function rungs(){return LADDER.map(function(r,i){return {r:r,i:i}}).sort(function(a,b){return (a.r.L-b.r.L)||(a.i-b.i)}).map(function(x){return x.r})}
  function fresh(){return rungs().filter(function(r){return unlocked(r)&&!isDone(r.id)&&!bs().seen[r.id]})}
  function today(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
  /* a scroll finished for the first time pays a little, up to a daily limit; scrolls finished before this existed pay nothing */
  function settle(){var b=bs(),first=!b.init,t=today(),f=window.__fc;
-  rungs().forEach(function(r){if(!isDone(r.id)||b.paid[r.id])return;
+  if(task()==='read'&&!first)return;
+  rungs().forEach(function(r){
+   var qualified=task()==='read'?!!nleState(r.id).done:isDone(r.id);
+   if(!qualified||b.paid[r.id])return;
    if(first){b.paid[r.id]=1;return}
    var n=b.days[t]||0;
-   if(n<capPaid()&&f&&f.coinsOn&&f.coinsOn()&&f.add){f.add(PAY);b.days[t]=n+1;b.paid[r.id]=2}
+   if(n<capPaid()&&f&&f.coinsOn&&f.coinsOn()&&f.add){b.days[t]=n+1;b.paid[r.id]=2;f.add(PAY)}
   });
   if(first)b.init=true;persist()}
  function load(){if(window.__pilotApply){window.__pilotApply();return}if(BI.busy)return;BI.busy=true;
@@ -12726,7 +12742,7 @@ var screenArena;
   }).catch(function(e){BI.err=code(e)}).then(function(){BI.busy=false;BI.loaded=true;render(true)})}
  var SCROLL0='<svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true" focusable="false"><rect x="8" y="7" width="24" height="26" rx="2" fill="#f1e3bf" stroke="#8a5f0d" stroke-width="2"/><ellipse cx="9" cy="20" rx="4" ry="13" fill="#e4cf9a" stroke="#8a5f0d" stroke-width="2"/><ellipse cx="31" cy="20" rx="4" ry="13" fill="#e4cf9a" stroke="#8a5f0d" stroke-width="2"/><path d="M14 14h12M14 20h12M14 26h8" stroke="#8a5f0d" stroke-width="1.6" stroke-linecap="round"/></svg>';
  function SCR(){var a=(window.__ART||{}).scroll_icon;return a?'<img src="'+a.u+'" alt="" style="height:46px;width:auto">':SCROLL0}
- function trPanel(r){var t=task();if(t==='mc')return '';var id=r.id,txt=String((rdState().tr||{})[id]||'').trim(),n=txt?txt.split(/\s+/).length:0,need=Math.max(8,Math.round(r.lines.join(' ').split(/\s+/).length*0.4)),done=trOK(id);
+ function trPanel(r){if(!needsTranslation(task()))return '';var id=r.id,txt=String((rdState().tr||{})[id]||'').trim(),n=txt?txt.split(/\s+/).length:0,need=translationMinimum(r),done=trOK(id);
   return '<div class="panel bbtr"><b>Your translation</b>'+(BI.trmsg?'<p class="note" role="status" style="margin:.2em 0;color:#a8412f">'+esc(BI.trmsg)+'</p>':'')+'<p class="note" style="margin:.2em 0 .5em">'+(done?'You have marked this translation finished. You can still revise it above.':'When your translation is complete, mark it finished. It needs at least '+need+' words; you have '+n+'.')+'</p>'+(done?'<span class="chip ok">Finished</span>':'<button class="btn sm" data-act="bb-trdone" data-id="'+id+'" data-need="'+need+'">Mark my translation finished</button>')+'</div>'}
  function promptText(fr){return esc(fr[0].title)+(fr.length>1?' and '+(fr.length-1)+' more':'')}
  /* the lessons no longer carry the ladder: the tab is removed, and a lesson's completion no longer waits on it */
@@ -12738,15 +12754,24 @@ var screenArena;
  wrapAll();
  var _sh=screenHome;screenHome=function(){wrapAll();return _sh()};
  /* the screen */
- screenBiblioteca=function(){wrapAll();settle();var b=bs(),open=S.ladderOpen,all=rungs(),h='<main class="wrap"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1 style="font-size:2.1rem;margin-bottom:.1em">Biblioteca</h1>';
+ screenBiblioteca=function(){wrapAll();settle();var b=bs(),open=S.ladderOpen,all=rungs(),h='<main class="wrap"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1 style="font-size:2.1rem;margin-bottom:.1em">Bibliothēca</h1>';
   if(open){var r=LADDER.filter(function(x){return x.id===open})[0];
-   var rv=(window.__ART||{}).scroll_reveal;if(r&&unlocked(r))return h+'<div class="sec"><button class="btn ghost" data-act="ld-back">Back to the Biblioteca</button></div>'+(rv?'<div class="bbreveal" aria-hidden="true"><img src="'+rv.u+'" alt="" data-cue="scroll-open"></div>':'')+'<div class="sec prose"><h2>'+esc(r.title)+'</h2><p class="note">Read the story first. Tap a word for help, or switch the help off to read on your own. '+(task()==='tr'?'Then write your translation.':(task()==='both'?'Then write your translation and answer the questions.':'Then answer the questions.'))+'</p></div><div class="bbtask-'+((BI.settings&&BI.settings.task)?task():'open')+'">'+readingCard(readingById(open))+'</div>'+trPanel(r)+(task()!=='tr'?nleView(open,true):'')+'</main>';
+   var rv=(window.__ART||{}).scroll_reveal,t=task();
+   if(r&&unlocked(r)){
+    var instruction={read:'Read at your own pace. You can mark the scroll as read when you finish.',tr:'Then write your translation.',mc:'Then answer the questions.',both:'Then write your translation and answer the questions.'}[t];
+    var readButton=t==='read'?(isDone(open)?'<p class="note" role="status">Read</p>':'<button class="btn sm" data-act="bb-mark-read" data-id="'+esc(open)+'">Mark as read</button>'):'';
+    return h+'<div class="sec"><button class="btn ghost" data-act="ld-back">Back to the Biblioteca</button></div>'+
+     (rv?'<div class="bbreveal" aria-hidden="true"><img src="'+rv.u+'" alt="" data-cue="scroll-open"></div>':'')+
+     '<div class="sec prose"><h2>'+esc(r.title)+'</h2><p class="note">Tap a word for help, or switch help off. '+instruction+'</p></div>'+
+     forumOptions()+readingCard(readingById(open),{translation:needsTranslation(t)})+trPanel(r)+(needsQuestions(t)?nleView(open,true):'')+readButton+'</main>';
+   }
    S.ladderOpen=null}
+  h+=forumOptions();
   var bg=(window.__ART||{}).bg_biblio;if(bg)h+='<div class="artban" data-cue="room-enter"><img src="'+bg.u+'" alt="The Biblioteca, with scrolls on the shelves"></div>';
   h+='<p class="note" style="max-width:72ch;margin:0 0 .6em">The reading library. Each scroll is a short original story, a little harder than the one before it, with questions in the style of the National Latin Exam. A new scroll opens each time you finish the lesson it belongs to. Reading a lot of easy Latin builds fluency faster than reading a little hard Latin, and the scrolls make good review whenever you return to Latin after a break.</p>';
-  if(window.__fc&&window.__fc.coinsOn&&window.__fc.coinsOn())h+='<p class="note" style="margin:0 0 .6em">The first time you finish a scroll it pays '+PAY+' denarii, up to '+capPaid()+' scrolls a day. Reading more is always welcome, paid or not.</p>';
+  if(task()!=='read'&&window.__fc&&window.__fc.coinsOn&&window.__fc.coinsOn())h+='<p class="note" style="margin:0 0 .6em">The first time you finish a scroll it pays '+PAY+' denarii, up to '+capPaid()+' scrolls a day. Reading more is always welcome, paid or not.</p>';
   if(mode()!=='sequence')h+='<div class="callout" style="max-width:72ch"><p style="margin:0">'+(mode()==='all'?'Your teacher has opened every scroll.':'Your teacher has opened the scrolls through Lesson '+ROMAN[through()-1]+'.')+'</p></div>';
-  h+=all.map(function(r,i){var done=isDone(r.id),un=unlocked(r),sc=done?nleScore(r.id):null,words=r.lines.join(' ').split(/\s+/).length;
+  h+=all.map(function(r,i){var done=isDone(r.id),un=unlocked(r),sc=needsQuestions(task())&&nleState(r.id).done?nleScore(r.id):null,words=r.lines.join(' ').split(/\s+/).length;
    var chip=done?'<span class="chip ok">Finished</span>':(un?(b.seen[r.id]?'':'<span class="chip acc">New</span>'):'<span class="chip">Locked</span>');
    return '<div class="panel" style="margin:.6em 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap'+(un?'':';opacity:.72')+'"><div><b>Scroll '+(i+1)+': '+(un?esc(r.title):'a scroll not yet opened')+'</b> '+chip+'<br><span class="note">'+(un?words+' words'+(sc?'. Your score: '+sc.ok+' of '+sc.tot:''):'Opens when you finish Lesson '+ROMAN[r.L-1])+'</span></div>'+(un?'<button class="btn'+(done?' ghost':'')+'" data-act="bb-read" data-id="'+r.id+'">'+(done?'Read again':'Read this scroll')+'</button>':'')+'</div>'}).join('');
   if(BI.canEdit){var m=mode();h+='<div class="panel" style="margin-top:1.2em"><b>For the teacher</b><p class="note" style="margin:.3em 0 .5em;max-width:70ch">Choose how the scrolls open for the whole class. In sequence is the usual setting. Open all, or open through a lesson, is useful for review, for example when students return to Latin after a break.</p><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn'+(m==='sequence'?'':' ghost')+'" data-act="bb-mode" data-m="sequence">In sequence</button><button class="btn'+(m==='all'?'':' ghost')+'" data-act="bb-mode" data-m="all">Open all</button><label>Open through Lesson <input id="bb-n" type="number" min="1" max="57" value="'+(through()||30)+'" style="width:4.5em"></label><button class="btn'+(m==='through'?'':' ghost')+'" data-act="bb-mode" data-m="through">Apply</button></div><p style="margin:.8em 0 .3em"><b>What each scroll asks</b></p><div class="seg" role="group" aria-label="What each scroll asks"><button data-act="bb-task" data-k="mc" aria-pressed="'+(task()==='mc')+'">Questions only</button><button data-act="bb-task" data-k="tr" aria-pressed="'+(task()==='tr')+'">Translation only</button><button data-act="bb-task" data-k="both" aria-pressed="'+(task()==='both')+'">Both</button></div><p style="margin:.6em 0 0"><label>Paid scrolls a day <input id="bb-paid" type="number" min="0" max="50" value="'+capPaid()+'" style="width:4.5em"></label> <button class="btn sm ghost" data-act="bb-paid">Save</button></p>'+(BI.msg?'<p class="note" role="status" style="margin:.5em 0 0">'+esc(BI.msg)+'</p>':'')+'</div>'}
@@ -12754,9 +12779,24 @@ var screenArena;
  var _la=labActs;labActs=function(A){_la(A);
   A['bb-task']=function(t){var doc=Object.assign({},BI.settings||{},{task:t.dataset.k,t:Date.now()});getDb().then(function(db){return db.doc('settings/biblioteca').set(doc)}).then(function(){BI.settings=doc;BI.msg='Saved for the class.';render(true)},function(e){BI.msg='Could not save ('+code(e)+').';render(true)})};
   A['bb-paid']=function(){var n=parseInt((document.getElementById('bb-paid')||{}).value,10);if(!(n>=0&&n<=50)){BI.msg='Choose a number from 0 to 50.';return render(true)}var doc=Object.assign({},BI.settings||{},{paid:n,t:Date.now()});getDb().then(function(db){return db.doc('settings/biblioteca').set(doc)}).then(function(){BI.settings=doc;BI.msg='Saved for the class.';render(true)},function(e){BI.msg='Could not save ('+code(e)+').';render(true)})};
-  A['bb-trdone']=function(t){var id=t.dataset.id,need=+t.dataset.need,txt=String((rdState().tr||{})[id]||'').trim(),n=txt?txt.split(/\s+/).length:0;if(n<need){BI.trmsg='Translate a little more first: '+n+' of at least '+need+' words.';return render(true)}BI.trmsg='';var b=bs();b.tr=b.tr||{};b.tr[id]=Date.now();persist();render(true)};
+  A['bb-forum-task']=function(t){
+   var next=t.dataset.k;
+   if(!PUBLIC_PRACTICE||!S.user||!options.some(function(o){return o[0]===next}))return;
+   bs().forumTask=next;BI.trmsg='';persist();render(true);
+  };
+  A['bb-mark-read']=function(t){
+   var id=t.dataset.id,r=LADDER.find(function(r){return r.id===id});
+   if(!PUBLIC_PRACTICE||!S.user||task()!=='read'||S.ladderOpen!==id||!r||!unlocked(r))return;
+   var b=bs();b.read=b.read||{};if(!b.read[id]){b.read[id]=Date.now();persist()}render(true);
+  };
+  A['bb-trdone']=function(t){
+   var id=t.dataset.id,r=LADDER.find(function(r){return r.id===id});
+   if(!S.user||!needsTranslation(task())||S.ladderOpen!==id||!r||!unlocked(r))return;
+   var need=translationMinimum(r),txt=String((rdState().tr||{})[id]||'').trim(),n=txt?txt.split(/\s+/).length:0;if(n<need){BI.trmsg='Translate a little more first: '+n+' of at least '+need+' words.';return render(true)}BI.trmsg='';var b=bs();b.tr=b.tr||{};b.tr[id]=Date.now();persist();render(true)};
   A['open-biblioteca']=function(){V.screen='biblioteca';S.ladderOpen=null;BI.msg='';if(!BI.loaded)load();window.scrollTo(0,0);render(true)};
-  A['bb-read']=function(t){var b=bs();b.seen[t.dataset.id]=true;S.ladderOpen=t.dataset.id;persist();window.scrollTo(0,0);render(true)};
+  A['bb-read']=function(t){var r=LADDER.find(function(r){return r.id===t.dataset.id});
+   if(!S.user||!r||!unlocked(r))return;
+   BI.trmsg='';var b=bs();b.seen[t.dataset.id]=true;S.ladderOpen=t.dataset.id;persist();window.scrollTo(0,0);render(true)};
   A['bb-mode']=function(t){var m=t.dataset.m,doc=Object.assign({},BI.settings||{},{mode:m,t:Date.now()});if(m==='through'){var n=parseInt((document.getElementById('bb-n')||{}).value,10);if(!(n>=1&&n<=57)){BI.msg='Choose a lesson from 1 to 57.';return render(true)}doc.through=n}
    getDb().then(function(db){return db.doc('settings/biblioteca').set(doc)}).then(function(){BI.settings=doc;BI.msg='Saved for the class.';render(true)},function(e){BI.msg='Could not save ('+code(e)+').';render(true)})};
  };
@@ -16079,7 +16119,7 @@ function settingsPanel(){
  h+=numberField('p-threshold','Required-practice accuracy (%)',l.threshold,0,100)+selectField('p-macrons','Macrons',l.macrons,[['lenient','Accept missing macrons'],['strict','Require macrons']])+selectField('p-practiceLen','Practice questions',l.practiceLen,[[5,'5'],[10,'10'],[15,'15']])+selectField('p-models','Model translations',l.models,[['off','Hidden'],['after','After the student writes'],['always','Always available']])+numberField('p-dailyGoal','Daily study goal',l.dailyGoal,1,100)+numberField('p-classGoal','Class practice goal',l.classGoal,1,100000)+numberField('p-newPerDay','New vocabulary per day',l.newPerDay,1,100)+selectField('p-lab','Sentence Lab default',l.lab,[['full','Full Lab'],['anchors','Key sentences full'],['light','Stripped-down Lab'],['off','Translate only']])+selectField('p-forumMode','Personal economy',l.forumMode,[['coins','Denarii and purchases'],['merit','No spendable coins']]);
  h+='</div>'+checkField('p-vocabRule','Require vocabulary review below the threshold',l.vocabRule)+checkField('p-autoAddLooked','Add looked-up words to review',l.autoAddLooked)+checkField('p-readingU','Use U in reading text',l.readingU)+checkField('p-showDrafts','Show draft material',l.showDrafts)+checkField('p-labLock','Lock the class Sentence Lab setting',l.labLock)+'<p class="note">AI translation feedback remains off until a separate provider is configured. Existing human-readable model answers remain available.</p><button class="btn" data-act="pilot-save-learning">Save learning settings</button></section>';
  h+='<section class="panel"><h2>Circus</h2><div class="pilot-fields">'+selectField('p-factionMode','Automatic factions',c.assign,[['calling','By calling'],['even','Even split']])+numberField('p-paidRounds','Staked trainer races per day',c.paidRounds,0,50)+'</div>'+checkField('p-stakes','Allow stakes in existing trainer races',c.stakes)+checkField('p-liveEnabled','Allow teacher-led live rounds',c.liveEnabled)+checkField('p-ghostEnabled','Allow classmate ghost races',c.ghostEnabled)+'<p>Shared races use no stakes. The first five shared finishes each day count toward the faction competition. All further races remain available for practice.</p><button class="btn" data-act="pilot-save-circus">Save Circus settings</button></section>';
- h+='<section class="panel"><h2>Biblioteca</h2><div class="pilot-fields">'+selectField('p-bibMode','Scroll access',b.mode,[['sequence','As lessons are completed'],['through','Open through a lesson'],['all','All scrolls open']])+numberField('p-bibThrough','Open through lesson',b.through,0,57)+selectField('p-bibTask','Scroll work',b.task,[['mc','Questions'],['tr','Translation'],['both','Both']])+numberField('p-bibPaid','Paid new scrolls per day',b.paid,0,50)+'</div><button class="btn" data-act="pilot-save-biblioteca">Save Biblioteca settings</button></section>';
+ h+='<section class="panel"><h2>Biblioteca</h2><div class="pilot-fields">'+selectField('p-bibMode','Scroll access',b.mode,[['sequence','As lessons are completed'],['through','Open through a lesson'],['all','All scrolls open']])+numberField('p-bibThrough','Open through lesson',b.through,0,57)+selectField('p-bibTask','Scroll work',b.task,[['mc','Multiple choice'],['tr','Translation'],['both','Translation and multiple choice']])+numberField('p-bibPaid','Paid new scrolls per day',b.paid,0,50)+'</div><button class="btn" data-act="pilot-save-biblioteca">Save Biblioteca settings</button></section>';
  return h;
 }
 function factionPanel(){return '<section class="panel"><h2>Faction assignments</h2><p>Individual overrides take priority over the automatic assignment. Saving an even split distributes the approved roster across all four factions.</p>'+table(['Student','Faction','Apply'],CLOUD.rows.filter(function(r){return r.status==='active'}).map(function(r){return [esc(r.displayName),'<select id="faction-'+esc(r.uid)+'">'+['auto','blue','green','red','white'].map(function(f){return '<option value="'+f+'"'+((r.faction||'auto')===f?' selected':'')+'>'+(f==='auto'?'Automatic':factionNames[f])+'</option>'}).join('')+'</select>','<button class="btn sm ghost" data-act="pilot-faction" data-uid="'+esc(r.uid)+'">Save</button>']}))+'</section>'}
