@@ -7,6 +7,8 @@ const p=harness(process.argv[2]||'index.html',{
 });
 action(p,'local-start');
 assert.match(p.markup(),/<main[^>]*><section class="panel avbar cta">/);
+assert.doesNotMatch(p.markup(),/class="avlinks"|>Device progress<|Choose your calling/);
+assert.equal((p.markup().match(/data-act="open-spectacula"/g)||[]).length,1);
 assert.match(p.markup(),/id="cloud-status" class="fh-storage"[^>]*>Saved on this device/);
 assert.doesNotMatch(p.markup(),/Only the Introduction and Lessons I and XIII are built|Chiseled into the Codex/);
 action(p,'open-avatar');
