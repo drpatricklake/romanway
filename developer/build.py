@@ -73,3 +73,6 @@ runpy.run_path(str(root/'apply-avatar-fitting.py'),run_name='__main__')
 
 # Frame the original deity art as busts in the chooser and show the current persona at promotion.
 runpy.run_path(str(root/'apply-avatar-card-preview.py'),run_name='__main__')
+
+# Add the checklist using the original completion and reward rules.
+runpy.run_path(str(root/'apply-lesson-checklist.py'),run_name='__main__')
