@@ -82,3 +82,6 @@ runpy.run_path(str(root/'apply-bibliotheca-options.py'),run_name='__main__')
 
 # Keep worksheet and interactive projects together in the Tablīnum.
 runpy.run_path(str(root/'apply-tablinum-projects.py'),run_name='__main__')
+
+# Give Public Practice its Forum homepage and direct marketplace.
+runpy.run_path(str(root/'apply-forum-home.py'),run_name='__main__')
