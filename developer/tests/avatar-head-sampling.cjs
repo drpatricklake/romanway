@@ -14,8 +14,10 @@ while ((offset = html.indexOf(marker, offset)) >= 0) {
     return { canvas, context: canvas.getContext('2d') };
   };
   const { canvas, context } = makeSurface();
-  context.fillStyle = '#73543b';
-  context.fillRect(0, 0, ...dimensions);
+  for (let row=0; row<dimensions[1]; row++) {
+    context.fillStyle = 'rgb('+Math.min(255,row*2)+',84,59)';
+    context.fillRect(0,row,dimensions[0],1);
+  }
   const result = vm.runInNewContext('(function(){' + code + '})()', {
     dimensions, canvas, context, surface: makeSurface,
     center: () => 176, pose: { anchors: { head: [] } },
@@ -23,8 +25,12 @@ while ((offset = html.indexOf(marker, offset)) >= 0) {
   });
   const pixels = result.getContext('2d').getImageData(175, 10, 1, 100).data;
   for (let row = 0; row < 100; row++) {
-    assert.deepEqual([...pixels.slice(row * 4, row * 4 + 4)], [115, 84, 59, 255],
-      'Solid head texture must remain opaque and constant at row ' + (row + 10));
+    const y=row+10;
+    const sourceY=y<83?(y+.5-10)*83/73-.5:y;
+    assert.ok(Math.abs(pixels[row*4]-Math.round(sourceY*2))<=1,
+      'Head must sample the continuous vertical gradient at row '+y);
+    assert.deepEqual([...pixels.slice(row*4+1,row*4+4)],[84,59,255],
+      'Head must preserve color and opacity at row '+y);
   }
   checked++;
   offset = end;
