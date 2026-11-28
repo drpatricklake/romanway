@@ -137,10 +137,23 @@ function summarizeLessonParts(parts, total) {
     var m=lessonTasks(V.lesson);
     return m.total?html.replace('<div class="tabs" role="tablist">',checklist(m)+'<div class="tabs" role="tablist">'):html;
   };
+  function secondaryHomeButtons(html){
+    return html.replace(/<button class="(btn(?: [^"]*)?)"/g,function(markup,classes){
+      return /(?:^| )ghost(?: |$)/.test(classes)?markup:'<button class="'+classes+' ghost"';
+    });
+  }
   var previousHome=screenHome;
   screenHome=function(){
     var html=previousHome();
     if(!S.user||S.user.role!=='student')return html;
+    if(!S.av||!S.av.done){
+      // Keep the existing setup flow and give it the first position until a persona is saved.
+      var setup=html.match(/<section class="panel avbar cta">[\s\S]*?<\/section>/);
+      if(!setup)return html;
+      return secondaryHomeButtons(html.replace(setup[0],'')).replace(/(<main\b[^>]*>)/,function(main){
+        return main+setup[0];
+      });
+    }
     var open=Object.keys(S.opened||{}).map(Number).filter(function(n){return n>=1&&n<=57}).sort(function(a,b){return b-a});
     var n=open.find(function(n){var p=lessonProgress(n);return p.done<p.total});
     if(!n)for(var i=1;i<=57;i++){var p=lessonProgress(i);if(p.done<p.total){n=i;break}}
@@ -149,9 +162,7 @@ function summarizeLessonParts(parts, total) {
     if(!t)return html;
     var reward=m.xp.find(function(i){return i.tab===t.id&&!i.done});
     var button='Continue: '+t.label+(reward?', up to +'+reward.xp+' XP':'');
-    html=html.replace(/<button class="(btn(?: [^"]*)?)"/g,function(markup,classes){
-      return /(?:^| )ghost(?: |$)/.test(classes)?markup:'<button class="'+classes+' ghost"';
-    });
+    html=secondaryHomeButtons(html);
     return html.replace(/(<main\b[^>]*>)/,'$1<section class="panel lc lc-next" aria-label="Continue your lesson"><p>Lesson '+ROMAN[n-1]+' · '+m.done+' of '+m.total+' required parts complete</p>'+action(t,n,button,'btn')+'</section>');
   };
   var styles=document.createElement('style');

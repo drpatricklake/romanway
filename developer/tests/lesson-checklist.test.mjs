@@ -2,6 +2,23 @@ import assert from 'node:assert/strict';
 import {harness,action} from './harness.mjs';
 const p=harness(process.argv[2]||'index.html',{edition:'public-practice',configure(c){c.URLSearchParams=URLSearchParams}});
 action(p,'local-start');
+const home=p.markup();
+assert.match(home,/<main\b[^>]*><section class="panel avbar cta">/);
+assert.doesNotMatch(home,/data-act="lesson-checklist-go"/);
+assert.equal((home.match(/class="panel avbar cta"/g)||[]).length,1);
+action(p,'open-avatar');
+action(p,'av-pick',{id:'textile'});
+action(p,'av-create');
+assert.equal(p.model.state.av.done,true);
+action(p,'home');
+assert.doesNotMatch(p.markup(),/class="panel avbar cta"/);
+const reopened=harness(process.argv[2]||'index.html',{
+ edition:'public-practice',seedStorage:Object.fromEntries(p.saved),configure(c){c.URLSearchParams=URLSearchParams}
+});
+action(reopened,'local-start');
+assert.equal(reopened.model.state.av.done,true);
+assert.match(reopened.markup(),/Continue: Guided notes/);
+assert.doesNotMatch(reopened.markup(),/class="panel avbar cta"/);
 assert.match(p.markup(),/Continue: Guided notes/);
 const filled=[...p.markup().matchAll(/<button class="(btn(?: [^"]*)?)"[^>]*>/g)].filter(m=>!m[1].split(' ').includes('ghost'));
 assert.equal(filled.length,1);
