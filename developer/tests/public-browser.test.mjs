@@ -10,7 +10,7 @@ const root=new URL('../../.vercel/output/',import.meta.url);
 const config=JSON.parse(readFileSync(new URL('config.json',root)));
 const manifest=JSON.parse(readFileSync(new URL('static/assets/manifest.json',root)));
 const allowed=new Set([
- '/','/index.html','/app-config.js','/app-bootstrap.js','/local-progress.js','/pilot-core.js','/word-forms.js',
+ '/','/index.html','/app-config.js','/app-bootstrap.js','/local-progress.js','/pilot-core.js','/romanway-app.js','/word-forms.js',
  ...manifest.images.concat(manifest.worksheets).map(asset=>'/'+asset.path),
 ]);
 const contentTypes={

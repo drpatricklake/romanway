@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { basename } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import vm from 'node:vm';
 
 const digest = value => createHash('sha256').update(value).digest('hex').slice(0, 16);
@@ -36,7 +36,10 @@ function element() {
 
 function harness(filename, options = {}) {
   const exactHtml = readFileSync(filename, 'utf8');
-  const scripts = Array.from(exactHtml.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi), (m) => m[1]);
+  const scripts = Array.from(exactHtml.matchAll(/<script(\s[^>]*)?>([\s\S]*?)<\/script>/gi), ([, attrs, body]) =>
+    attrs === ' src="/romanway-app.js"'
+      ? readFileSync(join(dirname(filename), 'romanway-app.js'), 'utf8')
+      : body);
   const app = scripts.find(s => s.includes('latin-proto-lesson1-v1') && s.includes('function render('));
   assert.ok(app, 'Could not locate the main app script');
   const end = /\nrender\(\);\n\}\)\(\);\s*$/;

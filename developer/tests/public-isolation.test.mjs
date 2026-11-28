@@ -38,12 +38,16 @@ assert.match(p.saved.get('romanway:public-practice:progress:v1'),/Distinctive re
 assert.match(plain(p.markup()),/Saved and checked/);
 const all=lessons(p);assert.deepEqual(all.failures,[]);
 for(const screen of all.captures)assert.ok(screen);
-// Audit the displayed lesson copy, including reading/project/translation tabs.
+// Audit displayed lesson and project copy through their normal entry points.
 for(const lesson of ['intro',...Array.from({length:57},(_,i)=>i+1)]){
  action(p,'open-lesson',{l:String(lesson)});
  for(const [tab] of p.model.lessonTabs()){
   action(p,'tab',{tab});assert.doesNotMatch(plain(p.markup()),forbidden,`${lesson}:${tab}`);
  }
+}
+for(const [l,tab] of [['35','grimm'],['47','crossword'],['51','orbis']]){
+ action(p,'dm-proj',{l,tab});
+ assert.doesNotMatch(plain(p.markup()),forbidden,tab);
 }
 // Public labels must not rewrite learner responses that contain the same words.
 action(p,'open-lesson',{l:'1'});action(p,'tab',{tab:'notes'});
@@ -57,7 +61,7 @@ assert.equal(output.version,3);
 assert.match(output.routes[0].headers['Content-Security-Policy'],/connect-src 'none'/);
 assert.match(output.routes[0].headers['Content-Security-Policy'],/form-action 'none'/);
 const staticRoot='.vercel/output/static';
-assert.deepEqual(readdirSync(staticRoot).sort(),['404.html','app-bootstrap.js','app-config.js','assets','index.html','local-progress.js','pilot-core.js','word-forms.js']);
+assert.deepEqual(readdirSync(staticRoot).sort(),['404.html','app-bootstrap.js','app-config.js','assets','index.html','local-progress.js','pilot-core.js','romanway-app.js','word-forms.js']);
 const manifest=JSON.parse(readFileSync(join(staticRoot,'assets/manifest.json')));
 const expectedAssets=[
   'assets/README.md','assets/manifest.json',manifest.figure_index.path,
@@ -72,5 +76,7 @@ assert.deepEqual(packagedAssets,expectedAssets,'Static assets must match the rev
 assert.equal(existsSync('.vercel/output/functions'),false);
 const html=readFileSync('.vercel/output/static/index.html','utf8');
 assert.doesNotMatch(html,/new XMLHttpRequest|<link[^>]+https:\/\/fonts\./);
+assert.match(html,/<script src="\/romanway-app\.js"><\/script>/);
+assert.doesNotMatch(html,/latin-proto-lesson1-v1/,'The packaged app script must load from its own file');
 assert.match(html,/<meta http-equiv="Content-Security-Policy"/);
 console.log(`PASS static Public Practice: ${all.captures.length} lesson tabs, manifest-only assets, shared controls/actions blocked, zero network/adapter calls, no server/account files, CSP blocks connections and forms.`);
