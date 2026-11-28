@@ -56,6 +56,10 @@ if args.deployment:
     html = deploy / 'index.html'
     require(html.is_file(), 'deployment index.html missing')
     content = html.read_text(encoding='utf-8')
+    if '<script src="/romanway-app.js"></script>' in content:
+        app = deploy / 'romanway-app.js'
+        require(app.is_file() and app.stat().st_size > 0, 'deployment application script missing or empty')
+        content += app.read_text(encoding='utf-8')
     require(not re.search(r'/_blob/[0-9a-f]{32}', content) or (args.graphics_only and set(re.findall(r'/_blob/([0-9a-f]{32})', content)) <= set(unresolved)), 'unresolved legacy URL in deployment')
     require("im.src='/_blob/'+SHEETS[s]" not in content, 'legacy textbook loader in deployment')
     by_path = {e['path']: e for e in entries + worksheets}
