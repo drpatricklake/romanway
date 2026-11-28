@@ -79,3 +79,6 @@ runpy.run_path(str(root/'apply-lesson-checklist.py'),run_name='__main__')
 
 # Render Bibliothēca activities according to the edition and selected work.
 runpy.run_path(str(root/'apply-bibliotheca-options.py'),run_name='__main__')
+
+# Keep worksheet and interactive projects together in the Tablīnum.
+runpy.run_path(str(root/'apply-tablinum-projects.py'),run_name='__main__')
