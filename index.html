@@ -2696,11 +2696,11 @@ function tabRead13(){
 /* ----- progress for Lesson XIII ----- */
 function setsDone(){var n=0;Object.keys(TSETS).forEach(function(id){var p=setProgress(id);if(p.n>=Math.ceil(p.t/2))n++});return n}
 function lessonProgress13(){
-  var parts=[notesStatus('l13').s==='done',vocabStatus(13).s==='done'];
-  var s=exStatus('dA').s;parts.push(s==='mastered'||s==='cleared');
-  parts.push(setsDone()>=3);
-  parts.push(!!((rdState().tr.rr||'').trim()));
-  return {done:parts.filter(Boolean).length,total:5};
+  var parts=[lessonPartStatus(notesStatus('l13').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(13).s==='done',"vocab",["vocab"])];
+  var s=exStatus('dA').s;parts.push(lessonPartStatus(s==='mastered'||s==='cleared','group',[['dA','drill']]));
+  parts.push(lessonPartStatus(setsDone()>=3,'translationSets',['dB','dC','xA','xB'],3));
+  parts.push(lessonPartStatus(!!((rdState().tr.rr||'').trim()),'reading',['read']));
+  return summarizeLessonParts(parts,5);
 }
 
 /* passage-specific context for the Exercise A sentences (drafts) */
@@ -3509,10 +3509,10 @@ function labDone(set){return LABSETS[set].ids.filter(function(id){return labStat
 function lessonProgress(n){
   n=n||1;if(n===13)return lessonProgress13();
   var parts;
-  if(n===2)parts=[notesStatus('l2').s==='done',vocabStatus(2).s==='done',okRef('l2D'),setProgress('l2A').n>=8&&setProgress('l2B').n>=8,!!((S.ws.w22&&S.ws.w22.sub)||(S.ws.w23&&S.ws.w23.sub))];
-  else if(n===3)parts=[notesStatus('l3').s==='done',vocabStatus(3).s==='done',okRef('l3A')&&okRef('l3B'),labDone('A')>=7,S.attempts.some(function(a){return a.ref==='l3C'})];
-  else{parts=[notesStatus('l1').s==='done',vocabStatus(1).s==='done'];['A','B','C'].forEach(function(r){parts.push(okRef(r))})}
-  return {done:parts.filter(Boolean).length,total:5};
+  if(n===2)parts=[lessonPartStatus(notesStatus('l2').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(2).s==='done',"vocab",["vocab"]),lessonPartStatus(okRef('l2D'),"group",[["l2D", "drill"]]),lessonPartStatus(setProgress('l2A').n>=8&&setProgress('l2B').n>=8,"group",[["l2A", "set"], ["l2B", "set"]],8),lessonPartStatus(!!((S.ws.w22&&S.ws.w22.sub)||(S.ws.w23&&S.ws.w23.sub)),"worksheets",["w22", "w23"])];
+  else if(n===3)parts=[lessonPartStatus(notesStatus('l3').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(3).s==='done',"vocab",["vocab"]),lessonPartStatus(okRef('l3A')&&okRef('l3B'),"group",[["l3A", "drill"], ["l3B", "drill"]]),lessonPartStatus(labDone('A')>=7,"lab",["A"],7),lessonPartStatus(S.attempts.some(function(a){return a.ref==='l3C'}),"activity",["l3C"])];
+  else{parts=[lessonPartStatus(notesStatus('l1').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(1).s==='done',"vocab",["vocab"])];['A','B','C'].forEach(function(r){parts.push(lessonPartStatus(okRef(r),'group',[[r,'drill']]))})}
+  return summarizeLessonParts(parts,5);
 }
 function requiredList(){
   var r=[],T1=[['A','Drill A'],['B','Drill B'],['C','Drill C']];
@@ -4295,7 +4295,7 @@ LREG[4]={
   if(tb==='ws')return tabWs();
   return '';
  },
- progress:function(){var parts=[notesStatus('l4').s==='done',vocabStatus(4).s==='done',okRefOf('l4A'),!!(S.ws.w4B&&S.ws.w4B.sub),labDone('B')>=8];return {done:parts.filter(Boolean).length,total:5}}
+ progress:function(){var parts=[lessonPartStatus(notesStatus('l4').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(4).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l4A'),"group",[["l4A", "drill"]]),lessonPartStatus(!!(S.ws.w4B&&S.ws.w4B.sub),"worksheets",["w4B"]),lessonPartStatus(labDone('B')>=8,"lab",["B"],8)];return summarizeLessonParts(parts,5)}
 };
 CHARTS.push({id:'sum',lesson:4,title:'Sum and possum',html:function(){return irregTable(VB4.sum,'Sum',SUM_ENG)+irregTable(VB4.possum,'Possum',POSSUM_ENG)}});
 
@@ -4479,7 +4479,7 @@ LREG[5]={
   if(tb==='ws')return tabWs();
   return '';
  },
- progress:function(){var parts=[notesStatus('l5').s==='done',vocabStatus(5).s==='done',okRefOf('l5C'),labDone('C')>=7,!!(rdState().tr.vn||'').trim()];return {done:parts.filter(Boolean).length,total:5}}
+ progress:function(){var parts=[lessonPartStatus(notesStatus('l5').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(5).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l5C'),"group",[["l5C", "drill"]]),lessonPartStatus(labDone('C')>=7,"lab",["C"],7),lessonPartStatus(!!(rdState().tr.vn||'').trim(),"reading",["read"])];return summarizeLessonParts(parts,5)}
 };
 CHARTS.push({id:'imp',lesson:5,title:'Imperative',html:function(){return impChart()}});
 CHARTS.push({id:'place',lesson:5,title:'Place in Latin',html:function(){return fig(img456('place'),'A diagram of place in Latin: accusative outside, ablative inside.','')+'<p class="note">Forward motion takes the accusative (ad, per, trāns, in “into”). Backward motion or no motion takes the ablative (ab, dē, ex, in “in,” sub).</p>'}});
@@ -4673,7 +4673,7 @@ LREG[6]={
   if(tb==='ws')return tabWs();
   return '';
  },
- progress:function(){var parts=[notesStatus('l6').s==='done',vocabStatus(6).s==='done',okRefOf('l6A'),!!(S.ws.w6B&&S.ws.w6B.sub),labDone('D')>=8];return {done:parts.filter(Boolean).length,total:5}}
+ progress:function(){var parts=[lessonPartStatus(notesStatus('l6').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(6).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l6A'),"group",[["l6A", "drill"]]),lessonPartStatus(!!(S.ws.w6B&&S.ws.w6B.sub),"worksheets",["w6B"]),lessonPartStatus(labDone('D')>=8,"lab",["D"],8)];return summarizeLessonParts(parts,5)}
 };
 CHARTS.push({id:'d2',lesson:6,title:'Second declension',html:function(){return endingsChart()}});
 
@@ -4995,7 +4995,7 @@ LREG[7]={
   if(tb==='ws')return tabWs();
   return '';
  },
- progress:function(){var parts=[notesStatus('l7').s==='done',vocabStatus(7).s==='done',okRefOf('l7A')&&okRefOf('l7B'),okRefOf('l7D'),labDone('E')>=7];return {done:parts.filter(Boolean).length,total:5}}
+ progress:function(){var parts=[lessonPartStatus(notesStatus('l7').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(7).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l7A')&&okRefOf('l7B'),"group",[["l7A", "drill"], ["l7B", "drill"]]),lessonPartStatus(okRefOf('l7D'),"group",[["l7D", "drill"]]),lessonPartStatus(labDone('E')>=7,"lab",["E"],7)];return summarizeLessonParts(parts,5)}
 };
 CHARTS.push({id:'adj',lesson:7,title:'Adjectives',html:function(){return adjTable('bonus','bon','Adjectives ending in -us','<span class="lat">bonus, bona, bonum</span> ‘good’')+adjTable('pulcher','pulchr','Ending in -er','<span class="lat">pulcher, pulchra, pulchrum</span> ‘beautiful’')}});
 
@@ -5234,7 +5234,7 @@ LREG[8]={
   if(tb==='ws')return tabWs();
   return '';
  },
- progress:function(){var parts=[notesStatus('l8').s==='done',vocabStatus(8).s==='done',okRefOf('l8A')&&okRefOf('l8B'),!!(S.ws.w8F&&S.ws.w8F.sub),labDone('F')>=7];return {done:parts.filter(Boolean).length,total:5}}
+ progress:function(){var parts=[lessonPartStatus(notesStatus('l8').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(8).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l8A')&&okRefOf('l8B'),"group",[["l8A", "drill"], ["l8B", "drill"]]),lessonPartStatus(!!(S.ws.w8F&&S.ws.w8F.sub),"worksheets",["w8F"]),lessonPartStatus(labDone('F')>=7,"lab",["F"],7)];return summarizeLessonParts(parts,5)}
 };
 CHARTS.push({id:'pas',lesson:8,title:'Passive voice',html:function(){return passEndingsChart()+passTable('pres','Present passive')+passTable('imp','Imperfect passive')+passTable('fut','Future passive')}});
 
@@ -5427,7 +5427,7 @@ LREG[9]={
   if(tb==='ws')return tabWs();
   return '';
  },
- progress:function(){var parts=[notesStatus('l9').s==='done',vocabStatus(9).s==='done',okRefOf('l9C'),labDone('G')>=8,!!(rdState().tr.tc||'').trim()];return {done:parts.filter(Boolean).length,total:5}}
+ progress:function(){var parts=[lessonPartStatus(notesStatus('l9').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(9).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l9C'),"group",[["l9C", "drill"]]),lessonPartStatus(labDone('G')>=8,"lab",["G"],8),lessonPartStatus(!!(rdState().tr.tc||'').trim(),"reading",["read"])];return summarizeLessonParts(parts,5)}
 };
 CHARTS.push({id:'pron',lesson:9,title:'Personal pronouns',html:function(){return pronChart()}});
 
@@ -5584,7 +5584,7 @@ LREG[10]={
   if(tb==='read')return tabRead10();
   return '';
  },
- progress:function(){var parts=[okRefOf('l10F'),['l10III','l10IV','l10V','l10VI','l10X'].every(function(i){var p=setProgress(i);return p.n>=p.t}),labDone('H')>=8,!!(rdState().tr.dc||'').trim()];return {done:parts.filter(Boolean).length,total:4}}
+ progress:function(){var parts=[lessonPartStatus(okRefOf('l10F'),"group",[["l10F", "drill"]]),lessonPartStatus(['l10III','l10IV','l10V','l10VI','l10X'].every(function(i){var p=setProgress(i);return p.n>=p.t}),"group",[["l10III", "set"], ["l10IV", "set"], ["l10V", "set"], ["l10VI", "set"], ["l10X", "set"]]),lessonPartStatus(labDone('H')>=8,"lab",["H"],8),lessonPartStatus(!!(rdState().tr.dc||'').trim(),"reading",["read"])];return summarizeLessonParts(parts,4)}
 };
 
 /* ================= Lesson XI: perfect active system; syncope; time constructions; Roman history ================= */
@@ -5843,7 +5843,7 @@ LREG[11]={
   if(tb==='ws')return tabWs();
   return '';
  },
- progress:function(){var parts=[notesStatus('l11').s==='done',vocabStatus(11).s==='done',okRefOf('l11A')&&okRefOf('l11D'),['l11B','l11C','l11X'].every(function(i){var p=setProgress(i);return p.n>=p.t}),labDone('I')>=8];return {done:parts.filter(Boolean).length,total:5}}
+ progress:function(){var parts=[lessonPartStatus(notesStatus('l11').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(11).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l11A')&&okRefOf('l11D'),"group",[["l11A", "drill"], ["l11D", "drill"]]),lessonPartStatus(['l11B','l11C','l11X'].every(function(i){var p=setProgress(i);return p.n>=p.t}),"group",[["l11B", "set"], ["l11C", "set"], ["l11X", "set"]]),lessonPartStatus(labDone('I')>=8,"lab",["I"],8)];return summarizeLessonParts(parts,5)}
 };
 CHARTS.push({id:'perf',lesson:11,title:'Perfect system (active)',html:function(){return perfTable('perf','Perfect active','Stem + ending')+perfTable('plup','Pluperfect active','Stem + imperfect of sum')+perfTable('fper','Future perfect active','Stem + future of sum')}});
 
@@ -6066,7 +6066,7 @@ LREG[12]={
   if(tb==='ws')return tabWs();
   return '';
  },
- progress:function(){var parts=[notesStatus('l12').s==='done',vocabStatus(12).s==='done',okRefOf('l12C')&&okRefOf('l12D'),['l12A','l12B','l12X'].every(function(i){var p=setProgress(i);return p.n>=p.t}),labDone('J')>=9];return {done:parts.filter(Boolean).length,total:5}}
+ progress:function(){var parts=[lessonPartStatus(notesStatus('l12').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(12).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l12C')&&okRefOf('l12D'),"group",[["l12C", "drill"], ["l12D", "drill"]]),lessonPartStatus(['l12A','l12B','l12X'].every(function(i){var p=setProgress(i);return p.n>=p.t}),"group",[["l12A", "set"], ["l12B", "set"], ["l12X", "set"]]),lessonPartStatus(labDone('J')>=9,"lab",["J"],9)];return summarizeLessonParts(parts,5)}
 };
 CHARTS.push({id:'ppass',lesson:12,title:'Perfect system (passive)',html:function(){return ppTable('perf','Perfect passive','Participle + present of sum')+ppTable('plup','Pluperfect passive','Participle + imperfect of sum')+ppTable('fper','Future perfect passive','Participle + future of sum')}});
 
@@ -6315,7 +6315,7 @@ LREG[14]={
   if(tb==='ws')return tabWs();
   return '';
  },
- progress:function(){var parts=[notesStatus('l14').s==='done',vocabStatus(14).s==='done',okRefOf('l14A')&&okRefOf('l14B'),['l14C','l14D','l14X'].every(function(i){var p=setProgress(i);return p.n>=p.t}),labDone('K')>=8,nleState('nle14').done];return {done:parts.filter(Boolean).length,total:6}}
+ progress:function(){var parts=[lessonPartStatus(notesStatus('l14').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(14).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l14A')&&okRefOf('l14B'),"group",[["l14A", "drill"], ["l14B", "drill"]]),lessonPartStatus(['l14C','l14D','l14X'].every(function(i){var p=setProgress(i);return p.n>=p.t}),"group",[["l14C", "set"], ["l14D", "set"], ["l14X", "set"]]),lessonPartStatus(labDone('K')>=8,"lab",["K"],8),lessonPartStatus(nleState('nle14').done,"nle",["nle"])];return summarizeLessonParts(parts,6)}
 };
 CHARTS.push({id:'idem',lesson:14,title:'Īdem, ipse, iste',html:function(){return pron14('idem')+pron14('ipse')+pron14('iste')}});
 
@@ -6509,7 +6509,7 @@ LREG[15]={
   if(tb==='ws')return tabWs();
   return '';
  },
- progress:function(){var parts=[notesStatus('l15').s==='done',vocabStatus(15).s==='done',okRefOf('l15A')&&okRefOf('l15B'),setProgress('l15X').n>=setProgress('l15X').t,labDone('L')>=8,!!(rdState().tr.tp||'').trim(),nleState('nle15').done];return {done:parts.filter(Boolean).length,total:7}}
+ progress:function(){var parts=[lessonPartStatus(notesStatus('l15').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(15).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l15A')&&okRefOf('l15B'),"group",[["l15A", "drill"], ["l15B", "drill"]]),lessonPartStatus(setProgress('l15X').n>=setProgress('l15X').t,"group",[["l15X", "set"]]),lessonPartStatus(labDone('L')>=8,"lab",["L"],8),lessonPartStatus(!!(rdState().tr.tp||'').trim(),"reading",["read"]),lessonPartStatus(nleState('nle15').done,"nle",["nle"])];return summarizeLessonParts(parts,7)}
 };
 CHARTS.push({id:'third',lesson:15,title:'Third declension nouns',html:function(){return tab3('Consonant stem','clāmōr','clāmor',0,'clāmor, clāmōris m.')+tab3('Parasyllabic i-stem','cīv','cīvis',1,'cīvis, cīvis m.')+tab3('Base two consonant i-stem','urb','urbs',1,'urbs, urbis f.')}});
 
@@ -7324,7 +7324,7 @@ LREG[16]={
   if(tb==='ladder')return tabLadder(16);
   return '';
  },
- progress:function(){var parts=[notesStatus('l16').s==='done',vocabStatus(16).s==='done',okRefOf('l16A')&&okRefOf('l16B'),setProgress('l16X').n>=setProgress('l16X').t,labDone('M')>=10,nleState('nle16').done,ladderStatus(16).s==='done'];return {done:parts.filter(Boolean).length,total:7}}
+ progress:function(){var parts=[lessonPartStatus(notesStatus('l16').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(16).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l16A')&&okRefOf('l16B'),"group",[["l16A", "drill"], ["l16B", "drill"]]),lessonPartStatus(setProgress('l16X').n>=setProgress('l16X').t,"group",[["l16X", "set"]]),lessonPartStatus(labDone('M')>=10,"lab",["M"],10),lessonPartStatus(nleState('nle16').done,"nle",["nle"]),lessonPartStatus(ladderStatus(16).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,7)}
 };
 CHARTS.push({id:'neuter3',lesson:16,title:'Third declension neuter nouns',html:function(){return tabNeut('Consonant stem','corpus, corporis n.',n16cols(N16[0],'corpus'))+tabNeut('i-stems','mare and animal',n16cols(N16[6],'mare').concat(n16cols(N16[7],'animal')))}});
 
@@ -7527,7 +7527,7 @@ LREG[18]={
   if(tb==='ladder')return tabLadder(18);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[notesStatus('l18').s==='done',vocabStatus(18).s==='done',sp('l18A')&&sp('l18B'),sp('l18X'),labDone('N')>=10,nleState('nle18').done,ladderStatus(18).s==='done'];return {done:parts.filter(Boolean).length,total:7}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(notesStatus('l18').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(18).s==='done',"vocab",["vocab"]),lessonPartStatus(sp('l18A')&&sp('l18B'),"group",[["l18A", "set"], ["l18B", "set"]]),lessonPartStatus(sp('l18X'),"group",[["l18X", "set"]]),lessonPartStatus(labDone('N')>=10,"lab",["N"],10),lessonPartStatus(nleState('nle18').done,"nle",["nle"]),lessonPartStatus(ladderStatus(18).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,7)}
 };
 CHARTS.push({id:'conj3',lesson:18,title:'Third conjugation active (mittō)',html:function(){var g=g3('mitt','mīs');return conjTbl('Present','mittō, mittere, mīsī, missum',0,g.pres)+conjTbl('Imperfect','',0,g.imp)+conjTbl('Future','',0,g.fut)+conjTbl('Perfect','',0,g.perf)+conjTbl('Pluperfect','',0,g.plup)+conjTbl('Future perfect','',0,g.fp)}});
 
@@ -7668,7 +7668,7 @@ LREG[17]={
   if(tb==='ladder')return tabLadder(17);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[okRefOf('l17F')&&okRefOf('l17III')&&okRefOf('l17V'),['l17IV','l17VI','l17VII','l17X'].every(sp),labDone('O')>=7,!!(rdState().tr.oh||'').trim(),nleState('nle17').done,ladderStatus(17).s==='done'];return {done:parts.filter(Boolean).length,total:6}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(okRefOf('l17F')&&okRefOf('l17III')&&okRefOf('l17V'),"group",[["l17F", "drill"], ["l17III", "drill"], ["l17V", "drill"]]),lessonPartStatus(['l17IV','l17VI','l17VII','l17X'].every(sp),"group",[["l17IV", "set"], ["l17VI", "set"], ["l17VII", "set"], ["l17X", "set"]]),lessonPartStatus(labDone('O')>=7,"lab",["O"],7),lessonPartStatus(!!(rdState().tr.oh||'').trim(),"reading",["read"]),lessonPartStatus(nleState('nle17').done,"nle",["nle"]),lessonPartStatus(ladderStatus(17).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,6)}
 };
 
 /* ================= Lesson XIX: third conjugation, passive voice; ablative of separation; Roman dress ================= */
@@ -7880,7 +7880,7 @@ LREG[19]={
   if(tb==='proj')return tabProj();
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[notesStatus('l19').s==='done',vocabStatus(19).s==='done',sp('l19A')&&sp('l19B')&&sp('l19C')&&sp('l19D'),sp('l19X'),labDone('P')>=10,nleState('nle19').done,ladderStatus(19).s==='done'];return {done:parts.filter(Boolean).length,total:7}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(notesStatus('l19').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(19).s==='done',"vocab",["vocab"]),lessonPartStatus(sp('l19A')&&sp('l19B')&&sp('l19C')&&sp('l19D'),"group",[["l19A", "set"], ["l19B", "set"], ["l19C", "set"], ["l19D", "set"]]),lessonPartStatus(sp('l19X'),"group",[["l19X", "set"]]),lessonPartStatus(labDone('P')>=10,"lab",["P"],10),lessonPartStatus(nleState('nle19').done,"nle",["nle"]),lessonPartStatus(ladderStatus(19).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,7)}
 };
 CHARTS.push({id:'pass3',lesson:19,title:'Third conjugation passive (mittō)',html:function(){var g=g3p('mitt');return passTbl('Present passive','',g.pres)+passTbl('Imperfect passive','',g.imp)+passTbl('Future passive','',g.fut)}});
 
@@ -8065,7 +8065,7 @@ LREG[20]={
   if(tb==='proj')return tabProj();
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[notesStatus('l20').s==='done',vocabStatus(20).s==='done',okRefOf('l20A')&&okRefOf('l20B')&&okRefOf('l20C'),sp('l20X'),labDone('Q')>=9,!!(rdState().tr.mt||'').trim(),nleState('nle20').done,ladderStatus(20).s==='done'];return {done:parts.filter(Boolean).length,total:8}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(notesStatus('l20').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(20).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l20A')&&okRefOf('l20B')&&okRefOf('l20C'),"group",[["l20A", "drill"], ["l20B", "drill"], ["l20C", "drill"]]),lessonPartStatus(sp('l20X'),"group",[["l20X", "set"]]),lessonPartStatus(labDone('Q')>=9,"lab",["Q"],9),lessonPartStatus(!!(rdState().tr.mt||'').trim(),"reading",["read"]),lessonPartStatus(nleState('nle20').done,"nle",["nle"]),lessonPartStatus(ladderStatus(20).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,8)}
 };
 CHARTS.push({id:'adj3',lesson:20,title:'Third declension adjectives',html:function(){return adjTbl3('i-stem: fortis, forte','',ADJ3[0])+adjTbl3('Three termination: ācer, ācris, ācre','',ADJ3[6])}});
 
@@ -8236,7 +8236,7 @@ LREG[21]={
   if(tb==='ladder')return tabLadder(21);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[notesStatus('l21').s==='done',vocabStatus(21).s==='done',sp('l21A')&&okRefOf('l21B')&&sp('l21C'),sp('l21X'),labDone('R')>=10,!!(rdState().tr.lc||'').trim(),nleState('nle21').done,ladderStatus(21).s==='done'];return {done:parts.filter(Boolean).length,total:8}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(notesStatus('l21').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(21).s==='done',"vocab",["vocab"]),lessonPartStatus(sp('l21A')&&okRefOf('l21B')&&sp('l21C'),"group",[["l21B", "drill"], ["l21A", "set"], ["l21C", "set"]]),lessonPartStatus(sp('l21X'),"group",[["l21X", "set"]]),lessonPartStatus(labDone('R')>=10,"lab",["R"],10),lessonPartStatus(!!(rdState().tr.lc||'').trim(),"reading",["read"]),lessonPartStatus(nleState('nle21').done,"nle",["nle"]),lessonPartStatus(ladderStatus(21).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,8)}
 };
 CHARTS.push({id:'rel',lesson:21,title:'The relative pronoun',html:function(){return '<h3>quī, quae, quod</h3>'+relTbl()}});
 
@@ -8482,7 +8482,7 @@ LREG[22]={
   if(tb==='ladder')return tabLadder(22);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[notesStatus('l22').s==='done',vocabStatus(22).s==='done',sp('l22A')&&sp('l22B'),sp('l22X'),labDone('S')>=10,!!(rdState().tr.cm||'').trim(),nleState('nle22').done,ladderStatus(22).s==='done'];return {done:parts.filter(Boolean).length,total:8}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(notesStatus('l22').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(22).s==='done',"vocab",["vocab"]),lessonPartStatus(sp('l22A')&&sp('l22B'),"group",[["l22A", "set"], ["l22B", "set"]]),lessonPartStatus(sp('l22X'),"group",[["l22X", "set"]]),lessonPartStatus(labDone('S')>=10,"lab",["S"],10),lessonPartStatus(!!(rdState().tr.cm||'').trim(),"reading",["read"]),lessonPartStatus(nleState('nle22').done,"nle",["nle"]),lessonPartStatus(ladderStatus(22).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,8)}
 };
 CHARTS.push({id:'quis',lesson:22,title:'The interrogative pronoun and adjective',html:function(){return '<h3>quis, quid</h3>'+quisTbl()+'<h3>quī, quae, quod</h3>'+relTbl()}});
 
@@ -8633,7 +8633,7 @@ LREG[23]={
   if(tb==='ladder')return tabLadder(23);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[notesStatus('l23').s==='done',vocabStatus(23).s==='done',okRefOf('l23A')&&sp('l23B')&&sp('l23C'),sp('l23X'),labDone('T')>=9,!!(rdState().tr.hc||'').trim(),nleState('nle23').done,ladderStatus(23).s==='done'];return {done:parts.filter(Boolean).length,total:8}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(notesStatus('l23').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(23).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l23A')&&sp('l23B')&&sp('l23C'),"group",[["l23A", "drill"], ["l23B", "set"], ["l23C", "set"]]),lessonPartStatus(sp('l23X'),"group",[["l23X", "set"]]),lessonPartStatus(labDone('T')>=9,"lab",["T"],9),lessonPartStatus(!!(rdState().tr.hc||'').trim(),"reading",["read"]),lessonPartStatus(nleState('nle23').done,"nle",["nle"]),lessonPartStatus(ladderStatus(23).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,8)}
 };
 CHARTS.push({id:'conj4',lesson:23,title:'Fourth conjugation: audiō',html:function(){var g=g4('aud','audīv'),gp=g4p('aud');return conjTbl('Present active','audiō, audīre, audīvī, audītum',0,g.pres)+passTbl('Present passive','',gp.pres)+conjTbl('Imperfect active','',0,g.imp)+conjTbl('Future active','',0,g.fut)}});
 
@@ -8742,7 +8742,7 @@ LREG[24]={
   if(tb==='ladder')return tabLadder(24);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[okRefOf('l24F')&&okRefOf('l24G'),okRefOf('l24S'),sp('l24V')&&sp('l24W')&&sp('l24U'),labDone('U')>=10,sp('l24X'),nleState('nle24').done,ladderStatus(24).s==='done'];return {done:parts.filter(Boolean).length,total:7}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(okRefOf('l24F')&&okRefOf('l24G'),"group",[["l24F", "drill"], ["l24G", "drill"]]),lessonPartStatus(okRefOf('l24S'),"group",[["l24S", "drill"]]),lessonPartStatus(sp('l24V')&&sp('l24W')&&sp('l24U'),"group",[["l24V", "set"], ["l24W", "set"], ["l24U", "set"]]),lessonPartStatus(labDone('U')>=10,"lab",["U"],10),lessonPartStatus(sp('l24X'),"group",[["l24X", "set"]]),lessonPartStatus(nleState('nle24').done,"nle",["nle"]),lessonPartStatus(ladderStatus(24).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,7)}
 };
 
 
@@ -8888,7 +8888,7 @@ LREG[25]={
   if(tb==='ladder')return tabLadder(25);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[notesStatus('l25').s==='done',vocabStatus(25).s==='done',okRefOf('l25A')&&sp('l25B')&&sp('l25C'),sp('l25X'),labDone('V')>=9,!!(rdState().tr.ms||'').trim(),nleState('nle25').done,ladderStatus(25).s==='done'];return {done:parts.filter(Boolean).length,total:8}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(notesStatus('l25').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(25).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l25A')&&sp('l25B')&&sp('l25C'),"group",[["l25A", "drill"], ["l25B", "set"], ["l25C", "set"]]),lessonPartStatus(sp('l25X'),"group",[["l25X", "set"]]),lessonPartStatus(labDone('V')>=9,"lab",["V"],9),lessonPartStatus(!!(rdState().tr.ms||'').trim(),"reading",["read"]),lessonPartStatus(nleState('nle25').done,"nle",["nle"]),lessonPartStatus(ladderStatus(25).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,8)}
 };
 CHARTS.push({id:'conj3i',lesson:25,title:'-iō verbs: capiō',html:function(){var g=g3i('cap','cēp'),gp=g3ip('cap');return conjTbl('Present active','capiō, capere, cēpī, captum',0,g.pres)+passTbl('Present passive','',gp.pres)+conjTbl('Imperfect active','',0,g.imp)+conjTbl('Future active','',0,g.fut)}});
 
@@ -9038,7 +9038,7 @@ LREG[26]={
   if(tb==='ladder')return tabLadder(26);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[notesStatus('l26').s==='done',vocabStatus(26).s==='done',okRefOf('l26A')&&sp('l26B')&&sp('l26C'),sp('l26X'),labDone('Y')>=11,nleState('nle26').done,ladderStatus(26).s==='done'];return {done:parts.filter(Boolean).length,total:7}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(notesStatus('l26').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(26).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l26A')&&sp('l26B')&&sp('l26C'),"group",[["l26A", "drill"], ["l26B", "set"], ["l26C", "set"]]),lessonPartStatus(sp('l26X'),"group",[["l26X", "set"]]),lessonPartStatus(labDone('Y')>=11,"lab",["Y"],11),lessonPartStatus(nleState('nle26').done,"nle",["nle"]),lessonPartStatus(ladderStatus(26).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,7)}
 };
 CHARTS.push({id:'prt',lesson:26,title:'Participles',html:function(){return '<h3>Present participle: mittēns</h3>'+prtTbl()+'<h3>All three participles</h3>'+prtSum()}});
 
@@ -9224,7 +9224,7 @@ LREG[27]={
   if(tb==='ladder')return tabLadder(27);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[notesStatus('l27').s==='done',vocabStatus(27).s==='done',okRefOf('l27A')&&sp('l27B'),sp('l27X'),labDone('Z')>=10,!!(rdState().tr.cm27||'').trim(),nleState('nle27').done,ladderStatus(27).s==='done'];return {done:parts.filter(Boolean).length,total:8}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(notesStatus('l27').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(27).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l27A')&&sp('l27B'),"group",[["l27A", "drill"], ["l27B", "set"]]),lessonPartStatus(sp('l27X'),"group",[["l27X", "set"]]),lessonPartStatus(labDone('Z')>=10,"lab",["Z"],10),lessonPartStatus(!!(rdState().tr.cm27||'').trim(),"reading",["read"]),lessonPartStatus(nleState('nle27').done,"nle",["nle"]),lessonPartStatus(ladderStatus(27).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,8)}
 };
 CHARTS.push({id:'tot',lesson:27,title:'The irregular -ius adjectives (tōtus)',html:function(){return '<h3>tōtus, tōta, tōtum</h3>'+totTbl()}});
 
@@ -9361,7 +9361,7 @@ LREG[28]={
   if(tb==='ladder')return tabLadder(28);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[notesStatus('l28').s==='done',vocabStatus(28).s==='done',okRefOf('l28A')&&sp('l28B')&&okRefOf('l28C'),okRefOf('l28D')&&okRefOf('l28E'),sp('l28X'),labDone('AB')>=10,nleState('nle28').done,ladderStatus(28).s==='done'];return {done:parts.filter(Boolean).length,total:8}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(notesStatus('l28').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(28).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l28A')&&sp('l28B')&&okRefOf('l28C'),"group",[["l28A", "drill"], ["l28C", "drill"], ["l28B", "set"]]),lessonPartStatus(okRefOf('l28D')&&okRefOf('l28E'),"group",[["l28D", "drill"], ["l28E", "drill"]]),lessonPartStatus(sp('l28X'),"group",[["l28X", "set"]]),lessonPartStatus(labDone('AB')>=10,"lab",["AB"],10),lessonPartStatus(nleState('nle28').done,"nle",["nle"]),lessonPartStatus(ladderStatus(28).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,8)}
 };
 CHARTS.push({id:'d45',lesson:28,title:'Fourth and fifth declensions',html:function(){return '<h3>impetus, cornū</h3>'+d4Tbl()+'<h3>domus</h3>'+domTbl()+'<h3>rēs</h3>'+resTbl()}});
 
@@ -9525,7 +9525,7 @@ LREG[29]={
   if(tb==='ladder')return tabLadder(29);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[notesStatus('l29').s==='done',vocabStatus(29).s==='done',labDone('AC')>=10,sp('l29X'),nleState('nle29').done,ladderStatus(29).s==='done'];return {done:parts.filter(Boolean).length,total:6}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(notesStatus('l29').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(29).s==='done',"vocab",["vocab"]),lessonPartStatus(labDone('AC')>=10,"lab",["AC"],10),lessonPartStatus(sp('l29X'),"group",[["l29X", "set"]]),lessonPartStatus(nleState('nle29').done,"nle",["nle"]),lessonPartStatus(ladderStatus(29).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,6)}
 };
 CHARTS.push({id:'absabs',lesson:29,title:'The ablative absolute',html:function(){return '<h3>Patterns</h3><ol><li>noun + participle (present or perfect): <span class="lat">Ānulō āmissō</span></li><li>noun + noun: <span class="lat">Cicerōne duce</span></li><li>noun + adjective: <span class="lat">discipulīs pigrīs</span></li></ol><p class="note">The noun of the ablative absolute may not be the subject or object of the main clause.</p>'}});
 
@@ -9656,7 +9656,7 @@ LREG[30]={
   if(tb==='ladder')return tabLadder(30);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[okRefOf('l30S'),sp('l30T')&&sp('l30U'),labDone('AD')>=8,sp('l30X'),nleState('nle30').done,ladderStatus(30).s==='done'];return {done:parts.filter(Boolean).length,total:6}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(okRefOf('l30S'),"group",[["l30S", "drill"]]),lessonPartStatus(sp('l30T')&&sp('l30U'),"group",[["l30T", "set"], ["l30U", "set"]]),lessonPartStatus(labDone('AD')>=8,"lab",["AD"],8),lessonPartStatus(sp('l30X'),"group",[["l30X", "set"]]),lessonPartStatus(nleState('nle30').done,"nle",["nle"]),lessonPartStatus(ladderStatus(30).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,6)}
 };
 
 
@@ -9886,7 +9886,7 @@ LREG[31]={
   if(tb==='ladder')return tabLadder(31);
   return '';
  },
- progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[notesStatus('l31').s==='done',vocabStatus(31).s==='done',okRefOf('l31A')&&okRefOf('l31B'),sp('l31X'),labDone('AE')>=11,!!(rdState().tr.pr||'').trim(),nleState('nle31').done,ladderStatus(31).s==='done'];return {done:parts.filter(Boolean).length,total:8}}
+ progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[lessonPartStatus(notesStatus('l31').s==='done',"notes",["notes"]),lessonPartStatus(vocabStatus(31).s==='done',"vocab",["vocab"]),lessonPartStatus(okRefOf('l31A')&&okRefOf('l31B'),"group",[["l31A", "drill"], ["l31B", "drill"]]),lessonPartStatus(sp('l31X'),"group",[["l31X", "set"]]),lessonPartStatus(labDone('AE')>=11,"lab",["AE"],11),lessonPartStatus(!!(rdState().tr.pr||'').trim(),"reading",["read"]),lessonPartStatus(nleState('nle31').done,"nle",["nle"]),lessonPartStatus(ladderStatus(31).s==='done',"ladder",["ladder"])];return summarizeLessonParts(parts,8)}
 };
 CHARTS.push({id:'cmp',lesson:31,title:'Comparison of adjectives',html:function(){return '<h3>fortior, fortius</h3>'+cmpTbl()+'<h3>The three degrees</h3>'+degTbl()}});
 
@@ -9986,14 +9986,14 @@ function defineLesson(S){
    return '';
   },
   progress:function(){var sp=function(i){var p=setProgress(i);return p.n>=p.t};var parts=[];
-   if(notes.length)parts.push(notesStatus(lid).s==='done');
-   if(S.vocab&&S.vocab.length)parts.push(vocabStatus(n).s==='done');
-   drills.forEach(function(d){parts.push(d.type==='grid'?okRefOf(lid+d.id):sp(lid+d.id))});
-   if(S.lab)parts.push(labDone(key)>=Math.ceil(S.lab.length/2));
-   if(S.exB)parts.push(sp(lid+'X'));
-   if(rds.length)parts.push(rds.every(function(r){return !!(rdState().tr[r.id]||'').trim()}));
-   parts.push(nleState('nle'+n).done);parts.push(ladderStatus(n).s==='done');
-   return {done:parts.filter(Boolean).length,total:parts.length}}
+   if(notes.length)parts.push(lessonPartStatus(notesStatus(lid).s==='done','notes',['notes']));
+   if(S.vocab&&S.vocab.length)parts.push(lessonPartStatus(vocabStatus(n).s==='done','vocab',['vocab']));
+   drills.forEach(function(d){parts.push(lessonPartStatus(d.type==='grid'?okRefOf(lid+d.id):sp(lid+d.id),'group',[[lid+d.id,d.type==='grid'?'drill':'set']]))});
+   if(S.lab)parts.push(lessonPartStatus(labDone(key)>=Math.ceil(S.lab.length/2),'lab',[key],Math.ceil(S.lab.length/2)));
+   if(S.exB)parts.push(lessonPartStatus(sp(lid+'X'),'group',[[lid+'X','set']]));
+   if(rds.length)parts.push(lessonPartStatus(rds.every(function(r){return !!(rdState().tr[r.id]||'').trim()}),'reading',['read']));
+   parts.push(lessonPartStatus(nleState('nle'+n).done,'nle',['nle']));parts.push(lessonPartStatus(ladderStatus(n).s==='done','ladder',['ladder']));
+   return summarizeLessonParts(parts,parts.length)}
  };
 }
 
@@ -12734,7 +12734,7 @@ var screenArena;
  function wrapAll(){Object.keys(LREG).forEach(function(k){var o=LREG[k];if(!o||!o.tabs||o.__bb)return;var had=false;try{had=o.tabs().some(function(t){return t[0]==='ladder'})}catch(e){}
   if(!had)return;var n=+k;window.__lregOrig[k]=o;
   LREG[k]=Object.assign({},o,{__bb:1,tabs:function(){return o.tabs().filter(function(t){return t[0]!=='ladder'})},
-   progress:o.progress?(function(){var inc;function test(){var ids=LADDER.filter(function(r){return r.L<=n}).map(function(r){return r.id});if(!ids.length)return false;S.nle=S.nle||{};var keep=ids.map(function(id){return S.nle[id]});try{ids.forEach(function(id){S.nle[id]={ans:{},done:false}});var a=o.progress();ids.forEach(function(id){S.nle[id]={ans:{},done:true}});var b=o.progress();return a.total===b.total&&b.done===a.done+1}catch(e){return false}finally{ids.forEach(function(id,i){if(keep[i])S.nle[id]=keep[i];else delete S.nle[id]})}}return function(){var r=o.progress();if(inc===undefined)inc=test();if(!inc)return r;var d=false;try{d=ladderStatus(n).s==='done'}catch(e){}return Object.assign({},r,{done:Math.max(0,r.done-(d?1:0)),total:Math.max(1,r.total-1)})}})():undefined})})}
+   progress:o.progress?(function(){var inc;function test(){var ids=LADDER.filter(function(r){return r.L<=n}).map(function(r){return r.id});if(!ids.length)return false;S.nle=S.nle||{};var keep=ids.map(function(id){return S.nle[id]});try{ids.forEach(function(id){S.nle[id]={ans:{},done:false}});var a=o.progress();ids.forEach(function(id){S.nle[id]={ans:{},done:true}});var b=o.progress();return a.total===b.total&&b.done===a.done+1}catch(e){return false}finally{ids.forEach(function(id,i){if(keep[i])S.nle[id]=keep[i];else delete S.nle[id]})}}return function(){var r=o.progress();if(inc===undefined)inc=test();if(!inc)return r;var d=false;try{d=ladderStatus(n).s==='done'}catch(e){}return Object.assign({},r,{done:Math.max(0,r.done-(d?1:0)),total:Math.max(1,r.total-1),parts:r.parts&&r.parts.filter(function(p){return p.kind!=='ladder'})})}})():undefined})})}
  wrapAll();
  var _sh=screenHome;screenHome=function(){wrapAll();return _sh()};
  /* the screen */
@@ -13878,7 +13878,21 @@ Object.assign(window.__ART=window.__ART||{},{"rank_civis": {"u": "data:image/web
  function notes(n){try{var r=notesStatus(n===0?'intro':'l'+n);return r.t>0&&r.s==='done'}catch(e){return false}}
  function gate(n){try{return !!(window.__hasGate&&window.__hasGate(n)&&window.__gateCleared(n))}catch(e){return false}}
  var memo=null,memoT=0;
- function lessonPart(n){var ex=tabsOf(n).filter(function(t){return /^Exercise/.test(t[1])&&okS(t)}).length;return {notes:notes(n)?20:0,ex:ex*10,done:done(n)?30:0,gate:gate(n)?25:0}}
+ function lessonXPItems(n){
+  var items=[];
+  if(notesStatus(n===0?'intro':'l'+n).t)items.push({tab:'notes',name:'Guided notes',xp:20,done:notes(n),type:'notes'});
+  if(n===0)return items;
+  tabsOf(n).filter(function(t){return /^Exercise/.test(t[1])}).forEach(function(t){items.push({tab:t[0],name:t[1],xp:10,done:okS(t),type:'ex'})});
+  items.push({name:'Lesson completion',xp:30,done:done(n),type:'done'});
+  if(window.__hasGate&&window.__hasGate(n))items.push({tab:'gate',name:'Gate',xp:25,done:gate(n),type:'gate'});
+  return items;
+ }
+ window.__lessonXPItems=lessonXPItems;
+ function lessonPart(n){
+  var result={notes:0,ex:0,done:0,gate:0};
+  lessonXPItems(n).forEach(function(item){if(item.done)result[item.type]+=item.xp});
+  return result;
+ }
  function compute(){var now=Date.now();if(memo&&now-memoT<150)return memo;
   var v={sapientia:0,constantia:0,fortitudo:0,virtus:0,pietas:0,liberalitas:0},per={};
   if(notes(0))v.sapientia+=20;
@@ -15252,11 +15266,22 @@ var screenRoad;
  function coinEarned(c){return gateCleared(c.n)}
  function wallOpen(){return lessonDone(55)}
  function log(f,t){f.log.unshift(t);if(f.log.length>10)f.log.length=10}
+ function lessonDenarii(done,total){return total?Math.floor(LESSON*done/total):0}
+ window.__lessonDenarii=function(n,done,total){
+  if(!coinsOn()||!total)return null;
+  var ledger=S.forum||{},paid=Math.min(total,(ledger.paid||{})[n]||0);
+  var earned=lessonDenarii(paid,total), maximum=lessonDenarii(total,total);
+  var qualified=lessonDenarii(Math.max(done,paid),total);
+  var gate=D.MONS.some(function(m){return m.t==='gate'&&m.n===n});
+  var gatePaid=gate&&(ledger.gp||{})[n],gateReady=gate&&!gatePaid&&gateCleared(n);
+  return {earned:earned,pending:qualified-earned,remaining:maximum-qualified,
+   gate:gate?{reward:GATEB,earned:!!gatePaid,pending:!!gateReady}:null};
+ };
  function sync(){
   if(!window.__rinfo||!S.user)return;var f=F(),changed=false,n;
   for(n=1;n<=57;n++){var inf;try{inf=window.__rinfo(n)}catch(e){continue}if(!inf.live)continue;var paid=f.paid[n]||0;
-   if(inf.done>paid){var add=inf.total?Math.floor(LESSON*inf.done/inf.total)-Math.floor(LESSON*paid/inf.total):0;if(add>0&&coinsOn()){f.coins+=add;log(f,'Lesson '+ROMAN[n-1]+': +'+add+' denarii for completed parts')}f.paid[n]=inf.done;changed=true}}
-  try{var ip=notesStatus('intro');if(ip&&ip.t){var pi=f.paid.intro||0;if(ip.d>pi){var addI=Math.floor(LESSON*ip.d/ip.t)-Math.floor(LESSON*pi/ip.t);if(addI>0&&coinsOn()){f.coins+=addI;log(f,'Introduction: +'+addI+' denarii for completed quick checks')}f.paid.intro=ip.d;changed=true}}}catch(e){}
+   if(inf.done>paid){var add=inf.total?lessonDenarii(inf.done,inf.total)-lessonDenarii(paid,inf.total):0;if(add>0&&coinsOn()){f.coins+=add;log(f,'Lesson '+ROMAN[n-1]+': +'+add+' denarii for completed parts')}f.paid[n]=inf.done;changed=true}}
+  try{var ip=notesStatus('intro');if(ip&&ip.t){var pi=f.paid.intro||0;if(ip.d>pi){var addI=lessonDenarii(ip.d,ip.t)-lessonDenarii(pi,ip.t);if(addI>0&&coinsOn()){f.coins+=addI;log(f,'Introduction: +'+addI+' denarii for completed quick checks')}f.paid.intro=ip.d;changed=true}}}catch(e){}
   D.MONS.forEach(function(m){if(!f.mon[m.id]&&monEarned(m)){f.mon[m.id]=Date.now();changed=true;if(m.t==='gate'&&!f.gp[m.n]){f.gp[m.n]=1;if(coinsOn()){f.coins+=GATEB;log(f,'Gate of Lesson '+ROMAN[m.n-1]+' closed: +'+GATEB+' denarii and a monument')}else log(f,'Gate of Lesson '+ROMAN[m.n-1]+' closed: a monument')}else log(f,'Monument earned: '+m.name)}});
   if(changed)persist();
  }
@@ -16931,6 +16956,178 @@ if (PUBLIC_PRACTICE) {
   window.__pilotTrainerFinished=function(){};
 
 }
+
+// The original completion checks supply the groups, counts, and states.
+function lessonPartStatus(done, kind, refs, count) {
+  return {done:!!done,kind:kind,refs:refs,count:count};
+}
+function summarizeLessonParts(parts, total) {
+  return {done:parts.filter(function(p){return typeof p==='object'?p.done:p}).length,total:total,parts:parts};
+}
+(function(){
+  function lessonTasks(n) {
+    var previous=V.lesson,tabs;
+    try { V.lesson=n; tabs=lessonTabs(); } finally { V.lesson=previous; }
+    var drills=n==='intro'?[]:window.__circusAPI.drillTabs(n);
+    var byTab=Object.create(null);
+    tabs.concat(drills).forEach(function(t){byTab[t[0]]=t});
+    var drillIds=new Set(drills.map(function(t){return t[0]}));
+    var progress;
+    if(n==='intro'){
+      var checks=notesStatus('intro');
+      progress={done:checks.d,total:checks.t,parts:[lessonPartStatus(checks.d===checks.t,'notes',['notes'])]};
+    }else{ progress=lessonProgress(n); }
+    var used=new Set();
+    function link(id,detail,complete,worksheet){
+      if(!byTab[id])return worksheet?{id:'ws',label:worksheet.title,detail:detail,complete:complete,worksheet:worksheet.id}:null;
+      used.add(id);
+      return {id:id,label:worksheet?worksheet.title||byTab[id][1]:byTab[id][1],detail:detail,complete:complete,circus:drillIds.has(id),worksheet:worksheet&&worksheet.id};
+    }
+    function count(done,total,unit){return done+' / '+total+' '+unit}
+    function build(p){
+      var links=[],title;
+      switch(p.kind){
+        case 'notes':{
+          var note=notesStatus(n==='intro'?'intro':'l'+n);
+          links.push(link('notes',count(note.d,note.t,'quick checks'),p.done));
+          break;
+        }
+        case 'vocab':{
+          var v=vocabStatus(n),rule=S.settings.vocabRule;
+          links.push(link('vocab',(rule?'Quiz or type at least 8 words at '+T()+'% or higher':'Complete a vocabulary activity')+(v.acc==null?'':' · '+v.acc+'% overall'),p.done));
+          break;
+        }
+        case 'lab':{
+          var lab=p.refs[0],finished=labDone(lab);
+          var id=byTab.xA?'xA':lab==='A'?'xA':Object.keys(byTab).find(function(key){return byTab[key][1]==='Exercise A'});
+          links.push(link(id,count(finished,p.count,'sentences required'),p.done));
+          break;
+        }
+        case 'group':
+          p.refs.forEach(function(spec){
+            var id=spec[0],type=spec[1];
+            if(type==='drill'){
+              var stat=exStatus(id),needs=stat.s==='required';
+              var detail=(needs?'Follow-up practice at ':'Score ')+T()+'% or higher';
+              if(stat.acc!=null)detail+=' · First attempt '+stat.acc+'%';
+              if(stat.s==='cleared')detail+=' · Cleared by practice';
+              links.push(link(id,detail,stat.s==='mastered'||stat.s==='cleared'));
+            }else{
+              var set=setProgress(id),required=p.count||set.t;
+              links.push(link(id,count(set.n,required,'responses required'),set.n>=required));
+            }
+          });
+          break;
+        case 'worksheets':
+          title=p.refs.length>1?'Submit one of these worksheets':'Submit the worksheet';
+          p.refs.forEach(function(id){
+            var w=WS.find(function(w){return w.id===id});
+            var tab='l'+n+id.slice(('w'+n).length);
+            var complete=!!(S.ws[id]&&S.ws[id].sub);
+            links.push(byTab[tab]?link(tab,'Submit the activity',complete):link('ws','Submit the activity',complete,w));
+          });
+          break;
+        case 'translationSets':
+          title='Reach halfway in any 3 translation sets';
+          p.refs.forEach(function(id){
+            var set=setProgress(id),min=Math.ceil(set.t/2);
+            links.push(link(id,count(set.n,min,'responses required'),set.n>=min));
+          });
+          title+=' ('+setsDone()+' qualifying)';
+          break;
+        case 'ladder':{
+          var ids=nleLadderFor(n), finished=ids.filter(function(id){return nleState(id).done}).length;
+          links.push({id:'ladder',label:'Reading ladder',detail:count(finished,ids.length,'readings complete'),complete:p.done,biblioteca:true});
+          break;
+        }
+        default:{
+          var names={reading:'Save the translation',nle:'Finish the NLE practice',ladder:'Finish the reading ladder',activity:'Submit the activity'};
+          links.push(link(p.refs[0],names[p.kind]||'',p.done));
+        }
+      }
+      links=links.filter(Boolean);
+      return {done:p.done,title:title||(!links.length?'Complete the lesson activity':links.map(function(l){return l.label}).join(' and ')),links:links};
+    }
+    var required=(progress.parts||[]).filter(function(p){return typeof p==='object'}).map(build);
+    var optional=tabs.filter(function(t){return !used.has(t[0])}).map(function(t){
+      return link(t[0],'',/^(done|mastered|cleared)$/.test(t[2]&&t[2].s));
+    });
+    var xp=window.__lessonXPItems(n==='intro'?0:n);
+    var denarii=window.__lessonDenarii(n,progress.done,progress.total);
+    var nextGroup=required.find(function(group){return !group.done&&group.links.some(function(l){return !l.complete})});
+    var next=nextGroup&&nextGroup.links.find(function(l){return !l.complete});
+    return {n:n,done:progress.done,total:progress.total,required:required,optional:optional,xp:xp,denarii:denarii,next:next};
+  }
+  window.__lessonChecklist=lessonTasks;
+  function action(task,n,label,css) {
+    return '<button class="'+css+'" data-act="lesson-checklist-go" data-l="'+n+'" data-tab="'+esc(task.id)+'"'+(task.circus?' data-circus="1"':'')+
+      (task.biblioteca?' data-biblioteca="1"':'')+(task.worksheet?' data-ws="'+esc(task.worksheet)+'"':'')+'>'+esc(label)+'</button>';
+  }
+  ACT['lesson-checklist-go']=function(t){
+    var data=t.dataset;
+    if(data.ws){ACT['dm-ws']({dataset:{l:data.l}});ACT['ws-open']({dataset:{id:data.ws}});return}
+    if(data.biblioteca){ACT['open-biblioteca']();return}
+    if(data.circus){ACT['cir-train']({dataset:{n:data.l,tab:data.tab}});return}
+    if(V.screen!=='lesson'||String(V.lesson)!==data.l)ACT['open-lesson']({dataset:{l:data.l}});
+    ACT.tab({dataset:{tab:data.tab}});
+  };
+  function checklist(m){
+    var earned=0,left=0;
+    m.xp.forEach(function(i){if(i.done)earned+=i.xp;else left+=i.xp});
+    return '<section class="panel lc" aria-label="Lesson completion and rewards"><h2>Lesson checklist</h2>'+
+      '<p>'+m.done+' of '+m.total+' '+(m.n==='intro'?'quick checks':'required parts')+' complete</p>'+
+      '<progress value="'+m.done+'" max="'+Math.max(1,m.total)+'" aria-label="Lesson completion"></progress>'+
+      '<p class="note">'+earned+' XP earned · '+left+' XP available'+(m.denarii?' · '+m.denarii.earned+' denarii credited · '+m.denarii.remaining+' denarii available'+(m.denarii.pending?' · '+m.denarii.pending+' denarii pending':''):'')+'</p>'+
+      (m.denarii&&m.denarii.gate?'<p class="note">Gate bonus · '+m.denarii.gate.reward+' denarii '+(m.denarii.gate.earned?'credited':m.denarii.gate.pending?'pending':'available')+'</p>':'')+
+      '<details><summary>Required activities</summary><ol>'+m.required.map(function(g){
+        return '<li><b>'+esc(g.title)+'</b> <span class="note">'+(g.done?'Complete':'To do')+'</span><ul>'+g.links.map(function(l){
+          return '<li>'+action(l,m.n,l.label,'link')+' <span class="note">'+esc(l.detail)+'</span></li>';
+        }).join('')+'</ul></li>';
+      }).join('')+'</ol></details>'+
+      (m.optional.length?'<details><summary>Optional for lesson completion</summary><ul>'+m.optional.map(function(l){return '<li>'+action(l,m.n,l.label,'link')+'</li>'}).join('')+'</ul></details>':'')+
+      '<details><summary>XP by activity</summary><ul>'+m.xp.map(function(i){
+        return '<li>'+esc(i.name)+' · '+i.xp+' XP '+(i.done?'earned':'available')+'</li>';
+      }).join('')+'</ul></details></section>';
+  }
+  var previousLesson=screenLesson;
+  screenLesson=function(){
+    var html=previousLesson();
+    if(V.screen!=='lesson')return html;
+    var m=lessonTasks(V.lesson);
+    return m.total?html.replace('<div class="tabs" role="tablist">',checklist(m)+'<div class="tabs" role="tablist">'):html;
+  };
+  function secondaryHomeButtons(html){
+    return html.replace(/<button class="(btn(?: [^"]*)?)"/g,function(markup,classes){
+      return /(?:^| )ghost(?: |$)/.test(classes)?markup:'<button class="'+classes+' ghost"';
+    });
+  }
+  var previousHome=screenHome;
+  screenHome=function(){
+    var html=previousHome();
+    if(!S.user||S.user.role!=='student')return html;
+    if(!S.av||!S.av.done){
+      // Keep the existing setup flow and give it the first position until a persona is saved.
+      var setup=html.match(/<section class="panel avbar cta">[\s\S]*?<\/section>/);
+      if(!setup)return html;
+      return secondaryHomeButtons(html.replace(setup[0],'')).replace(/(<main\b[^>]*>)/,function(main){
+        return main+setup[0];
+      });
+    }
+    var open=Object.keys(S.opened||{}).map(Number).filter(function(n){return n>=1&&n<=57}).sort(function(a,b){return b-a});
+    var n=open.find(function(n){var p=lessonProgress(n);return p.done<p.total});
+    if(!n)for(var i=1;i<=57;i++){var p=lessonProgress(i);if(p.done<p.total){n=i;break}}
+    if(!n)return html;
+    var m=lessonTasks(n),t=m.next;
+    if(!t)return html;
+    var reward=m.xp.find(function(i){return i.tab===t.id&&!i.done});
+    var button='Continue: '+t.label+(reward?', up to +'+reward.xp+' XP':'');
+    html=secondaryHomeButtons(html);
+    return html.replace(/(<main\b[^>]*>)/,'$1<section class="panel lc lc-next" aria-label="Continue your lesson"><p>Lesson '+ROMAN[n-1]+' · '+m.done+' of '+m.total+' required parts complete</p>'+action(t,n,button,'btn')+'</section>');
+  };
+  var styles=document.createElement('style');
+  styles.textContent='.lc{margin:.6rem 0}.lc h2,.lc p{margin:.25rem 0}.lc progress{width:min(100%,22rem);accent-color:var(--acc,#846020)}.lc details{margin:.35rem 0}.lc summary{cursor:pointer}.lc li{margin:.2rem 0}.lc .link{text-align:left}.lc-next .btn{margin-top:.3rem}';
+  document.head.appendChild(styles);
+})();
 
 render();
 })();
