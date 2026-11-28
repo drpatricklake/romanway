@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync,readdirSync,existsSync} from 'node:fs';
+import {join,relative} from 'node:path';
 import {harness,action,lessons,plain} from './harness.mjs';
 let calls=[];
 const unexpected=new Proxy({}, {get(_,key){return ()=>{calls.push(String(key));throw Error('Unexpected cloud call: '+String(key));}}});
@@ -55,9 +56,21 @@ const output=JSON.parse(readFileSync('.vercel/output/config.json'));
 assert.equal(output.version,3);
 assert.match(output.routes[0].headers['Content-Security-Policy'],/connect-src 'none'/);
 assert.match(output.routes[0].headers['Content-Security-Policy'],/form-action 'none'/);
-assert.deepEqual(readdirSync('.vercel/output/static').sort(),['404.html','app-bootstrap.js','app-config.js','index.html','local-progress.js','pilot-core.js','word-forms.js']);
+const staticRoot='.vercel/output/static';
+assert.deepEqual(readdirSync(staticRoot).sort(),['404.html','app-bootstrap.js','app-config.js','assets','index.html','local-progress.js','pilot-core.js','word-forms.js']);
+const manifest=JSON.parse(readFileSync(join(staticRoot,'assets/manifest.json')));
+const expectedAssets=[
+  'assets/README.md','assets/manifest.json',manifest.figure_index.path,
+  ...manifest.images.map(asset=>asset.path),
+  ...manifest.worksheets.map(asset=>asset.path),
+].sort();
+const packagedAssets=readdirSync(join(staticRoot,'assets'),{recursive:true,withFileTypes:true})
+ .filter(entry=>!entry.isDirectory())
+ .map(entry=>relative(staticRoot,join(entry.parentPath,entry.name)))
+ .sort();
+assert.deepEqual(packagedAssets,expectedAssets,'Static assets must match the reviewed manifest');
 assert.equal(existsSync('.vercel/output/functions'),false);
 const html=readFileSync('.vercel/output/static/index.html','utf8');
 assert.doesNotMatch(html,/new XMLHttpRequest|<link[^>]+https:\/\/fonts\./);
 assert.match(html,/<meta http-equiv="Content-Security-Policy"/);
-console.log('PASS static Public Practice: 601 lesson tabs, shared controls/actions blocked, zero network/adapter calls, no server/account files, CSP blocks connections and forms.');
+console.log(`PASS static Public Practice: ${all.captures.length} lesson tabs, manifest-only assets, shared controls/actions blocked, zero network/adapter calls, no server/account files, CSP blocks connections and forms.`);

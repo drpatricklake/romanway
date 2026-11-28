@@ -1,19 +1,29 @@
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import {readFileSync} from 'node:fs';
+import {extname} from 'node:path';
 import {chromium} from 'playwright';
 
 // Exercise the actual public package and its policy in a real browser.
 // Hosted Vercel routing, headers, and injected scripts still need a live check.
 const root=new URL('../../.vercel/output/',import.meta.url);
 const config=JSON.parse(readFileSync(new URL('config.json',root)));
-const allowed=new Set(['/','/index.html','/app-config.js','/app-bootstrap.js','/local-progress.js','/pilot-core.js','/word-forms.js']);
+const manifest=JSON.parse(readFileSync(new URL('static/assets/manifest.json',root)));
+const allowed=new Set([
+ '/','/index.html','/app-config.js','/app-bootstrap.js','/local-progress.js','/pilot-core.js','/word-forms.js',
+ ...manifest.images.concat(manifest.worksheets).map(asset=>'/'+asset.path),
+]);
+const contentTypes={
+ '.html':'text/html; charset=utf-8','.js':'text/javascript','.jpg':'image/jpeg',
+ '.webp':'image/webp','.pdf':'application/pdf',
+};
 const server=http.createServer((req,res)=>{
  for(const [k,v] of Object.entries(config.routes[0].headers))res.setHeader(k,v);
  const path=new URL(req.url,'http://localhost').pathname;
  if(!allowed.has(path)){res.writeHead(404);res.end(readFileSync(new URL('static/404.html',root)));return}
- res.setHeader('Content-Type',path.endsWith('.js')?'text/javascript':'text/html; charset=utf-8');
- res.end(readFileSync(new URL('static/'+(path==='/'?'index.html':path.slice(1)),root)));
+ const file=path==='/'?'index.html':path.slice(1);
+ res.setHeader('Content-Type',contentTypes[extname(file)]);
+ res.end(readFileSync(new URL('static/'+file,root)));
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const base='http://127.0.0.1:'+server.address().port;
@@ -67,6 +77,7 @@ try{
  assert.deepEqual(errors,[]);
  assert.deepEqual(policyFailures,[]);
  assert.ok(requests.length>0);
+ assert.ok(requests.some(r=>new URL(r.url).pathname.startsWith('/assets/')),'Browser requested reviewed artwork');
  for(const r of requests){
   assert.equal(new URL(r.url).origin,base,r.url);
   assert.ok(allowed.has(new URL(r.url).pathname),r.url);

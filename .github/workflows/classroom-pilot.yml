@@ -43,7 +43,11 @@ jobs:
         run: npm run test:browser
         working-directory: developer/tests
       - name: Public Practice static isolation and browser response storage
-        if: github.ref_name == 'public-practice' || github.head_ref == 'public-practice'
+        if: >-
+          github.ref_name == 'public-practice' ||
+          github.head_ref == 'public-practice' ||
+          github.base_ref == 'public-practice' ||
+          github.base_ref == 'fix/restore-forum-assets'
         run: |
           node scripts/build-public-practice.mjs
           node developer/tests/public-isolation.test.mjs
