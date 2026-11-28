@@ -1199,7 +1199,7 @@ function render(nav){
   if(V.screen==='login'||!S.user)body=screenLogin();
   else if(!CLOUD.ready||CLOUD.phase==='conflict')body=screenCloud();
   else if(V.screen==='instructor')body=screenTeacherCloud();
-  else if(V.screen==='road')body=screenRoad();else if(V.screen==='forum')body=screenForum();else if(V.screen==='avatar')body=screenAvatar();else if(V.screen==='signin')body=screenSignin();else if(V.screen==='board')body=screenBoard();else if(V.screen==='arena')body=screenArena();else if(V.screen==='biblioteca')body=screenBiblioteca();else if(V.screen==='circus')body=screenCircus();else if(V.screen==='spectacula')body=screenSpectacula();else if(V.screen==='virtutes')body=screenVirtutes();else if(V.screen==='domus')body=screenDomus();else if(V.screen==='appendix')body=screenAppendix();else if(V.screen==='readings')body=screenReadings();
+  else if(V.screen==='road')body=screenRoad();else if(V.screen==='forum')body=screenForum();else if(V.screen==='avatar'||V.screen==='tabernae'||V.screen==='arca')body=screenAvatar();else if(V.screen==='signin')body=screenSignin();else if(V.screen==='board')body=screenBoard();else if(V.screen==='arena')body=screenArena();else if(V.screen==='biblioteca')body=screenBiblioteca();else if(V.screen==='circus')body=screenCircus();else if(V.screen==='spectacula')body=screenSpectacula();else if(V.screen==='virtutes')body=screenVirtutes();else if(V.screen==='domus')body=screenDomus();else if(V.screen==='appendix')body=screenAppendix();else if(V.screen==='readings')body=screenReadings();
   else if(V.screen==='review')body=screenReview();
   else if(V.screen==='lesson')body=screenLesson();
   else body=screenHome();
@@ -11287,6 +11287,11 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
  function cCard(c,a){if(cAccess(c,a)==='locked')return null;var e=c.earlyAccess,early=e&&!done(c.unlockAfterLesson);return {text:(early&&e.cardText)||c.cardText,source:(early&&e.source)||c.source||null,more:(early&&e.additionalSources)||c.additionalSources||[]}}
  function cSeal(a,c){var k=ccalling(a);if(!k||!a.owned[c.id])return null;var pk=cprof(a).patronId,prim=k.primary.some(function(p){return p.companionId===c.id&&(p.patronId===undefined||p.patronId===pk)});return (prim||c.id===k.starter||k.related.indexOf(c.id)>=0)?k.seal:null}
  function compOf(a){var id=cid(a.worn.Companion||'');return a.owned[id]&&CBY[id]?CBY[id]:null}
+ window.__tablinumCompanion=function(){
+  var a=S.av,c=a&&a.done&&compOf(a);
+  return c?'<section class="panel fh-companion"><h2>Comes <span class="note">(Companion)</span></h2>'+
+   sp('cp_'+c.id,'','width:90px')+'<p>'+esc(c.name||c.id)+'</p></section>':'';
+ };
  function sealChip(sl){return '<span class="cpseal" style="background:'+sl.color+'" title="'+esc(sl.name)+'">'+esc(sl.initials)+'</span> <span class="note">'+esc(sl.name)+'</span>'}
  function lockText(c,a){var e=c.earlyAccess;if(c.unlockAfterLesson>57)return mineSel(c,a)?'First access for your calling'+(e.unlockAfterLesson?' after Lesson '+ROMAN[e.unlockAfterLesson-1]:''):'Belongs to another calling';return mineSel(c,a)?'First access for your calling after Lesson '+ROMAN[e.unlockAfterLesson-1]+'; for everyone after Lesson '+ROMAN[c.unlockAfterLesson-1]:'Opens after Lesson '+ROMAN[c.unlockAfterLesson-1]}
  function reach(c,a){var e=c.earlyAccess;return mineSel(c,a)?Math.min(e.unlockAfterLesson,c.unlockAfterLesson):c.unlockAfterLesson}
@@ -11353,7 +11358,7 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
  }
  function artDiagnostics(){return new URLSearchParams(window.location.search).get('devArt')==='1'}
  function setup(){
-  var a=A(),h='<main class="wrap"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1 style="font-size:2.1rem;margin-bottom:.1em">Choose your calling</h1><p class="note" style="max-width:72ch;margin:0 0 .8em">A <i>vocātiō</i> is a calling: the life you walk through the textbook. You begin as a Trojan refugee or a local Latin, and your calling grows with the history of Rome, from legend to kings, republic, empire, and legacy. Each calling has a guardian deity, its <i>tutēla</i>, and its own stages, drawn from real people and sources.</p>';
+  var a=A(),h='<main class="wrap"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1 style="font-size:2.1rem;margin-bottom:.1em">'+(PUBLIC_PRACTICE?'Choose your Persōna':'Choose your calling')+'</h1><p class="note" style="max-width:72ch;margin:0 0 .8em">A <i>vocātiō</i> is a calling: the life you walk through the textbook. You begin as a Trojan refugee or a local Latin, and your calling grows with the history of Rome, from legend to kings, republic, empire, and legacy. Each calling has a guardian deity, its <i>tutēla</i>, and its own stages, drawn from real people and sources.</p>';
   if(V.avStep===1){
    h+=PICKBAR(a)+'<div class="avgrid">'+D.callings.filter(function(c){return !LEGACY_CALL[c.id]||a.calling===c.id}).map(function(c){var sel=a.calling===c.id,r=ROST[c.id],ti=r?r[a.origin==='latin'?'latin':'trojan'][a.pres==='m'?0:1]:c.latin;return '<button class="avcard'+(sel?' sel':'')+'" data-act="av-pick" data-id="'+c.id+'" aria-pressed="'+sel+'">'+selectionFigure(c.id,a,'avc-img')+'<span class="avc-n">'+esc(callingEnglish(c.id,a))+'</span><span class="avc-l lat">'+esc(ti)+'</span><span class="avc-p">Tutēla: '+esc(c.patron)+'</span><span class="avc-s">'+esc((c.stages||c.stagesF)[0].t)+'</span></button>'}).join('')+'</div>';
   }else{
@@ -11365,11 +11370,13 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
  /* ---------- the studio ---------- */
  function itemsFor(a){return D.items.filter(function(i){return (i.for==='all'||i.for.indexOf(a.calling)>=0)&&(!i.pres||i.pres===a.pres)})}
  function iname(i){return latn(i)+(i.style?' ('+i.style+')':'')}
- function tabs(){var t=[['portrait','Portrait'],['path','Your path'],['wardrobe','Wardrobe'],['market','Market'],['comp','Companions'],['patron','Tutēla']].concat(phaseIdx()>=5?[['keepsake','Legacy portrait']]:[]).concat(artDiagnostics()?[['art','Art status']]:[]);return '<div class="tabs" role="tablist">'+t.map(function(x){return '<button class="tab" role="tab" aria-selected="'+(V.avTab===x[0])+'" data-act="av-tab" data-t="'+x[0]+'">'+x[1]+'</button>'}).join('')+'</div>'}
+ function tabs(){var t=(PUBLIC_PRACTICE?
+  [['portrait','Effigiēs (Portrait)'],['path','Aetātēs (Stages)'],['wardrobe','Vestīmenta (Wardrobe)'],['market','Tabernae (Market)'],['comp','Comitēs (Companions)'],['patron','Tutēla (Guardian)']]:
+  [['portrait','Portrait'],['path','Your path'],['wardrobe','Wardrobe'],['market','Market'],['comp','Companions'],['patron','Tutēla']]).concat(phaseIdx()>=5?[['keepsake','Legacy portrait']]:[]).concat(artDiagnostics()?[['art','Art status']]:[]);return '<div class="tabs" role="tablist">'+t.map(function(x){return '<button class="tab" role="tab" aria-selected="'+(V.avTab===x[0])+'" data-act="av-tab" data-t="'+x[0]+'">'+x[1]+'</button>'}).join('')+'</div>'}
  function tabPortrait(a){
   var s=stageOf(a),wr=Object.keys(a.worn).map(function(sl){return D.items.filter(function(i){return i.id===a.worn[sl]})[0]}).filter(Boolean),sc=V.avView==='scene';
   var left=sc?scene(a):portrait(a,true);
-  return prestPanel(a)+'<div class="avlayout"><div class="avleft">'+left+'<div class="seg" role="group" aria-label="View" style="margin-top:8px"><button data-act="av-view" data-v="portrait" aria-pressed="'+(!sc)+'">Portrait</button><button data-act="av-view" data-v="scene" aria-pressed="'+sc+'">Scene with tutēla</button></div></div><div style="flex:1;min-width:240px"><h2 style="margin:0">'+esc(a.name)+'</h2><p class="note" style="margin:.1em 0 .5em"><span class="lat">'+esc(ctitle(a))+'</span> · '+esc(callingEnglish(s.c.id,a))+(a.prestige?' · <b class="lat">'+esc(prestigeLabel(a))+'</b>':'')+' · '+(a.origin==='trojan'?'a Trojan refugee':'a local Latin')+(a.patron?' · tutēla: '+esc(a.patron):'')+'</p><p style="margin:0 0 .3em;display:flex;align-items:center;gap:8px">'+sp('pb_'+PHID[s.ph.id],'phbadge')+'<span><span class="chip acc">'+esc(s.ph.n)+'</span> <b>'+esc(s.st.t)+'</b></span></p><p class="note" style="margin:0 0 .6em">'+esc(s.st.who)+(s.st.tag?' · '+esc(s.st.tag):'')+'</p><p style="margin:0 0 .6em">'+esc(s.st.task)+'</p>'+(compOf(a)?'<p class="note" style="margin:0 0 .3em"><b>Companion:</b> '+esc(compOf(a).name)+(cSeal(a,compOf(a))?' · '+sealChip(cSeal(a,compOf(a))):'')+'</p>':'')+(coinsOn()?'<p style="margin:0 0 .3em;display:flex;align-items:center;gap:6px">'+sp('ui_denarius','coinimg')+'<b>'+bal()+'</b> denarii</p>':'')+'<p class="note" style="margin:0"><b>Wearing:</b> '+(wr.length?wr.map(function(i){return esc(iname(i))}).join(' · '):'nothing yet. Visit the market.')+'</p>'+''+'</div></div>';
+  return prestPanel(a)+'<div class="avlayout"><div class="avleft">'+left+'<div class="seg" role="group" aria-label="View" style="margin-top:8px"><button data-act="av-view" data-v="portrait" aria-pressed="'+(!sc)+'"">'+(PUBLIC_PRACTICE?'Effigiēs (Portrait)':'Portrait')+'</button><button data-act="av-view" data-v="scene" aria-pressed="'+sc+'">'+(PUBLIC_PRACTICE?'Scaena cum Tutēlā (Scene)':'Scene with tutēla')+'</button></div></div><div style="flex:1;min-width:240px"><h2 style="margin:0">'+esc(a.name)+'</h2><p class="note" style="margin:.1em 0 .5em"><span class="lat">'+esc(ctitle(a))+'</span> · '+esc(callingEnglish(s.c.id,a))+(a.prestige?' · <b class="lat">'+esc(prestigeLabel(a))+'</b>':'')+' · '+(a.origin==='trojan'?'a Trojan refugee':'a local Latin')+(a.patron?' · tutēla: '+esc(a.patron):'')+'</p><p style="margin:0 0 .3em;display:flex;align-items:center;gap:8px">'+sp('pb_'+PHID[s.ph.id],'phbadge')+'<span><span class="chip acc">'+esc(s.ph.n)+'</span> <b>'+esc(s.st.t)+'</b></span></p><p class="note" style="margin:0 0 .6em">'+esc(s.st.who)+(s.st.tag?' · '+esc(s.st.tag):'')+'</p><p style="margin:0 0 .6em">'+esc(s.st.task)+'</p>'+(compOf(a)?'<p class="note" style="margin:0 0 .3em"><b>Companion:</b> '+esc(compOf(a).name)+(cSeal(a,compOf(a))?' · '+sealChip(cSeal(a,compOf(a))):'')+'</p>':'')+(coinsOn()?'<p style="margin:0 0 .3em;display:flex;align-items:center;gap:6px">'+sp('ui_denarius','coinimg')+'<b>'+bal()+'</b> denarii</p>':'')+'<p class="note" style="margin:0"><b>Wearing:</b> '+(wr.length?wr.map(function(i){return esc(iname(i))}).join(' · '):'nothing yet. Visit the market.')+'</p>'+''+'</div></div>';
  }
  function tabPath(a){
   var c=cal(a.calling),sts=stagesOf(c,a.pres),k=phaseIdx(),h='<p class="note" style="max-width:72ch">Your calling grows through six stages. Each stage opens when you complete the lesson before it, and each is told through a real person or a source.</p>';
@@ -11424,9 +11431,22 @@ Object.keys(A4).forEach(function(k){if(AUTHORS[k]){AUTHORS[k].bio=A4[k].bio;AUTH
  }
  screenAvatar=function(){
   var a=A();
+  if(PUBLIC_PRACTICE&&V.screen==='tabernae')return '<main class="wrap"><div class="crumb"><button class="link" data-act="home">Forum</button></div>'+
+   '<h1>Tabernae</h1>'+(a.done?tabMarket(a):'<p>Choose your Persōna to shop for its clothing and equipment.</p><button class="btn" data-act="open-avatar">Choose your Persōna</button>')+'</main>';
+  if(PUBLIC_PRACTICE&&V.screen==='arca'){
+   var names=Object.keys(a.owned).filter(function(id){return a.owned[id]}).map(function(id){
+    var item=D.items.find(function(i){return i.id===id});
+    return item?iname(item):(CBY[cid(id)]||{}).name||id;
+   });
+   return '<main class="wrap"><div class="crumb"><button class="link" data-act="home">Forum</button></div><h1>Arca</h1>'+
+    '<section class="panel"><h2>Dēnāriī</h2><p><b>'+bal()+'</b> denarii</p></section>'+
+    '<section class="panel"><h2>Rēs <span class="note">(Possessions)</span></h2>'+
+    (names.length?'<ul>'+names.map(function(name){return '<li>'+esc(name)+'</li>'}).join('')+'</ul>':'<p>No possessions yet.</p>')+
+    '<button class="btn ghost" data-act="forum-persona-tab" data-t="wardrobe">Vestīmenta (Wardrobe)</button></section></main>';
+  }
   if(!artDiagnostics()&&V.avTab==='art')V.avTab='portrait';
   if(!a.done)return setup();
-  var h='<main class="wrap"><div class="crumb"><button class="link" data-act="home">All lessons</button> · <button class="link" data-act="open-forum">Your Forum</button></div><h1 style="font-size:2.1rem;margin-bottom:.2em">Your avatar</h1>'+tabs()+'<div style="margin-top:.7em">';
+  var h='<main class="wrap"><div class="crumb"><button class="link" data-act="home">All lessons</button> · <button class="link" data-act="open-forum">Your Forum</button></div><h1 style="font-size:2.1rem;margin-bottom:.2em">'+(PUBLIC_PRACTICE?'Persōna':'Your avatar')+'</h1>'+tabs()+'<div style="margin-top:.7em">';
   h+=(V.avTab==='portrait'?tabPortrait(a):V.avTab==='path'?tabPath(a):V.avTab==='wardrobe'?tabWardrobe(a):V.avTab==='market'?tabMarket(a):V.avTab==='comp'?tabComp(a):V.avTab==='patron'?tabPatron(a):V.avTab==='keepsake'?tabKeepsake(a):tabArt(a));
   return h+'</div></main>';
  };
@@ -13212,8 +13232,14 @@ var screenAppendix;
  function done(L){try{var n=notesStatus(key(L));return n.t>0&&n.s==='done'}catch(e){return false}}
  function lname(L){return L===0?'the Introduction':'Lesson '+ROMAN[L-1]}
  /* chisel a section in as soon as its lesson's guided notes are done; students already past this point are not celebrated */
+ var moment=null;
  function refresh(){var c=cx(),first=!c.init,any=false;
-  Object.keys(M).forEach(function(i){if(c.ch[i])return;if(done(M[i])){c.ch[i]=Date.now();any=true;if(!first)c.fresh.push(+i)}});
+  var inNotes=V.screen==='lesson'&&V.tab==='notes';
+  if(moment&&(!inNotes||V.lesson!==moment.lesson))moment=null;
+  Object.keys(M).forEach(function(i){if(c.ch[i])return;if(done(M[i])){c.ch[i]=Date.now();any=true;if(!first){
+    if(!PUBLIC_PRACTICE)c.fresh.push(+i);
+    else if(inNotes){moment=moment||{lesson:V.lesson,ids:[]};moment.ids.push(+i)}
+   }}});
   if(first)c.init=true;if(any||first)persist()}
  function keep(i){var k=window.__cxKeep;return !k||!!k[i]}
  function count(){var c=cx();return Object.keys(c.ch).filter(keep).length}
@@ -13221,9 +13247,11 @@ var screenAppendix;
  window.__codexBadge=function(i){var L=M[i];if(L===undefined)return '';var c=cx();
   return c.ch[i]?' <span class="cxbadge on" title="Chiseled in when you finished the guided notes of '+lname(L)+'">'+CHISEL+' Chiseled</span>':' <span class="cxbadge" title="Chiseled in when you finish the guided notes of '+lname(L)+'">'+(L===0?'Introduction':'Lesson '+ROMAN[L-1])+'</span>'};
  function titlesOf(list){var seen={},out=[];list.forEach(function(i){var t=APX.G[i].title.replace(/\s*\(.*$/,'');var k=t+'|'+APX.G[i].v;if(seen[k])return;seen[k]=1;out.push(t)});return out}
- function freshText(){var c=cx(),f=c.fresh;if(!f.length)return '';var t=titlesOf(f),s=t.slice(0,3).join('; ');return esc(s)+(t.length>3?' and '+(t.length-3)+' more':'')}
- function banner(cls){var c=cx();if(!c.fresh.length)return '';
-  return '<div class="panel cxfresh '+(cls||'')+'" role="region" aria-label="New in the Codex"><div class="cxic" aria-hidden="true">'+((window.__ART||{}).chisel?'<img src="'+window.__ART.chisel.u+'" alt="" style="width:40px;height:auto" data-cue="codex-engrave">':CHISEL.replace('width="14" height="14"','width="30" height="30"'))+'</div><div class="cxt"><b>Chiseled into the Codex</b><div>'+freshText()+'</div></div><button class="btn sm" data-act="codex-open">Open the Codex</button> <button class="btn sm ghost" data-act="codex-dismiss">Dismiss</button></div>'}
+ function freshText(f){if(!f.length)return '';var t=titlesOf(f),s=t.slice(0,3).join('; ');return esc(s)+(t.length>3?' and '+(t.length-3)+' more':'')}
+ function banner(cls){
+  var f=PUBLIC_PRACTICE?(cls==='cxlesson'&&moment?moment.ids:[]):cx().fresh;
+  if(!f.length)return '';
+  return '<div class="panel cxfresh '+(cls||'')+'" role="region" aria-label="New in the Codex"><div class="cxic" aria-hidden="true">'+((window.__ART||{}).chisel?'<img src="'+window.__ART.chisel.u+'" alt="" style="width:40px;height:auto" data-cue="codex-engrave">':CHISEL.replace('width="14" height="14"','width="30" height="30"'))+'</div><div class="cxt"><b>Chiseled into the Codex</b><div>'+freshText(f)+'</div></div><button class="btn sm" data-act="codex-open">Open the Codex</button> <button class="btn sm ghost" data-act="codex-dismiss">Dismiss</button></div>'}
  function peekBar(){return '<div class="codexbar"><button class="btn sm ghost" data-act="codex-peek" aria-haspopup="dialog">Codex <span class="note">('+count()+' chiseled)</span></button> <button class="btn sm ghost" data-act="vocab-peek" aria-haspopup="dialog">Vocabulary</button></div>'}
  window.__codexBar=peekBar;
  /* the quick-view: only what the student has chiseled, for use while reading and working */
@@ -13293,8 +13321,8 @@ var screenAppendix;
  var _la=labActs;labActs=function(A){_la(A);
   A['codex-peek']=function(t){openPeek(t)};
   A['vocab-peek']=function(t){openVocab(t)};
-  A['codex-dismiss']=function(){cx().fresh=[];persist();render(true)};
-  A['codex-open']=function(){cx().fresh=[];persist();var st0=S.apx||(S.apx={});V.screen='appendix';V.read=null;window.scrollTo(0,0);render(true)};
+  A['codex-dismiss']=function(){moment=null;cx().fresh=[];persist();render(true)};
+  A['codex-open']=function(){moment=null;cx().fresh=[];persist();var st0=S.apx||(S.apx={});V.screen='appendix';V.read=null;window.scrollTo(0,0);render(true)};
  };
  /* where it shows */
  var _jp=journeyPanel;journeyPanel=function(){refresh();var h=_jp(),b=banner();if(!b)return h;var i=h.indexOf('<section class="panel avbar'),j=i>=0?h.indexOf('</section>',i):-1;return j>=0?h.slice(0,j+10)+b+h.slice(j+10):b+h};
@@ -14011,7 +14039,7 @@ Object.assign(window.__ART=window.__ART||{},{"rank_civis": {"u": "data:image/web
  function art(k){var a=(window.__ART||{})[k];return a?a.u:''}
  window.__xpTotal=function(){return compute().total};
  window.__xpLesson=function(n){return compute().per[n]||0};
- window.__xp={compute:compute,rankOf:rankOf,RANKS:RANKS,VIR:VIR};
+ window.__xp={compute:compute,rankOf:rankOf,RANKS:RANKS,VIR:VIR,signature:sigOf};
  /* a promotion is noticed once, the first time it happens */
  function promo(){var m=compute(),r=rankOf(m),x=xs();if(x.rank==null){x.rank=r;persist();return null}if(r>x.rank){x.rank=r;x.promo=r;persist()}return x.promo!=null?x.promo:null}
  function standing(){var m=compute(),r=rankOf(m),nx=RANKS[r+1],pct=nx?Math.max(0,Math.min(100,100*(m.total-RANKS[r].min)/(nx.min-RANKS[r].min))):100,ep=epithet(m);
@@ -14019,13 +14047,20 @@ Object.assign(window.__ART=window.__ART||{},{"rank_civis": {"u": "data:image/web
  function honorNews(){var m=compute(),x=xs(),h=honorsOf(m).length;if(x.hon==null){x.hon=h;persist();return null}if(h>x.hon){x.hon=h;x.honNew=h-1;persist()}return x.honNew!=null?x.honNew:null}
  function honorBanner(){var i=honorNews(),g=sigOf();if(i==null||!g)return '';var hh=HON[g][i],hic=((window.__HONICON||{})[g]||[])[i];return '<section class="panel xppromo" role="status"><img src="'+(hic||art('vir_'+g))+'" alt="" data-cue="perfect-score"><div style="flex:1 1 200px"><b>Honor earned: <span class="lat">'+hh[0]+'</span></b><div class="note">'+hh[1]+', for '+hstep(g)[i]+' XP in '+VIR.filter(function(q){return q.id===g})[0].n+', the virtue of your calling.</div></div><button class="btn sm ghost" data-act="xp-hon-dismiss">Dismiss</button></section>'}
  function promoBanner(){var p=promo();if(p==null)return '';return '<section class="panel xppromo" role="status"><img src="'+art('rank_'+RANKS[p].id)+'" alt="" data-cue="rank-up"><div style="flex:1 1 200px"><b>Promoted: '+rname(p)+'</b><div class="note">You have risen to the rank of '+rname(p)+' (“'+RANKS[p].en+'”).</div></div><button class="btn sm ghost" data-act="xp-dismiss">Dismiss</button></section>'}
+ function signatureHonors(m){
+  var x=xs(),h='';
+  var g=sigOf();
+  if(g){var gq=VIR.filter(function(q){return q.id===g})[0],hs=honorsOf(m);if(x.honNew!=null){x.honNew=null;persist()}
+   h+='<div class="panel xpsig"><img src="'+art('vir_'+g)+'" alt=""><div style="flex:1 1 260px"><b>The virtue of your calling: '+gq.n+'</b> <span class="note">(“'+gq.en+'”)</span><div class="note" style="margin:.2em 0 .4em">Every virtue counts the same toward your rank. Yours gives you your epithet, '+EPI[g][fem()?1:0]+', and its honors.</div><div class="xphon">'+HON[g].map(function(hh,i){var got=hs.indexOf(i)>=0;return '<div class="xph'+(got?' on':'')+'">'+(((window.__HONICON||{})[g]||[])[i]?'<img src="'+window.__HONICON[g][i]+'" alt="">':'')+'<b class="lat">'+hh[0]+'</b><span class="note">'+hh[1]+'</span><span class="chip'+(got?' ok':'')+'">'+(got?'Earned':hstep(g)[i]+' XP')+'</span></div>'}).join('')+'</div></div></div>'}
+  return h;
+ }
+ window.__signatureHonors=function(){return signatureHonors(compute())};
  screenVirtutes=function(){var m=compute(),r=rankOf(m),ep=epithet(m),x=xs();
   var h='<main class="wrap"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1 style="font-size:2.1rem;margin-bottom:.1em">Virtūtēs</h1><p class="note" style="max-width:70ch;margin:0 0 .6em">Your XP is the permanent record of your growth as a scholar and a citizen. It is never spent; denarii are what you spend. Your rank rises with the total, and the virtue of your calling gives you your epithet and its honors.</p>';
   h+=promoBanner();
   h+='<div class="panel xpstand"><img class="xpins" src="'+art('rank_'+RANKS[r].id)+'" alt="" style="width:84px;height:84px"><div class="xpmain"><div style="font-size:1.25rem"><b>'+rname(r)+'</b> <span class="note">(“'+RANKS[r].en+'”)</span></div><div>'+m.total+' XP'+(ep?' · epithet <span class="lat"><b>'+ep+'</b></span>':'')+'</div><div class="note">'+m.days+' day'+(m.days===1?'':'s')+' of study'+(m.streak?' · current streak '+m.streak+' day'+(m.streak===1?'':'s'):'')+'</div></div></div>';
   var g=sigOf();
-  if(g){var gq=VIR.filter(function(q){return q.id===g})[0],hs=honorsOf(m);if(x.honNew!=null){x.honNew=null;persist()}
-   h+='<div class="panel xpsig"><img src="'+art('vir_'+g)+'" alt=""><div style="flex:1 1 260px"><b>The virtue of your calling: '+gq.n+'</b> <span class="note">(“'+gq.en+'”)</span><div class="note" style="margin:.2em 0 .4em">Every virtue counts the same toward your rank. Yours gives you your epithet, '+EPI[g][fem()?1:0]+', and its honors.</div><div class="xphon">'+HON[g].map(function(hh,i){var got=hs.indexOf(i)>=0;return '<div class="xph'+(got?' on':'')+'">'+(((window.__HONICON||{})[g]||[])[i]?'<img src="'+window.__HONICON[g][i]+'" alt="">':'')+'<b class="lat">'+hh[0]+'</b><span class="note">'+hh[1]+'</span><span class="chip'+(got?' ok':'')+'">'+(got?'Earned':hstep(g)[i]+' XP')+'</span></div>'}).join('')+'</div></div></div>'}
+  if(!PUBLIC_PRACTICE)h+=signatureHonors(m);
   h+='<div class="xpgrid">'+VIR.map(function(q){return '<div class="panel xpvir'+(q.id===g?' sig':'')+'"><img src="'+art('vir_'+q.id)+'" alt=""><div><b>'+q.n+'</b> <span class="note">(“'+q.en+'”)</span><div style="font-size:1.2rem;font-weight:700">'+m.v[q.id]+' XP</div><div class="note">'+q.how+'</div></div></div>'}).join('')+'</div>';
   h+='<h2 style="font-size:1.3rem;margin:1em 0 .3em">The ranks</h2><div class="xpladder">'+RANKS.map(function(R,i){return '<div class="xprung'+(i===r?' on':'')+(i>r?' off':'')+'"><img src="'+art('rank_'+R.id)+'" alt=""><b>'+(fem()?R.f:R.m)+'</b><span class="note">'+(R.id==='divus'&&PILOT?'Opens in the full course':(R.each?R.min+' XP, and '+R.each+' in every virtue':R.min+' XP'))+'</span></div>'}).join('')+'</div>';
   var APO=[{id:'augustus',n:'Augustus',cog:['Pater Patriae','Māter Patriae'],why:'for civic and priestly paths'},{id:'trajan',n:'Trajan',cog:['Optimus','Optima'],why:'for soldiers, builders, and generous patrons'},{id:'hadrian',n:'Hadrian',cog:['Restitūtor','Restitūtrīx'],why:'for architects, artists, and travelers'},{id:'marcus-aurelius',n:'Marcus Aurelius',cog:['Philosophus','Philosopha'],why:'for philosophers and scholars'}];
@@ -14089,14 +14124,16 @@ window.__ART4={"bg_tablinum": "data:image/webp;base64,UklGRopbAQBXRUJQVlA4IH5bAQ
   var hasProjects=projWs().some(function(w){return String(w.lesson)===l})||
    TABLINUM_PROJECTS.some(function(p){return String(p.l)===l});
   if(!worksheets&&!hasProjects)return h;
-  var materials=worksheets?(hasProjects?'worksheets and projects':'worksheets'):'projects';
+  var materials=hasProjects?'worksheets and projects':'worksheets';
   var b='<div class="panel dmlesson" role="region" aria-label="Lesson materials in the Tablinum">'+
    '<div style="flex:1 1 240px"><b>This lesson’s '+materials+' are in the Tablinum.</b></div>'+
    (worksheets?'<button class="btn sm ghost" data-act="dm-ws" data-l="'+l+'">'+(hasProjects?'Open worksheets':'Open the Tablinum')+'</button>':'')+
    (hasProjects?'<button class="btn sm ghost" data-act="dm-project-list">Open projects</button>':'')+'</div>';
   return h.replace('<div class="tabs" role="tablist">',b+'<div class="tabs" role="tablist">')};
  function A4(k){return (window.__ART4||{})[k]||''}
- function roomTabs(){var R=[['tablinum','Tablinum'],['atrium','Atrium'],['lararium','Lararium']];return '<div class="tabs" role="tablist">'+R.map(function(r){return '<button class="tab" role="tab" aria-selected="'+(DM.room===r[0])+'" data-act="dm-room" data-r="'+r[0]+'">'+r[1]+'</button>'}).join('')+'</div>'}
+ function roomTabs(){var R=PUBLIC_PRACTICE?
+  [['tablinum','Tablīnum (Study)'],['atrium','Ātrium (Hall)'],['lararium','Larārium (Shrine)']]:
+  [['tablinum','Tablinum'],['atrium','Atrium'],['lararium','Lararium']];return '<div class="tabs" role="tablist">'+R.map(function(r){return '<button class="tab" role="tab" aria-selected="'+(DM.room===r[0])+'" data-act="dm-room" data-r="'+r[0]+'">'+r[1]+'</button>'}).join('')+'</div>'}
  function subTabs(){var R=[['record','Your record'],['ws','Worksheets'],['proj','Projects']];return '<div class="seg" role="group" aria-label="Tablinum" style="margin:.2em 0 .8em">'+R.map(function(r){return '<button data-act="dm-sub" data-s="'+r[0]+'" aria-pressed="'+(DM.sub===r[0])+'">'+r[1]+'</button>'}).join('')+'</div>'}
  function record(){var h=screenVirtutes(),i=h.indexOf('</h1>'),j=h.lastIndexOf('</main>');return i>=0&&j>i?h.slice(i+5,j):h}
  function wsRow(w){var s=wsStatus(w),as=assigned().indexOf(w.id)>=0;return '<div class="dmrow"><div style="flex:1 1 220px"><b><span class="lat">'+esc(w.code||'')+'</span> '+esc(w.title)+'</b>'+(as?' <span class="chip warn">Assigned</span>':'')+'<div class="note">'+esc(w.kind||'')+'</div></div>'+chipFor(s)+'<button class="btn sm" data-act="ws-open" data-id="'+w.id+'">'+(s==='done'?'Review':'Open')+'</button>'+(DM.canEdit?'<button class="btn sm ghost" data-act="dm-assign" data-id="'+w.id+'" aria-pressed="'+as+'">'+(as?'Unassign':'Assign')+'</button>':'')+'</div>'}
@@ -14124,7 +14161,8 @@ window.__ART4={"bg_tablinum": "data:image/webp;base64,UklGRopbAQBXRUJQVlA4IH5bAQ
  function atrium(){var art='<div class="artban" data-cue="room-enter" style="position:relative"><img src="'+A4('bg_atrium')+'" alt="The atrium of a Roman house, with a table and lamp"></div>';if(window.__atriumView)return window.__atriumView(art);return art+'<div class="panel"><h2 style="margin:0 0 .3em;font-size:1.3rem">The Atrium</h2><p style="margin:0 0 .5em;max-width:72ch">In the atrium a Roman <i>patrōnus</i> received his <i>clientēs</i> each morning. Here a student who wants help with a checkpoint will find a patron among the class, a strong student will be invited to offer service, and the teacher will be able to pair students. Patrons earn Līberālitās when their client passes; clients earn Cōnstantia for seeing it through.</p><p class="note" style="margin:0"><span class="chip">Opening soon</span> The Atrium needs the whole class signed in together, which your developer is preparing.</p></div>'}
  function lararium(){var a=S.av,t=a&&a.patron;return '<div class="panel" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap"><div class="dmtut">'+(window.__tutelaHtml?window.__tutelaHtml():'')+'</div><div style="flex:1 1 240px"><h2 style="margin:0 0 .3em;font-size:1.3rem">The Lararium</h2><p style="margin:0 0 .4em;max-width:68ch">Every Roman house kept a small shrine, the <i>larārium</i>, for the Lares who guarded the household, the Penates of the storeroom, and the family’s Genius. Here stands your <i>tutēla</i>'+(t?', <b>'+esc(t)+'</b>':'')+'.</p>'+(a&&a.done?'<button class="btn sm ghost" data-act="dm-tutela">Choose your tutēla</button>':'<button class="btn sm" data-act="open-avatar">Choose your calling first</button>')+'</div></div>'}
  screenDomus=function(){var h='<main class="wrap"><div class="crumb"><button class="link" data-act="home">All lessons</button></div><h1 style="font-size:2.1rem;margin-bottom:.1em">Domus</h1><p class="note" style="max-width:70ch;margin:0 0 .5em">Your Roman house. The Tablinum keeps your record, your worksheets, and your projects; the Atrium is where students help one another; the Lararium holds your guardian deity.</p>'+roomTabs();
-  if(DM.room==='atrium')return h+atrium()+'</main>';
+  if(DM.room==='atrium')return h+atrium()+(PUBLIC_PRACTICE?'<section aria-label="Honōrēs (Honors)"><h2>Honōrēs</h2>'+
+   (window.__signatureHonors()||'<p>Choose your Persōna to discover its honors.</p>')+'</section>':'')+'</main>';
   if(DM.room==='lararium')return h+lararium()+'</main>';
   if(DM.project){
    return h+'<div class="crumb"><button class="link" data-act="dm-sub" data-s="proj">All projects</button></div>'+
@@ -14134,7 +14172,7 @@ window.__ART4={"bg_tablinum": "data:image/webp;base64,UklGRopbAQBXRUJQVlA4IH5bAQ
   h+='<div class="artban" data-cue="room-enter"><img src="'+A4('bg_tablinum')+'" alt="The tablinum, a quiet room of records and writing"></div>'+subTabs();
   if(DM.sub==='ws')return h+wsList()+'</main>';
   if(DM.sub==='proj')return h+projList()+'</main>';
-  return h+record()+'</main>'};
+  return h+(PUBLIC_PRACTICE?window.__tablinumCompanion():'')+record()+'</main>'};
  function clearTablinumItem(){DM.project=null;V.ws=null;V.mapSel=null}
  function enterTablinum(sub){
   clearTablinumItem();
@@ -15491,8 +15529,8 @@ var screenRoad;
   if(!wallOpen())return h+'<div class="panel"><p class="note">This wall is shown when you finish Lesson LV, the lesson on Vesuvius and Pompeii.</p></div>';
   return h+D.WALL.map(function(w){return '<div class="panel"><p class="lat" style="font-size:1.1em;margin:0 0 .2em">'+esc(w.la)+'</p><p style="margin:0">'+esc(w.en)+'</p><p class="note" style="margin:.3em 0 0">'+esc(w.src)+'</p></div>'}).join('');
  }
- function tabToday(){
-  var d=new Date(),f=F(),k=dayKey(d),p=proverb(d),rec=f.day[k]||{},h='<div class="panel"><p class="note" style="margin:0">Today, by the Roman reckoning, is</p><p class="lat" style="font-size:1.35em;margin:.1em 0 .2em">'+romanDate(d)+'</p><p class="note" style="margin:0">The Romans counted backward from three fixed days of the month: the Kalends (the 1st), the Nones, and the Ides. The Ides of March was a day like any other until 44 B.C.</p></div>';
+ function tabToday(compact){
+  var d=new Date(),f=F(),k=dayKey(d),p=proverb(d),rec=f.day[k]||{},h=compact?'':'<div class="panel"><p class="note" style="margin:0">Today, by the Roman reckoning, is</p><p class="lat" style="font-size:1.35em;margin:.1em 0 .2em">'+romanDate(d)+'</p><p class="note" style="margin:0">The Romans counted backward from three fixed days of the month: the Kalends (the 1st), the Nones, and the Ides. The Ides of March was a day like any other until 44 B.C.</p></div>';
   h+='<div class="panel"><p class="note" style="margin:0 0 .3em">A saying for today</p><p class="lat" style="font-size:1.25em;margin:.1em 0 .4em">'+esc(p.la)+'</p><div class="c2opts">'+p.opts.map(function(o,oi){var cls='btn ghost sm'+(rec.pick===oi?(oi===p.tg?' fl-ok':' fl-no'):'');return '<button class="'+cls+'" data-act="forum-day" data-o="'+oi+'" data-tg="'+p.tg+'">'+esc(o)+'</button>'}).join('')+'</div>'+(rec.pick!=null?'<p class="note" role="status">'+(rec.pick===p.tg?'Correct. ':'The saying means: ')+esc(p.en)+(rec.pay&&coinsOn()?' (+'+DAY+' denarius)':'')+'</p>':'<p class="note">Choose the best translation. A new saying comes each day.</p>')+'</div>';
   return h;
  }
@@ -15500,6 +15538,14 @@ var screenRoad;
   var f=F(),h='<div class="panel"><p style="font-size:1.4rem;margin:0 0 4px">'+coin(26)+' <b>'+f.coins+'</b> denarii</p>'+(coinsOn()?'<p class="note" style="margin:0 0 8px">You earn <b>'+LESSON+' denarii</b> for each lesson you complete, including the Introduction (spread over its parts), <b>'+GATEB+'</b> for each gate you close, <b>'+TIT+'</b> for each inscription you read, and <b>'+DAY+'</b> a day for the day’s saying. Denarii buy clothing, companions, props, and settings for your avatar. Nothing in the course ever depends on them.</p>':'<p class="note">Your teacher has turned off the denarii for this class. Your monuments, inscriptions, coins, and the wall are still yours.</p>')+'<p style="margin:0"><button class="btn" data-act="open-avatar">Open your avatar and the market</button></p></div><div class="note"><b>Recent:</b> '+(f.log.length?f.log.map(esc).join(' · '):'nothing yet')+'</div>';
   return h;
  }
+ window.__civicForum={
+  date:function(){return romanDate(new Date())},
+  saying:function(){return tabToday(true)},
+  monuments:function(){
+   var recorded=F().mon,earned=D.MONS.filter(function(m){return recorded[m.id]}).sort(function(a,b){return recorded[a.id]-recorded[b.id]});
+   return {earned:earned.length,total:D.MONS.length,latest:earned.at(-1)};
+  }
+ };
  screenForum=function(){
   sync();var h='<main class="wrap"><div class="crumb"><button class="link" data-act="home">All lessons</button> · <button class="link" data-act="open-avatar">Your avatar</button></div><h1 style="font-size:2.1rem;margin-bottom:.1em">Your Forum</h1><p class="note" style="margin:0 0 .6em;max-width:72ch">The Forum was where Rome kept its memory: statues, inscriptions, arches, and the news of the day. This one is yours. It grows as you walk the road, and nothing here ever blocks your lessons.</p>';
   if(mode()==='off')return h+'<div class="panel"><p>Your teacher has turned the Forum off for this class.</p></div><details class="subm" style="margin-top:1.2em"><summary>Have a class code from your teacher?</summary><p><input id="forum-code" type="text" placeholder="Paste the code" style="width:16em"> <button class="btn sm" data-act="forum-code">Use code</button></p>'+(V.fMsg?'<p class="note" role="status">'+esc(V.fMsg)+'</p>':'')+'</details></main>';
@@ -17253,6 +17299,100 @@ function summarizeLessonParts(parts, total) {
   var styles=document.createElement('style');
   styles.textContent='.lc{margin:.6rem 0}.lc h2,.lc p{margin:.25rem 0}.lc progress{width:min(100%,22rem);accent-color:var(--acc,#846020)}.lc details{margin:.35rem 0}.lc summary{cursor:pointer}.lc li{margin:.2rem 0}.lc .link{text-align:left}.lc-next .btn{margin-top:.3rem}';
   document.head.appendChild(styles);
+})();
+
+/* Public Practice civic home. Existing lesson and market actions own their state. */
+(function(){
+  if(!PUBLIC_PRACTICE)return;
+
+  function button(action,label,extra){
+    return '<button type="button" class="btn ghost" data-act="'+action+'"'+(extra||'')+'>'+label+'</button>';
+  }
+  function art(key,cls){
+    var asset=(window.__ART||{})[key];
+    return asset?'<img class="'+cls+'" src="'+asset.u+'" alt="">':'';
+  }
+  function standing(){
+    var xp=window.__xp,m=xp.compute(),rank=xp.RANKS[xp.rankOf(m)],signature=xp.signature();
+    return '<section class="panel fh-standing" aria-label="Your standing"><div class="fh-rank">'+art('rank_'+rank.id,'fh-rank-image')+
+      '<div><h2>'+esc(S.av&&S.av.pres==='f'?rank.f:rank.m)+'</h2><p>'+m.total+' XP</p></div></div>'+
+      '<div class="fh-virtues" aria-label="Virtues">'+xp.VIR.map(function(v){
+        var highlighted=signature===v.id;
+        return '<details class="fh-virtue'+(highlighted?' fh-signature':'')+'"><summary aria-label="'+esc(v.n+' · '+m.v[v.id]+' XP'+
+          (highlighted?' · signature virtue':''))+'">'+art('vir_'+v.id,'fh-virtue-image')+'<span>'+m.v[v.id]+'</span></summary>'+
+          '<p><b>'+esc(v.n)+'</b> · '+esc(v.en)+'</p>'+(highlighted?
+          '<p>The ring marks your Persōna’s signature virtue. Its XP unlocks its own honors. All six virtues count equally toward rank.</p>':'')+'</details>';
+      }).join('')+'</div>'+button('open-virtutes','Virtūtēs (Record)')+'</section>';
+  }
+  function monuments(){
+    var m=window.__civicForum.monuments();
+    return '<section class="panel fh-monuments"><h2>Monuments</h2><p class="note">'+m.earned+' of '+m.total+' earned</p>'+
+      (m.latest?window.__sp('mon_'+m.latest.id,'fh-monument-image')+'<p>'+esc(m.latest.name)+'</p>':
+        '<p>Finish lessons and close gates to earn monuments.</p>')+button('forum-monuments','View monuments')+'</section>';
+  }
+  function courseView(legacy){
+    var road=legacy.indexOf('<section class="panel journey" id="roadpanel"');
+    var goals=legacy.indexOf('<div class="goals">',road);
+    if(road<0||goals<0)return legacy;
+    var roadEnd=legacy.lastIndexOf('</section>',goals)+'</section>'.length;
+    return '<main class="wrap"><div class="crumb"><button class="link" data-act="home">Forum</button></div><h1>Via <span class="note">(The Road)</span></h1>'+
+      legacy.slice(road,roadEnd)+legacy.slice(goals);
+  }
+  var legacyHome=screenHome;
+  screenHome=function(){
+    var legacy=legacyHome().replace(/<p class="protonote">[\s\S]*?<\/p>/,'');
+    if(V.screen==='via')return courseView(legacy);
+    var setup=legacy.match(/<section class="panel avbar cta">[\s\S]*?<\/section>/);
+    var next=legacy.match(/<section class="panel lc lc-next"[^>]*>[\s\S]*?<\/section>/);
+    var primary=next?next[0]:'<section class="fh-next"><button class="btn" data-act="open-road">Review the Via</button></section>';
+    var awards=legacy.match(/<section class="panel (?:prestprompt|xppromo)"[^>]*>[\s\S]*?<\/section>/g)||[];
+    var practice=legacy.match(/<div class="alert" role="status">[\s\S]*?<\/div>/);
+    var review=reviewCounts();
+    return '<main class="wrap fh">'+(setup?setup[0].replace('Choose your calling','Choose your Persōna'):'')+
+      '<section class="fh-hero"><div><p class="fh-date lat" aria-label="Roman date">'+esc(window.__civicForum.date())+'</p><h1>Forum</h1>'+
+      (S.av&&S.av.done?'<p class="fh-greeting">Salvē, '+esc(S.av.name)+'.</p>':'')+'</div>'+
+      (!setup?primary:'')+'</section>'+
+      '<nav class="fh-places" aria-label="Forum places">'+button('open-road','Via',' aria-label="Via (The Road)"')+
+      button('forum-persona-tab','Persōna',' data-t="portrait"')+button('open-tabernae','Tabernae',' aria-label="Tabernae (Market)"')+
+      button('open-domus','Domus',' data-r="tablinum"')+button('open-appendix','Codex')+
+      button('open-biblioteca','Bibliothēca')+button('open-spectacula','Spectācula')+
+      button('open-arca','Arca',' aria-label="Arca (Wallet and possessions)"')+'</nav>'+
+      awards.join('')+(practice?practice[0]:'')+
+      '<div class="fh-civic"><div class="fh-today">'+window.__civicForum.saying()+'</div>'+
+      standing()+monuments()+'</div>'+
+      '<p class="fh-review">'+button(review.due||review.newN?'rev-start':'rev-more',review.due?'Review · '+review.due+' due':'Review vocabulary')+'</p></main>';
+  };
+
+  ACT['open-road']=function(){V.screen='via';render(true)};
+  ACT['forum-monuments']=function(){V.fTab='map';ACT['open-forum']()};
+  ACT['open-tabernae']=function(){V.screen='tabernae';render(true)};
+  ACT['open-arca']=function(){V.screen='arca';render(true)};
+  ACT['forum-persona-tab']=function(t){V.avTab=t.dataset.t;ACT['open-avatar']()};
+  var oldHeader=header;
+  header=function(){
+    return oldHeader().replace('id="cloud-status" role','id="cloud-status" class="fh-storage" role')
+      .replace('>Device progress</button>','>Progress settings</button>');
+  };
+  var oldMarkup=publicPracticeMarkup;
+  publicPracticeMarkup=function(html){
+    return oldMarkup(html).replace(/data-act="home">(All lessons|Back to lessons)<\/button>/g,'data-act="home">Forum</button>');
+  };
+
+  var style=document.createElement('style');
+  style.textContent=`
+    .fh{--fh-gold:#d8bd80}.fh-hero{display:grid;grid-template-columns:1fr minmax(0,1.15fr);align-items:end;gap:1.5rem;padding:clamp(1rem,3vw,2rem);margin:.4rem 0 0;background:#203c5a;color:#fff;border-radius:12px 12px 0 0;border-top:4px solid var(--fh-gold)}
+    .fh-hero h1{font-size:clamp(2.5rem,6vw,4.2rem);line-height:1;margin:.22em 0 .12em;color:inherit}.fh-hero p{margin:.2rem 0}.fh-date{color:#f0d99e;font-size:clamp(1rem,2.4vw,1.28rem)}.fh-greeting{overflow-wrap:anywhere}
+    .fh-hero .lc-next{background:var(--surface);color:var(--ink);margin:0;min-width:0}.fh-hero .lc-next .btn{white-space:normal;text-align:left}.fh-next{justify-self:end}
+    .fh-places{display:flex;flex-wrap:wrap;gap:.45rem;padding:.75rem;background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;margin-bottom:1rem}.fh-places .btn{font-weight:650}
+    .fh-civic{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.1fr) minmax(0,.85fr);gap:.8rem;align-items:start}.fh-civic .panel{margin:0;padding:.9rem}.fh-civic h2{font-size:1.4rem;margin:0 0 .25rem}.fh-civic p{margin:.3rem 0 .6rem}
+    .fh-rank{display:flex;gap:.6rem;align-items:center}.fh-rank-image{width:3.25rem;height:3.25rem;object-fit:contain}.fh-virtues{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem;margin:.6rem 0}
+    .fh-virtue{min-width:0}.fh-virtue summary{list-style:none;border:1px solid var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:.24rem;padding:.32rem;cursor:pointer;min-height:2.6rem;font-size:.82rem}.fh-virtue summary::-webkit-details-marker{display:none}
+    .fh-virtue[open]{grid-column:1/-1}.fh-virtue p{font-size:.86rem}.fh-signature summary{border:2px solid var(--brass)}.fh-virtue-image{width:1.35rem;height:1.35rem;object-fit:contain}
+    .fh-monument-image{display:block;max-height:140px;max-width:100%;margin:.4rem 0}.fh-review{margin-top:.7rem}.fh-storage{background:var(--surface-2);border-radius:1rem;padding:.25rem .58rem;overflow-wrap:anywhere}
+    @media(max-width:760px){.fh-civic{grid-template-columns:repeat(2,minmax(0,1fr))}.fh-today{grid-column:1/-1}}
+    @media(max-width:490px){.fh-hero,.fh-civic{grid-template-columns:minmax(0,1fr);gap:.65rem}.fh-hero .lc-next{margin-top:.3rem}.fh-next{justify-self:start}.fh .c2opts .btn{white-space:normal}.top-in,.top-r{min-width:0;flex-wrap:wrap}.fh-storage{flex:1 1 auto}.fh-places .btn{padding:.42rem .6rem}}
+  `;
+  document.head.appendChild(style);
 })();
 
 render();
