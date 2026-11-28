@@ -19,6 +19,18 @@ def apply(html):
         html = html.replace("im.src='/_blob/'+SHEETS[s]", 'im.src=SHEETS[s]')
     else:
         assert old == [f'/assets/textbook/sheets/sheet{i:02d}.jpg' for i in range(14)], 'unexpected sheet map'
+    taberna = re.search(r'var IMG11=(\{[^\n]+?\});', html)
+    assert taberna, 'Lesson XI image mapping missing'
+    taberna_id = re.fullmatch(r'@IMG(\d+)@', json.loads(taberna[1])['taberna'])
+    assert taberna_id, 'Lesson XI Taberna image must be on a textbook sheet'
+    draw = "    c.getContext('2d').drawImage(im,a[1],a[2],a[3],a[4],0,0,a[3],a[4]);"
+    upright_draw = f"""    var ctx=c.getContext('2d');
+    // Rotate the Lesson XI Taberna crop 180 degrees before encoding the image.
+    if(n==={taberna_id[1]})ctx.setTransform(-1,0,0,-1,c.width,c.height);
+    ctx.drawImage(im,a[1],a[2],a[3],a[4],0,0,a[3],a[4]);"""
+    if upright_draw not in html:
+        assert html.count(draw) == 1, 'textbook sheet draw not uniquely identified'
+        html = html.replace(draw, upright_draw, 1)
     for key, path in (mapping | manifest['legacy_worksheet_routes']).items():
         html = html.replace('/_blob/' + key, '/' + path)
     remaining = set(re.findall(r'/_blob/([0-9a-f]{32})', html))
