@@ -10,23 +10,27 @@ new='''        const { canvas, flip } = shoePiece(art, foot, item, side);
         proportional(piece.context, canvas, (left + right) / 2, y, w, h, 0, flip);
         // The art includes a donor ankle. Keep its upper section inside the
         // actual leg silhouette; retain the shoe's own outline below the strap.
-        const base = imageCache.get(pose.image);
         // Pose images are loaded before footwear is composed.
         const silhouette = poseSilhouettes.get(pose.id);
         if (silhouette) {
           const pixels = piece.context.getImageData(0, 0, ...dimensions);
           const native = silhouette.data;
-          for (let py = Math.max(0, Math.floor(y)); py < Math.min(dimensions[1], y + h * .62); py++) {
-            const blend = clamp((py - y - h * .36) / (h * .26), 0, 1);
+          const tailored = /^(herder|stoneworker|textile|service)-male$/.test(pose.id);
+          const fadeStart = tailored ? .58 : .36;
+          const fadeEnd = tailored ? .80 : .62;
+          for (let py = Math.max(0, Math.floor(y)); py < Math.min(dimensions[1], y + h * fadeEnd); py++) {
+            const blend = clamp((py - y - h * fadeStart) / (h * (fadeEnd - fadeStart)), 0, 1);
             for (let px = Math.max(0, Math.floor(left - 3)); px < Math.min(dimensions[0], right + 4); px++) {
               const i = (py * dimensions[0] + px) * 4;
-              pixels.data[i + 3] *= blend + (1 - blend) * native[i + 3] / 255;
+              const overlap = native[i + 3] / 255;
+              // Reveal the strap over the native foot before revealing the sole outside it.
+              const inside = tailored ? clamp((py - y - h * .31) / (h * .29), 0, 1) : 1;
+              pixels.data[i + 3] *= blend + (1 - blend) * overlap * inside;
             }
           }
           piece.context.putImageData(pixels, 0, 0);
         }
         context.drawImage(piece.canvas, 0, 0);'''
-new=new.replace('        const base = imageCache.get(pose.image);\n','')
 assert s.count(old)==2
 s=s.replace(old,new)
 s=s.replace('    const footwearCache = new Map();','    const footwearCache = new Map();\n    const poseSilhouettes = new Map();')
