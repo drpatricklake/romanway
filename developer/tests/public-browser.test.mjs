@@ -40,6 +40,7 @@ try{
  });
  await page.goto(base);
  await page.getByRole('button',{name:'Start or resume practice'}).click();
+ await page.getByRole('button',{name:'Via (The Road)',exact:true}).click();
  await page.locator('[data-act="open-lesson"][data-l="1"]').first().click();
  await page.getByRole('tab',{name:'Guided notes',exact:true}).click();
  // Include interface-like wording to catch accidental rewriting of learner text.
@@ -49,6 +50,7 @@ try{
  await page.waitForFunction(({key,answer})=>localStorage.getItem(key)?.includes(answer),{key,answer});
  await page.reload();
  await page.getByRole('button',{name:'Start or resume practice'}).click();
+ await page.getByRole('button',{name:'Via (The Road)',exact:true}).click();
  await page.locator('[data-act="open-lesson"][data-l="1"]').first().click();
  await page.getByRole('tab',{name:'Guided notes',exact:true}).click();
  assert.equal(await page.locator('#w-s1-conj').inputValue(),answer);

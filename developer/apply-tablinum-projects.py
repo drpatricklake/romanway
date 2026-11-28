@@ -62,7 +62,7 @@ once(
   var hasProjects=projWs().some(function(w){return String(w.lesson)===l})||
    TABLINUM_PROJECTS.some(function(p){return String(p.l)===l});
   if(!worksheets&&!hasProjects)return h;
-  var materials=worksheets?(hasProjects?'worksheets and projects':'worksheets'):'projects';
+  var materials=hasProjects?'worksheets and projects':'worksheets';
   var b='<div class="panel dmlesson" role="region" aria-label="Lesson materials in the Tablinum">'+
    '<div style="flex:1 1 240px"><b>This lesson’s '+materials+' are in the Tablinum.</b></div>'+
    (worksheets?'<button class="btn sm ghost" data-act="dm-ws" data-l="'+l+'">'+(hasProjects?'Open worksheets':'Open the Tablinum')+'</button>':'')+

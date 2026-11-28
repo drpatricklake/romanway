@@ -42,7 +42,8 @@ for (const edition of ['public-practice', 'classroom']) {
       activities.some(({ l }) => l === String(lesson));
     const hasWorksheets = p.model.worksheets.some(w => !w.project && !w.inNotes && !w.inTab && String(w.lesson) === String(lesson));
     if (hasProjects) {
-      assert.ok(plain(p.markup()).includes("This lesson’s " + (hasWorksheets ? 'worksheets and projects' : 'projects') + ' are in the Tablinum.'));
+      assert.ok(plain(p.markup()).includes("This lesson’s worksheets and projects are in the Tablinum."));
+      assert.equal(p.markup().includes('data-act="dm-ws"'),hasWorksheets);
       action(p, 'dm-project-list');
       assertInProjects(p);
     } else if (hasWorksheets) {
