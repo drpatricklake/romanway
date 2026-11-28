@@ -76,3 +76,6 @@ runpy.run_path(str(root/'apply-avatar-card-preview.py'),run_name='__main__')
 
 # Add the checklist using the original completion and reward rules.
 runpy.run_path(str(root/'apply-lesson-checklist.py'),run_name='__main__')
+
+# Render Bibliothēca activities according to the edition and selected work.
+runpy.run_path(str(root/'apply-bibliotheca-options.py'),run_name='__main__')
