@@ -1,0 +1,1925 @@
+{
+  "schema": 1,
+  "images": [
+    {
+      "path": "assets/sprites/backdrops.webp",
+      "sha256": "7126e580a40d8fa1f159dca498f85d13ba072297000270b2b23c649de52953fd",
+      "bytes": 854280,
+      "width": 2048,
+      "height": 3240
+    },
+    {
+      "path": "assets/sprites/bears.webp",
+      "sha256": "f32b44e8804db97b2f7b827afd771ae7bf054177138a858aef5674ab2299fa7d",
+      "bytes": 99720,
+      "width": 900,
+      "height": 600
+    },
+    {
+      "path": "assets/sprites/comp.webp",
+      "sha256": "852911ecbddd101d5891ee3476ca13fa5be2e52c8489e304d4725a89a4917d85",
+      "bytes": 725298,
+      "width": 1536,
+      "height": 1280
+    },
+    {
+      "path": "assets/sprites/compi.webp",
+      "sha256": "dc2d6fbaf7672f69f1c281a8c35a4a5229a49a7cb10ec8eb27f83cd544f20001",
+      "bytes": 221978,
+      "width": 768,
+      "height": 640
+    },
+    {
+      "path": "assets/sprites/emb.webp",
+      "sha256": "a419bebc9c243964a9ad9be5e47658b3aa40891075e46a6465c06971c0304d45",
+      "bytes": 331300,
+      "width": 1792,
+      "height": 512
+    },
+    {
+      "path": "assets/sprites/frames.webp",
+      "sha256": "24d82b69b4353502c919afb807d916f421dfdb4ea06c030565ae094924f4b463",
+      "bytes": 123544,
+      "width": 800,
+      "height": 460
+    },
+    {
+      "path": "assets/sprites/icons.webp",
+      "sha256": "abf4a1957f8e1679e7e4219c5d56123c3e044aa6d245067b2170d6bda4556b90",
+      "bytes": 626308,
+      "width": 1728,
+      "height": 1296
+    },
+    {
+      "path": "assets/sprites/legacy.webp",
+      "sha256": "5c116134b0c4add8d7bb5df0034898efe70cd8eeec1c778bdb5abd9d5d1401dc",
+      "bytes": 220902,
+      "width": 960,
+      "height": 1200
+    },
+    {
+      "path": "assets/sprites/misc.webp",
+      "sha256": "58d70b88f821aef314805a150f9918faca0fd11af7a58d4f330cbd4198489365",
+      "bytes": 145176,
+      "width": 900,
+      "height": 732
+    },
+    {
+      "path": "assets/sprites/mon.webp",
+      "sha256": "338dfef7c9824565cbf1169c64a1c1d45d3afa8bbac6ea30a2c1dbd6e78994d4",
+      "bytes": 255674,
+      "width": 1024,
+      "height": 1024
+    },
+    {
+      "path": "assets/sprites/p1.webp",
+      "sha256": "06434c2c757d5ec7fcdbfb4f87f92b6f25d6136ba68b49bfe83503b0fd84bb7e",
+      "bytes": 568942,
+      "width": 1680,
+      "height": 1728
+    },
+    {
+      "path": "assets/sprites/p2.webp",
+      "sha256": "b5811d2ecaf491d80b170cfd0857bfe91b54e1e3c46f16819c169364142ec306",
+      "bytes": 527054,
+      "width": 1680,
+      "height": 1728
+    },
+    {
+      "path": "assets/sprites/p3.webp",
+      "sha256": "9385acd148b3964841bd069e40a6eb001698a10d09b9b0f3758c0656f71392ff",
+      "bytes": 474000,
+      "width": 1680,
+      "height": 1728
+    },
+    {
+      "path": "assets/sprites/p4.webp",
+      "sha256": "ba5c47290e277be94f3fabcddc224228564a2d07a8e087814476a1c3ae8b2ad0",
+      "bytes": 537446,
+      "width": 1680,
+      "height": 1728
+    },
+    {
+      "path": "assets/sprites/p5.webp",
+      "sha256": "cf8c67006968c4aa55d6a4d483c79f6d40b4c81994408f53e877bd80f4bad2c5",
+      "bytes": 529796,
+      "width": 1680,
+      "height": 1728
+    },
+    {
+      "path": "assets/sprites/p6.webp",
+      "sha256": "cd538d7da772cee1566230132c445416d4989ab9a2fd0c4dfb5422ae3d55cd2b",
+      "bytes": 580870,
+      "width": 1680,
+      "height": 1728
+    },
+    {
+      "path": "assets/sprites/p7.webp",
+      "sha256": "7e9d3192bf34158117bda27e6d51774998e75a8a717c5cc1a412f95865c55934",
+      "bytes": 544694,
+      "width": 1680,
+      "height": 1728
+    },
+    {
+      "path": "assets/sprites/patc.webp",
+      "sha256": "cbd3fdc44a98e1d27632c2bc7d9c74cd69bb83ed6e6744b27d22cc92b120383b",
+      "bytes": 360774,
+      "width": 1400,
+      "height": 864
+    },
+    {
+      "path": "assets/sprites/patp.webp",
+      "sha256": "1fff9a4330a60b03f30bebfb9796e485dbe141dc9828ef520c011ef2cd794694",
+      "bytes": 205866,
+      "width": 1344,
+      "height": 448
+    },
+    {
+      "path": "assets/sprites/pv.webp",
+      "sha256": "95d6072886024f7d67512e62b8f2a05faa4fb21f563607eb425cc035055cdfff",
+      "bytes": 275648,
+      "width": 1440,
+      "height": 720
+    },
+    {
+      "path": "assets/sprites/scenes.webp",
+      "sha256": "32d05d7cd988cff33e7c7ca6da6f53cf2ac90367255185280e64535b59676be6",
+      "bytes": 218434,
+      "width": 736,
+      "height": 1920
+    },
+    {
+      "path": "assets/sprites/settings.webp",
+      "sha256": "c9ddca677f5105889103ffc1f10da74514c9baddf0d2e56c4054af438f335df6",
+      "bytes": 147010,
+      "width": 800,
+      "height": 1800
+    },
+    {
+      "path": "assets/sprites/tryon.webp",
+      "sha256": "fe652ba7a9030f3f836356bc411e2e87ede6e7ade58a312de8cad7f87911f36d",
+      "bytes": 245826,
+      "width": 1680,
+      "height": 864
+    },
+    {
+      "path": "assets/sprites/ui.webp",
+      "sha256": "d7c7d2d0c6e3e149451921f5a5919d190e144e0e4fcad9716e52c3cc11e448fb",
+      "bytes": 241182,
+      "width": 1792,
+      "height": 384
+    },
+    {
+      "path": "assets/sprites/wemb.webp",
+      "sha256": "f4667adf7935dd7cef73a7cca3f7ab0b9fa0ee7231352e2ceb1ce0d210631781",
+      "bytes": 195154,
+      "width": 576,
+      "height": 504
+    },
+    {
+      "path": "assets/sprites/wlay.webp",
+      "sha256": "5f310da9b102f54353cf68047566595a7347a285753521c048f0541e1dee9308",
+      "bytes": 1718220,
+      "width": 2048,
+      "height": 2458
+    },
+    {
+      "path": "assets/sprites/wmask.webp",
+      "sha256": "afb32406a4ae454243adccd954148fedea816e91ba6fe0efd61dafe94af3ba75",
+      "bytes": 81066,
+      "width": 2464,
+      "height": 1728
+    },
+    {
+      "path": "assets/sprites/wpose.webp",
+      "sha256": "7b720e90b0ecb4f256c624fb4831cf7fe75f6b3827c795e9f4f8875af8a80d4d",
+      "bytes": 736210,
+      "width": 2464,
+      "height": 1728
+    },
+    {
+      "path": "assets/textbook/figures/f100_L49.jpg",
+      "sha256": "fef88a88a22a8c6e2805410cc2b17a5e47cbe181a37709aef5462c5b68c93576",
+      "bytes": 50671,
+      "width": 420,
+      "height": 521
+    },
+    {
+      "path": "assets/textbook/figures/f101_L49.jpg",
+      "sha256": "bc88fcad903f9ae14dd08c13f141ba25129081435525008da51f640b205f8a04",
+      "bytes": 33240,
+      "width": 420,
+      "height": 270
+    },
+    {
+      "path": "assets/textbook/figures/f102_L49.jpg",
+      "sha256": "df2bf55957dbf54ed87b9b883ca10010383077b105eaf313fa8d0e9d00f582fb",
+      "bytes": 40077,
+      "width": 420,
+      "height": 312
+    },
+    {
+      "path": "assets/textbook/figures/f103_L49.jpg",
+      "sha256": "8e99735f27636763bbe2c53d5cc23467cdef3972fd154981425c18bb990cdccf",
+      "bytes": 47231,
+      "width": 420,
+      "height": 276
+    },
+    {
+      "path": "assets/textbook/figures/f104_L49.jpg",
+      "sha256": "90d937e9cc7aefd1ea88405cab171608b96c6868dad3dd072e27755c95358c1f",
+      "bytes": 63708,
+      "width": 420,
+      "height": 630
+    },
+    {
+      "path": "assets/textbook/figures/f105_L49.jpg",
+      "sha256": "37fbb53fa0009ef6495b0d93fb8ca62c3f12a77e6927904e38711dfdd9802c99",
+      "bytes": 33631,
+      "width": 420,
+      "height": 299
+    },
+    {
+      "path": "assets/textbook/figures/f106_L49.jpg",
+      "sha256": "5afb29bad99be3c7b79a07796048ad0e7ccac9729ef5bd5bb5a392b9b039184d",
+      "bytes": 31286,
+      "width": 420,
+      "height": 257
+    },
+    {
+      "path": "assets/textbook/figures/f107_L49.jpg",
+      "sha256": "a7aaa2d2bed9c4b87cfa55d52cd4c3dc502f710c8032f292ecd86d9c860cbf62",
+      "bytes": 50359,
+      "width": 420,
+      "height": 560
+    },
+    {
+      "path": "assets/textbook/figures/f108_L50.jpg",
+      "sha256": "cfab5779001001d807fbf7bfeb716b2997c19b63fad1d99fe837ea2e2329ff07",
+      "bytes": 57057,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f109_L50.jpg",
+      "sha256": "2162b340e47bccff019d4478aadf83caa93654e4d0a1da8367c4779ae812a648",
+      "bytes": 41549,
+      "width": 420,
+      "height": 252
+    },
+    {
+      "path": "assets/textbook/figures/f10_L33.jpg",
+      "sha256": "b465422dc2750fc8f9b23143506182e32e07daaa3d1e08fa7f106ba5340afb63",
+      "bytes": 42662,
+      "width": 420,
+      "height": 302
+    },
+    {
+      "path": "assets/textbook/figures/f110_L50.jpg",
+      "sha256": "228cb5f341b90d9a0fe34398e449d2cd43de1ca505cc6f47e21cc5260dc023a0",
+      "bytes": 34412,
+      "width": 272,
+      "height": 390
+    },
+    {
+      "path": "assets/textbook/figures/f111_L50.jpg",
+      "sha256": "6f3812606aadfd7e052b79c883a0daf23285ed0b3fd2fe0b26ee3e9e15636b25",
+      "bytes": 57561,
+      "width": 420,
+      "height": 519
+    },
+    {
+      "path": "assets/textbook/figures/f112_L50.jpg",
+      "sha256": "806752b8df2e4e0e19a786b750f909617783b98778abfba1f41f49216a950e25",
+      "bytes": 42512,
+      "width": 420,
+      "height": 306
+    },
+    {
+      "path": "assets/textbook/figures/f113_L51.jpg",
+      "sha256": "84f4c06ecfd700c8c63e0addf6e623d2d569a1131d343085cca71f5f9867e285",
+      "bytes": 53257,
+      "width": 420,
+      "height": 258
+    },
+    {
+      "path": "assets/textbook/figures/f114_L51.jpg",
+      "sha256": "1c667610baefbb90dea950d2bbadd56b3b9973813689422d9fffe9cc03fbd825",
+      "bytes": 31275,
+      "width": 420,
+      "height": 196
+    },
+    {
+      "path": "assets/textbook/figures/f115_L51.jpg",
+      "sha256": "66606900abfd0d8c55a4328cd2744fe733cb12adcb90be78d962f0a20a3bddda",
+      "bytes": 51561,
+      "width": 420,
+      "height": 279
+    },
+    {
+      "path": "assets/textbook/figures/f116_L51.jpg",
+      "sha256": "efdaab7ec8f85b07e8c1f380ab216021e48f67d9b9db5b05824d8dd2f50f6045",
+      "bytes": 35963,
+      "width": 420,
+      "height": 389
+    },
+    {
+      "path": "assets/textbook/figures/f117_L51.jpg",
+      "sha256": "6b0cc325f05716bc84a87d1e85c639de16d82f601f28a18c5cd9a964b2ad28fc",
+      "bytes": 77405,
+      "width": 420,
+      "height": 521
+    },
+    {
+      "path": "assets/textbook/figures/f118_L51.jpg",
+      "sha256": "6d8918f12251b93172198d94e673c91bd828ebc34573b4cfa5ebbfa5791e10c0",
+      "bytes": 26813,
+      "width": 330,
+      "height": 440
+    },
+    {
+      "path": "assets/textbook/figures/f119_L51.jpg",
+      "sha256": "a8f05632b0cc262aea332878198b36d0ae29c00b90792123c5aa2501cde08ea5",
+      "bytes": 41500,
+      "width": 420,
+      "height": 346
+    },
+    {
+      "path": "assets/textbook/figures/f11_L33.jpg",
+      "sha256": "9341f5633105dac9a3e894f17fdcfb16dadf2f0b5d279476914a2e7807751259",
+      "bytes": 30348,
+      "width": 420,
+      "height": 303
+    },
+    {
+      "path": "assets/textbook/figures/f120_L51.jpg",
+      "sha256": "302c29eb0a5ee613d2ab8493e53dc1765a135cc5a164c34015142d6ac8b918d4",
+      "bytes": 44828,
+      "width": 420,
+      "height": 296
+    },
+    {
+      "path": "assets/textbook/figures/f121_L51.jpg",
+      "sha256": "2a16e602fbf937c3846f5dac049cf42a77b5d5d8b37a6d5905ae2ed1eebe5b13",
+      "bytes": 33842,
+      "width": 420,
+      "height": 223
+    },
+    {
+      "path": "assets/textbook/figures/f122_L51.jpg",
+      "sha256": "b47aeefa642a2d8e2a7ff6c648eb45d5080d891be6b5cf868f80655adba4efb0",
+      "bytes": 46130,
+      "width": 420,
+      "height": 267
+    },
+    {
+      "path": "assets/textbook/figures/f123_L51.jpg",
+      "sha256": "8b5b88c88386223dc879d2daf406e7c9af11f1af779be0cc1db57375e4def7a3",
+      "bytes": 47074,
+      "width": 420,
+      "height": 630
+    },
+    {
+      "path": "assets/textbook/figures/f124_L51.jpg",
+      "sha256": "520c3166855c1d66f7b81f1bc9ec0423219409e4dcfd3e2378acecbd32ce3d51",
+      "bytes": 41937,
+      "width": 420,
+      "height": 242
+    },
+    {
+      "path": "assets/textbook/figures/f125_L52.jpg",
+      "sha256": "7548f9f8c996ae2515c7a7cc90698d72340d1ff245305f2fa0599a72facfc270",
+      "bytes": 54747,
+      "width": 420,
+      "height": 455
+    },
+    {
+      "path": "assets/textbook/figures/f126_L52.jpg",
+      "sha256": "d38c6f9b55417de7598629498da14854605205c66dc1e55b7c8c5185c70b6a29",
+      "bytes": 44366,
+      "width": 520,
+      "height": 408
+    },
+    {
+      "path": "assets/textbook/figures/f127_L52.jpg",
+      "sha256": "67f37b484f3980b2dfc113e2592c82db89b6ce60788a57f3a1aeb0d4478a6c2b",
+      "bytes": 35641,
+      "width": 330,
+      "height": 495
+    },
+    {
+      "path": "assets/textbook/figures/f128_L52.jpg",
+      "sha256": "10d19b42e7ef23db034071b0322f8f0e023125fdbd4d1257e9f8e5c83c44715f",
+      "bytes": 49798,
+      "width": 420,
+      "height": 386
+    },
+    {
+      "path": "assets/textbook/figures/f129_L52.jpg",
+      "sha256": "63b031423cc8a7d8f124b0974342543268648a8ff3271709bcafc533adf423f1",
+      "bytes": 32465,
+      "width": 420,
+      "height": 575
+    },
+    {
+      "path": "assets/textbook/figures/f12_L33.jpg",
+      "sha256": "5cc24dcc64adc4dc3e25809f347a953ad5bc16413113743303f6e24606cdd843",
+      "bytes": 37704,
+      "width": 420,
+      "height": 263
+    },
+    {
+      "path": "assets/textbook/figures/f130_L52.jpg",
+      "sha256": "2236a12cf0259000d616bc6f5fdcc8f30310bcbf8643a278f4166cd21bf89731",
+      "bytes": 33528,
+      "width": 420,
+      "height": 720
+    },
+    {
+      "path": "assets/textbook/figures/f131_L52.jpg",
+      "sha256": "a4373b3c7a91b375fc7f8f2de775f98efbc92c5972571a04858ab8fa55e97d36",
+      "bytes": 50381,
+      "width": 420,
+      "height": 554
+    },
+    {
+      "path": "assets/textbook/figures/f132_L52.jpg",
+      "sha256": "aa5288a8648b91a6183d104efd922d33140b0912c6fd18c8a1c1146416a46197",
+      "bytes": 36918,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f133_L52.jpg",
+      "sha256": "8e3d514cd7944c46c6b6f56e6e2f3e7fa440bfe63e96c9b61c23c46731024041",
+      "bytes": 83337,
+      "width": 420,
+      "height": 592
+    },
+    {
+      "path": "assets/textbook/figures/f134_L52.jpg",
+      "sha256": "23e022cef5422b800bab6b587969aedd8ae2e8642f0f36de7b179e0cd85f3439",
+      "bytes": 32158,
+      "width": 420,
+      "height": 560
+    },
+    {
+      "path": "assets/textbook/figures/f135_L52.jpg",
+      "sha256": "5ae05beb7ed944c41c2f27b8cc52094170c97b10a1774c87ff4329f1db9eb199",
+      "bytes": 35909,
+      "width": 420,
+      "height": 364
+    },
+    {
+      "path": "assets/textbook/figures/f136_L52.jpg",
+      "sha256": "7db82ccb611cda1d531b09d995b92e641a7c2cc6d78c8e464ecffac01ce0f379",
+      "bytes": 44351,
+      "width": 420,
+      "height": 206
+    },
+    {
+      "path": "assets/textbook/figures/f137_L52.jpg",
+      "sha256": "38ae510d4ebd2628989edf14cb6d88809df241aee5a9bf7789fd2a585e2bf104",
+      "bytes": 51196,
+      "width": 420,
+      "height": 368
+    },
+    {
+      "path": "assets/textbook/figures/f138_L52.jpg",
+      "sha256": "042ce2db5545423b70dd338e2bc3c7a0307660010318daa50ed1d2c0afdde02f",
+      "bytes": 29596,
+      "width": 420,
+      "height": 203
+    },
+    {
+      "path": "assets/textbook/figures/f139_L53.jpg",
+      "sha256": "26876bd8472c19133aa8d38390bf3fc004a41b03892cccf611378c4b090ed04a",
+      "bytes": 31024,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f13_L33.jpg",
+      "sha256": "966d7736c89d08dd0f1defd7c6c3ccce8eb583f354e4c3e5e220bef6f9950d9c",
+      "bytes": 57531,
+      "width": 420,
+      "height": 280
+    },
+    {
+      "path": "assets/textbook/figures/f140_L53.jpg",
+      "sha256": "f6d67e4440bd57296f60195f7a3ea8f4972b92419182ca30651d58121a77c50d",
+      "bytes": 21766,
+      "width": 420,
+      "height": 420
+    },
+    {
+      "path": "assets/textbook/figures/f141_L53.jpg",
+      "sha256": "99cfad12f9e84e1ae56590168dd9ca578090c359d469d102a26dcd15d1f1bff9",
+      "bytes": 92685,
+      "width": 420,
+      "height": 449
+    },
+    {
+      "path": "assets/textbook/figures/f142_L53.jpg",
+      "sha256": "52692c7b5445a8a931bd2306aa62731343c9b354aaa3bb65a15a62a2eaa11ece",
+      "bytes": 46112,
+      "width": 420,
+      "height": 560
+    },
+    {
+      "path": "assets/textbook/figures/f145_L53.jpg",
+      "sha256": "7070a512f5d4a22c17e1199009cb0762a1c8b72e9c8b07c39465e27710e7c2ce",
+      "bytes": 28557,
+      "width": 420,
+      "height": 167
+    },
+    {
+      "path": "assets/textbook/figures/f146_L53.jpg",
+      "sha256": "4508a1ac9c8a479b20fb0f85f14303c6d7e7152b3d512e7137f2501d018470bb",
+      "bytes": 23185,
+      "width": 420,
+      "height": 232
+    },
+    {
+      "path": "assets/textbook/figures/f147_L53.jpg",
+      "sha256": "7374afdbce51923cdf5a3a315679a2c949770bc89f08bd93ba366810ab14eca0",
+      "bytes": 54247,
+      "width": 420,
+      "height": 559
+    },
+    {
+      "path": "assets/textbook/figures/f148_L53.jpg",
+      "sha256": "45328eaa3c040960c7ac45a61653a312193b233a8fb84c9ef7fdcc783ea206a6",
+      "bytes": 87472,
+      "width": 420,
+      "height": 427
+    },
+    {
+      "path": "assets/textbook/figures/f149_L53.jpg",
+      "sha256": "2b8312d90b693b0d77476bce4cff5cc793a00998d13f8b23c263ed14b92c995d",
+      "bytes": 145707,
+      "width": 405,
+      "height": 1556
+    },
+    {
+      "path": "assets/textbook/figures/f14_L33.jpg",
+      "sha256": "34dc9c1d6030a46f3f563c2b6206454de8fbdb3e4045ff664beff615fa128bec",
+      "bytes": 55365,
+      "width": 420,
+      "height": 694
+    },
+    {
+      "path": "assets/textbook/figures/f150_L53.jpg",
+      "sha256": "9327d428f1c59582aa0bb5d0e5c754c9095fe09d26a48125bda0ab410f035ddc",
+      "bytes": 46611,
+      "width": 420,
+      "height": 274
+    },
+    {
+      "path": "assets/textbook/figures/f151_L53.jpg",
+      "sha256": "62ce74b0dc23d35087c2c539a0cceb0a024328824fa478d4dab90d738a14df89",
+      "bytes": 91121,
+      "width": 420,
+      "height": 844
+    },
+    {
+      "path": "assets/textbook/figures/f152_L54.jpg",
+      "sha256": "70ddc7d23c4ca2547c0366a1f542e0495c6ef5857e3da840af0cb5ede5f41c84",
+      "bytes": 47378,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f153_L54.jpg",
+      "sha256": "df396f51d51d2e741f5f095570a0a55621228c694c5b586c9d40e6a962951ae8",
+      "bytes": 51809,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f154_L54.jpg",
+      "sha256": "5508bc17d258ba69bae8b9e9656db2b87ed20914e62cdbfdd57e39f2afd1969e",
+      "bytes": 49070,
+      "width": 420,
+      "height": 560
+    },
+    {
+      "path": "assets/textbook/figures/f155_L54.jpg",
+      "sha256": "7d7da2ec04170a4afca89dbeb43f7f97e92db41f72787e047b475338f6b65e39",
+      "bytes": 38946,
+      "width": 420,
+      "height": 212
+    },
+    {
+      "path": "assets/textbook/figures/f156_L54.jpg",
+      "sha256": "1b4e470cd395a71ceb9d5237620019f54129882eabb734c4f336a0190e617109",
+      "bytes": 97001,
+      "width": 420,
+      "height": 643
+    },
+    {
+      "path": "assets/textbook/figures/f157_L54.jpg",
+      "sha256": "ba87f3b1b95851259c2fbd7e96274edd41c0b85a1e819569d08cb990a6d5c65b",
+      "bytes": 80109,
+      "width": 420,
+      "height": 946
+    },
+    {
+      "path": "assets/textbook/figures/f158_L54.jpg",
+      "sha256": "5e760c0854960f264ecc559aa585cbbb364cdfe3b0fe053020d07e83cb437455",
+      "bytes": 51296,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f159_L54.jpg",
+      "sha256": "9333a81f128a59c0cce440cb4d5cb89aee905e985f0a22cacb52b93dd655fbcf",
+      "bytes": 42170,
+      "width": 420,
+      "height": 234
+    },
+    {
+      "path": "assets/textbook/figures/f15_L34.jpg",
+      "sha256": "71cad46f4207b5a222f3644470121b1a61e19548d823c3960194d09bf6c15ef7",
+      "bytes": 20556,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f160_L54.jpg",
+      "sha256": "d369cdf9f0d76255a6f79288b4b987eb6df3fad88f3ba1578ee9096789abb25b",
+      "bytes": 66022,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f161_L54.jpg",
+      "sha256": "a5aa8aadb63bb79c76174f314a0c688d2ed5a2f20b40a6975210dbb1c8c6beec",
+      "bytes": 46442,
+      "width": 365,
+      "height": 323
+    },
+    {
+      "path": "assets/textbook/figures/f162_L54.jpg",
+      "sha256": "a7dd5f51cea956263e386494df4b1daa65c01f7415b52cfcc520ce1a31defdc3",
+      "bytes": 37036,
+      "width": 420,
+      "height": 182
+    },
+    {
+      "path": "assets/textbook/figures/f163_L54.jpg",
+      "sha256": "36b98368fb008e0a5050f85f4df6ed871a5d96daa7fd9f6646a99fc43b3bed65",
+      "bytes": 58728,
+      "width": 420,
+      "height": 520
+    },
+    {
+      "path": "assets/textbook/figures/f164_L54.jpg",
+      "sha256": "917bf7b8bea1f904d6935ae483b5b36b03c1e605431d65b4f198548140efa554",
+      "bytes": 39330,
+      "width": 420,
+      "height": 203
+    },
+    {
+      "path": "assets/textbook/figures/f165_L54.jpg",
+      "sha256": "b12c94a132ee1241496c2f6964645b4b05457cbfc86eff99d92d50eefced755e",
+      "bytes": 121453,
+      "width": 420,
+      "height": 829
+    },
+    {
+      "path": "assets/textbook/figures/f166_L54.jpg",
+      "sha256": "7c8e73640de2f89816d115b82cc1a58fc2171385d689c9ef11f6181b96c6c6ec",
+      "bytes": 43430,
+      "width": 420,
+      "height": 256
+    },
+    {
+      "path": "assets/textbook/figures/f167_L54.jpg",
+      "sha256": "62ac2fd740a673031b873baf0ec55ce9c99f80286c9d4934cd1c3cfcc1ee4f34",
+      "bytes": 41607,
+      "width": 420,
+      "height": 253
+    },
+    {
+      "path": "assets/textbook/figures/f168_L54.jpg",
+      "sha256": "1395d5f33d40d9abc1a31485c5b6e00bc7475862b757ec27d0bd01035dd6c8a4",
+      "bytes": 147470,
+      "width": 1038,
+      "height": 802
+    },
+    {
+      "path": "assets/textbook/figures/f169_L54.jpg",
+      "sha256": "7a3c6e3047e06a77ef0f44d0670829d993d3e297b693158ae166b36e244d4f37",
+      "bytes": 19468,
+      "width": 420,
+      "height": 116
+    },
+    {
+      "path": "assets/textbook/figures/f16_L34.jpg",
+      "sha256": "f43d6df79583da193a7c64bcdbe5813a7d8fdbd277601775aab99a0ec22ff9ff",
+      "bytes": 61279,
+      "width": 420,
+      "height": 627
+    },
+    {
+      "path": "assets/textbook/figures/f170_L54.jpg",
+      "sha256": "56fa5431851c69fac3ead577a10849e2330d78ef09ac6e6d1958aad035d3c322",
+      "bytes": 47486,
+      "width": 420,
+      "height": 189
+    },
+    {
+      "path": "assets/textbook/figures/f171_L54.jpg",
+      "sha256": "ee03b6062e2c4a7b3c8bc077887fca66e7a92e0ed154b8e75e1fcd78d5b42838",
+      "bytes": 52895,
+      "width": 420,
+      "height": 282
+    },
+    {
+      "path": "assets/textbook/figures/f172_L55.jpg",
+      "sha256": "692a8895ed9729985b40d660fe0087045b21ae16a096a25b1ef005f92ed42ea8",
+      "bytes": 38407,
+      "width": 420,
+      "height": 253
+    },
+    {
+      "path": "assets/textbook/figures/f173_L55.jpg",
+      "sha256": "11c3479d7bf964894f44798db76c8cda904a23adf306886a1efe4ae7818638a5",
+      "bytes": 60715,
+      "width": 420,
+      "height": 559
+    },
+    {
+      "path": "assets/textbook/figures/f174_L55.jpg",
+      "sha256": "24e1c713ef569656fcee5415c37e05aae728564115126b6bcd2ba28ecdf9fa4a",
+      "bytes": 40173,
+      "width": 420,
+      "height": 630
+    },
+    {
+      "path": "assets/textbook/figures/f175_L55.jpg",
+      "sha256": "c8c4f2bac859be8a14abe4cbdc792e03705fbf6547ac789753c0d85ff589e919",
+      "bytes": 36927,
+      "width": 420,
+      "height": 310
+    },
+    {
+      "path": "assets/textbook/figures/f176_L55.jpg",
+      "sha256": "28c4c45a94d791216c670737ab2c6c7dea81928c7af67f796eee5302e1b72992",
+      "bytes": 59894,
+      "width": 420,
+      "height": 388
+    },
+    {
+      "path": "assets/textbook/figures/f177_L55.jpg",
+      "sha256": "3b0af3dd5cbf9702a1138302a71eaaa2b3435eba073463c1be9553b256b64fc7",
+      "bytes": 46187,
+      "width": 420,
+      "height": 314
+    },
+    {
+      "path": "assets/textbook/figures/f178_L55.jpg",
+      "sha256": "2f52b124ef4e23422a2e5476d37ae6884cb616a4bb7926e8ddf4b8edc80bff03",
+      "bytes": 37727,
+      "width": 420,
+      "height": 280
+    },
+    {
+      "path": "assets/textbook/figures/f179_L55.jpg",
+      "sha256": "cafc40c60ebdeb084f08d6cb11e824fa7cc7f2c163db042a87af75bc3a4d020c",
+      "bytes": 35407,
+      "width": 420,
+      "height": 280
+    },
+    {
+      "path": "assets/textbook/figures/f17_L34.jpg",
+      "sha256": "5788bb91fb675052eacd0e232560ef4352b6c3aa80579ccc4b0bf644f1a661bc",
+      "bytes": 71954,
+      "width": 420,
+      "height": 514
+    },
+    {
+      "path": "assets/textbook/figures/f180_L55.jpg",
+      "sha256": "58ca56b81e981311fef85d79ebaa3c89d7355a28bcc5c68a82fc1bf92969ac43",
+      "bytes": 31667,
+      "width": 420,
+      "height": 367
+    },
+    {
+      "path": "assets/textbook/figures/f181_L55.jpg",
+      "sha256": "0d3086a09c1753632d3dfe7096406e10747310c40e4acf86724eed98b58b22f7",
+      "bytes": 31382,
+      "width": 420,
+      "height": 314
+    },
+    {
+      "path": "assets/textbook/figures/f182_L55.jpg",
+      "sha256": "61e40c610d9bf0aff2128b00029813688c5488ead0d680bb48f1c7ae766f12b1",
+      "bytes": 59281,
+      "width": 420,
+      "height": 321
+    },
+    {
+      "path": "assets/textbook/figures/f183_L55.jpg",
+      "sha256": "cd7837c804ed420e09c20ea4140477a1acee969e07997fdf78cb6a6412181a7e",
+      "bytes": 35331,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f184_L55.jpg",
+      "sha256": "6c4da40ff53339bb1bfe43fd4275be51edb9e811598ed8d81868d601e6bb2823",
+      "bytes": 102101,
+      "width": 420,
+      "height": 560
+    },
+    {
+      "path": "assets/textbook/figures/f185_L55.jpg",
+      "sha256": "4db047b057158d60bf23a5cb2ee05904c7cd7067108c03a388f5a57128e3071e",
+      "bytes": 59234,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f186_L56.jpg",
+      "sha256": "fa437320ecedc88756ddc8286f9a2f6d436bd88b1199458a8240ddf57e648f5b",
+      "bytes": 22325,
+      "width": 420,
+      "height": 276
+    },
+    {
+      "path": "assets/textbook/figures/f187_L56.jpg",
+      "sha256": "3fd984ebae3ec9c67de6f9dec3f39df5547ba531435bd76161fa8b6f4ddd1f59",
+      "bytes": 93247,
+      "width": 420,
+      "height": 553
+    },
+    {
+      "path": "assets/textbook/figures/f188_L56.jpg",
+      "sha256": "e0f7394a9b6b8b94271f5f8ca315a0166fdf65d27382acd7a0057254d679195a",
+      "bytes": 50235,
+      "width": 420,
+      "height": 250
+    },
+    {
+      "path": "assets/textbook/figures/f189_L56.jpg",
+      "sha256": "d612f6849db489be09ad097f8217f43e29f7a513f89e97fd64b59566f99a1c58",
+      "bytes": 31277,
+      "width": 420,
+      "height": 379
+    },
+    {
+      "path": "assets/textbook/figures/f18_L34.jpg",
+      "sha256": "e2cf098d78a0dc6ab2fc2d17e1a048b76a92edc1dcaae8db30f1c378ef739d3a",
+      "bytes": 52703,
+      "width": 420,
+      "height": 633
+    },
+    {
+      "path": "assets/textbook/figures/f190_L56.jpg",
+      "sha256": "1c4f197758abc0b976a8848f25971ec11adb78a769a618ce022ff6005ebc956a",
+      "bytes": 60609,
+      "width": 420,
+      "height": 330
+    },
+    {
+      "path": "assets/textbook/figures/f191_L56.jpg",
+      "sha256": "aa2ac3e99c2229121fcce2bb4a1159ee9b6eff2c3a81e4a4fb866e2b0ac09352",
+      "bytes": 53117,
+      "width": 420,
+      "height": 568
+    },
+    {
+      "path": "assets/textbook/figures/f192_L56.jpg",
+      "sha256": "e4161c7b3711306eed1f4b1fe5ff71482dab0f269da308cebcf56b87e436238a",
+      "bytes": 36582,
+      "width": 420,
+      "height": 195
+    },
+    {
+      "path": "assets/textbook/figures/f193_L56.jpg",
+      "sha256": "e19f2853125b69239e40ff7b8dd129a978178ce2e5c935dcace4fabca11cb231",
+      "bytes": 40223,
+      "width": 420,
+      "height": 443
+    },
+    {
+      "path": "assets/textbook/figures/f194_L56.jpg",
+      "sha256": "b0681a5ec01a8c63a6964a80977630e812ec8e2cca53b94561c6a99a7ec26ed9",
+      "bytes": 55792,
+      "width": 360,
+      "height": 480
+    },
+    {
+      "path": "assets/textbook/figures/f195_L56.jpg",
+      "sha256": "53631a9ee0b87eb2f9d9472fc6a0fce3d08dfaa2ed2a49dbabdc6146d5e79fac",
+      "bytes": 68013,
+      "width": 420,
+      "height": 979
+    },
+    {
+      "path": "assets/textbook/figures/f196_L56.jpg",
+      "sha256": "fd447c68f1003763becc32e1ccc245f3f7cc0aaf857fb962a699ec9591db2bc6",
+      "bytes": 41136,
+      "width": 420,
+      "height": 268
+    },
+    {
+      "path": "assets/textbook/figures/f197_L56.jpg",
+      "sha256": "9bfc6bc21fcceb027d47c4589879e89c1fdefad3da6312d25184ebc9c04a2f2f",
+      "bytes": 34157,
+      "width": 420,
+      "height": 267
+    },
+    {
+      "path": "assets/textbook/figures/f198_L56.jpg",
+      "sha256": "b7c71d88241cdd468da6d1bf1a6e17ecb0507a8d7c4c320dbd5264dd71115162",
+      "bytes": 46304,
+      "width": 330,
+      "height": 495
+    },
+    {
+      "path": "assets/textbook/figures/f199_L56.jpg",
+      "sha256": "1baa69c919fb80f5e9c32ba497ca6d27b95cefe398f0dd838e9856175a74dd01",
+      "bytes": 56480,
+      "width": 300,
+      "height": 720
+    },
+    {
+      "path": "assets/textbook/figures/f19_L34.jpg",
+      "sha256": "ff91a09f97115e753802a59df67b441c504d965a6b533368d49b63522e51a940",
+      "bytes": 38071,
+      "width": 420,
+      "height": 238
+    },
+    {
+      "path": "assets/textbook/figures/f200_L56.jpg",
+      "sha256": "c436243430325d8fe207ef094ffa7e37d9b2e40e9e7ec27ac2cd0aabcdcb1a7e",
+      "bytes": 40855,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f201_L56.jpg",
+      "sha256": "da7c953454acb2e485bf8135082e22453098d5beab47d7edd3b5415b45d9593a",
+      "bytes": 49693,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f202_L56.jpg",
+      "sha256": "b75d48d28d4b60f45cf018d5d2e69e5a6d2c3ae7c9b3a917560df365113edb79",
+      "bytes": 18990,
+      "width": 330,
+      "height": 220
+    },
+    {
+      "path": "assets/textbook/figures/f203_L56.jpg",
+      "sha256": "e5400ec48ec4c40924c7786c3325558b667de2c570ea3267eb4e91a205a03b5f",
+      "bytes": 80079,
+      "width": 420,
+      "height": 418
+    },
+    {
+      "path": "assets/textbook/figures/f204_L56.jpg",
+      "sha256": "b7ccbc36cad4fcec075e5b38a219e6f51861d7d7ec24f3f7dfa054ad28204694",
+      "bytes": 76768,
+      "width": 420,
+      "height": 579
+    },
+    {
+      "path": "assets/textbook/figures/f205_L56.jpg",
+      "sha256": "72252786e375967d859574ab8fb68eb54cb076284918ff31aa1b06dd754c86fe",
+      "bytes": 60116,
+      "width": 420,
+      "height": 560
+    },
+    {
+      "path": "assets/textbook/figures/f206_L56.jpg",
+      "sha256": "8c2f62561aac17b9f157c48a67300c5177e8558c02e12138401e72768387e71f",
+      "bytes": 47758,
+      "width": 420,
+      "height": 630
+    },
+    {
+      "path": "assets/textbook/figures/f207_L56.jpg",
+      "sha256": "299f8e9a836fbd32e1f3efbd35666d53f4079e0d40de3b7854250053d42d5e83",
+      "bytes": 45921,
+      "width": 420,
+      "height": 199
+    },
+    {
+      "path": "assets/textbook/figures/f208_L56.jpg",
+      "sha256": "bacd9ddbc767f6f203e1922ae54e3d0fed8a2fb5911239e7b34725f061c15f18",
+      "bytes": 38639,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f209_L56.jpg",
+      "sha256": "e9a51293b44ebbd85a085fd1bd9d91e8acd6bb0f2759f7c6ccf024f73f3d1950",
+      "bytes": 53888,
+      "width": 420,
+      "height": 280
+    },
+    {
+      "path": "assets/textbook/figures/f20_L35.jpg",
+      "sha256": "e74ed2f16c09672b11acfd561482f8be3c71354c01a8824a655123f4fc64163e",
+      "bytes": 20471,
+      "width": 420,
+      "height": 379
+    },
+    {
+      "path": "assets/textbook/figures/f210_L56.jpg",
+      "sha256": "83145be6aeea6339fbb54b4178eed1c8ffde659adcc4a250a248743b4985065f",
+      "bytes": 64342,
+      "width": 420,
+      "height": 620
+    },
+    {
+      "path": "assets/textbook/figures/f212_L57.jpg",
+      "sha256": "99adae706118a7b7e9bddcb8f7344e10a3e41733e59e61cf47667c573652fdc1",
+      "bytes": 56412,
+      "width": 420,
+      "height": 559
+    },
+    {
+      "path": "assets/textbook/figures/f213_L57.jpg",
+      "sha256": "e9353601db363deab55b88175cbe8c174ef2acbaaea0913df8eb6a8ccaa9f2d1",
+      "bytes": 112090,
+      "width": 420,
+      "height": 541
+    },
+    {
+      "path": "assets/textbook/figures/f214_L57.jpg",
+      "sha256": "2640c3ad5c88ed1c3543f4483cec028d924c9944c09ec77971535a1f03185953",
+      "bytes": 70865,
+      "width": 420,
+      "height": 757
+    },
+    {
+      "path": "assets/textbook/figures/f215_L57.jpg",
+      "sha256": "c005893159a971f6fea1508a04b13c226c29b0938513bea425fce46cdce997ae",
+      "bytes": 47313,
+      "width": 420,
+      "height": 635
+    },
+    {
+      "path": "assets/textbook/figures/f216_L57.jpg",
+      "sha256": "acb920384db47dc3e3b5d18645f46fcd418d28fab415d7ffe7eea987597bbd1a",
+      "bytes": 73114,
+      "width": 377,
+      "height": 600
+    },
+    {
+      "path": "assets/textbook/figures/f217_L57.jpg",
+      "sha256": "825a73a8249953471f7fa08b48891211afee59a55a75e14541f882983feaeead",
+      "bytes": 68127,
+      "width": 420,
+      "height": 729
+    },
+    {
+      "path": "assets/textbook/figures/f218_L57.jpg",
+      "sha256": "0db193a619aa138ac2288c05f622efe650be9202b96bb903486aecc8cdb44a66",
+      "bytes": 46968,
+      "width": 420,
+      "height": 559
+    },
+    {
+      "path": "assets/textbook/figures/f219_L57.jpg",
+      "sha256": "f0fbe599d889580fabec50fcfa19339f52d176b73b72cc0b622bcf88c940e714",
+      "bytes": 62990,
+      "width": 330,
+      "height": 503
+    },
+    {
+      "path": "assets/textbook/figures/f21_L35.jpg",
+      "sha256": "c4e165a4bccaa4937fb14ab3d857bd11eabc16d41fdecc4c68f55c259d459d14",
+      "bytes": 55961,
+      "width": 420,
+      "height": 559
+    },
+    {
+      "path": "assets/textbook/figures/f220_L57.jpg",
+      "sha256": "5737686795bdc973ebb404e9be6afabf68bbb65b0fef3f52421bb688b9120aec",
+      "bytes": 96330,
+      "width": 420,
+      "height": 630
+    },
+    {
+      "path": "assets/textbook/figures/f221_L57.jpg",
+      "sha256": "38d8fcda77aa237434c9e982efb7ee829f6214158e999d0b2455ab5528f6108c",
+      "bytes": 66617,
+      "width": 420,
+      "height": 322
+    },
+    {
+      "path": "assets/textbook/figures/f222_L57.jpg",
+      "sha256": "9ddd34c40676ea1861f0fd3f1d01b4150bad82f9d8f25b3267939e2249f10be7",
+      "bytes": 10050,
+      "width": 187,
+      "height": 89
+    },
+    {
+      "path": "assets/textbook/figures/f223_L57.jpg",
+      "sha256": "d74368f6588ce179db48c8275f5b7e2fe514bc435348909350dc90986cbbc33b",
+      "bytes": 32236,
+      "width": 420,
+      "height": 657
+    },
+    {
+      "path": "assets/textbook/figures/f224_L57.jpg",
+      "sha256": "ddf6bb133b466191f9b4dd14ab266f5d52fabc9337de988fa84f3164c0d4efd1",
+      "bytes": 51018,
+      "width": 330,
+      "height": 500
+    },
+    {
+      "path": "assets/textbook/figures/f225_L57.jpg",
+      "sha256": "5c5c059fcf761ccb285dc63392eff2978594862818070b97effbab1bf8931f4f",
+      "bytes": 38280,
+      "width": 420,
+      "height": 280
+    },
+    {
+      "path": "assets/textbook/figures/f226_L57.jpg",
+      "sha256": "cd3b7aa6e31387bcf51795016a42d5f5ed3ef8823489e81a8ae1e66b327e2402",
+      "bytes": 25788,
+      "width": 420,
+      "height": 248
+    },
+    {
+      "path": "assets/textbook/figures/f227_L57.jpg",
+      "sha256": "5cfd1c0eab9f3079ed7781d76b2bee6308b1f8d8782a864e0f6e59c6be7c5d05",
+      "bytes": 64019,
+      "width": 420,
+      "height": 631
+    },
+    {
+      "path": "assets/textbook/figures/f228_L57.jpg",
+      "sha256": "bd09ebbbb7d33b9bd6f4b09cb139f7f7740820a59fd9ac3ea520c7ce1daf3f49",
+      "bytes": 45245,
+      "width": 420,
+      "height": 290
+    },
+    {
+      "path": "assets/textbook/figures/f229_L57.jpg",
+      "sha256": "f38fd7cb4689cd08160994423c08f076cf8549f75ce9481a7da083564f824d51",
+      "bytes": 39471,
+      "width": 420,
+      "height": 284
+    },
+    {
+      "path": "assets/textbook/figures/f22_L35.jpg",
+      "sha256": "3da8254a01d4050c3e72ea3ac4fa3f4ee14612592ae5cfe5e74ec28110513646",
+      "bytes": 54249,
+      "width": 420,
+      "height": 585
+    },
+    {
+      "path": "assets/textbook/figures/f230_L57.jpg",
+      "sha256": "43f058a76a23de7aa9a0cbc6adfccc84e45f9fde6083741fe93a09b2170f5cbb",
+      "bytes": 33896,
+      "width": 420,
+      "height": 260
+    },
+    {
+      "path": "assets/textbook/figures/f23_L35.jpg",
+      "sha256": "62f381f9bb1f1612d1288f052fcfac756d03a51be87afd2a5bc6d5fc90c5bac6",
+      "bytes": 58462,
+      "width": 420,
+      "height": 351
+    },
+    {
+      "path": "assets/textbook/figures/f24_L36.jpg",
+      "sha256": "2f2f73640449296198f64ccaf67c7e3f34646286306f96dfffa660ec981b5352",
+      "bytes": 44441,
+      "width": 420,
+      "height": 279
+    },
+    {
+      "path": "assets/textbook/figures/f25_L36.jpg",
+      "sha256": "c1dc04bc8ff2471abd5f7587a616bd821049ca0da5993fac96f50011db8efdda",
+      "bytes": 63046,
+      "width": 420,
+      "height": 509
+    },
+    {
+      "path": "assets/textbook/figures/f26_L36.jpg",
+      "sha256": "703d5c9ea3f79145ffb6c2f12955cf1f1a6e68bd751f96c40f6b17c5de5e6aec",
+      "bytes": 54339,
+      "width": 420,
+      "height": 560
+    },
+    {
+      "path": "assets/textbook/figures/f27_L36.jpg",
+      "sha256": "30f778b3063d5d78d76cc67480764e2386878cb925f2413fc368883a9fc14245",
+      "bytes": 22258,
+      "width": 420,
+      "height": 280
+    },
+    {
+      "path": "assets/textbook/figures/f28_L36.jpg",
+      "sha256": "c62b3069703d440fa2afab94eaed7c5b8d8b2ca08165a5d50a950f272b7443f0",
+      "bytes": 45525,
+      "width": 420,
+      "height": 314
+    },
+    {
+      "path": "assets/textbook/figures/f29_L36.jpg",
+      "sha256": "b3a2d6cc268a37ea048f804969dbc045e95b8c30ecea994cc6fe682506bafa71",
+      "bytes": 17272,
+      "width": 420,
+      "height": 299
+    },
+    {
+      "path": "assets/textbook/figures/f30_L36.jpg",
+      "sha256": "27ff407fae3c268c5f7e5d591dbd7f5c57230e3ebc5e45ef21c7d25b6abc4095",
+      "bytes": 58043,
+      "width": 420,
+      "height": 365
+    },
+    {
+      "path": "assets/textbook/figures/f31_L37.jpg",
+      "sha256": "e800d25123f66a1f6407f75518e840471838c410601b8c642e949c1aaf215060",
+      "bytes": 56986,
+      "width": 420,
+      "height": 272
+    },
+    {
+      "path": "assets/textbook/figures/f32_L37.jpg",
+      "sha256": "1e0aa92aa6e12e6fd2e7fa944727a6e7a57354a107cb67aeb4aa2833aa35f39f",
+      "bytes": 33443,
+      "width": 420,
+      "height": 720
+    },
+    {
+      "path": "assets/textbook/figures/f33_L38.jpg",
+      "sha256": "67c523ac76b6fd8a7b22f2ed535baa4585a27915e14afb8b9da20df79ee6c5ca",
+      "bytes": 40663,
+      "width": 420,
+      "height": 428
+    },
+    {
+      "path": "assets/textbook/figures/f34_L38.jpg",
+      "sha256": "277d3de65a604b3976398907be402bcec4456299c524798e48fac962f0ffb8fd",
+      "bytes": 48399,
+      "width": 420,
+      "height": 335
+    },
+    {
+      "path": "assets/textbook/figures/f35_L38.jpg",
+      "sha256": "a71ca7fcfde022535f3e4b124a6e95775ff4bfc26e685cceab71454a1e6971cd",
+      "bytes": 39508,
+      "width": 420,
+      "height": 256
+    },
+    {
+      "path": "assets/textbook/figures/f36_L38.jpg",
+      "sha256": "71e95a077771dd8af62a254e43a60c645a34b4da5a5d08d6f5aefeb78619906b",
+      "bytes": 24283,
+      "width": 420,
+      "height": 130
+    },
+    {
+      "path": "assets/textbook/figures/f37_L39.jpg",
+      "sha256": "afd3d8d194a6620bf98d4729ed258517fe9794a3f1c95e7daa18a4a94aceddb1",
+      "bytes": 78593,
+      "width": 420,
+      "height": 560
+    },
+    {
+      "path": "assets/textbook/figures/f38_L39.jpg",
+      "sha256": "2a42a3db37f918eacff67b8a41d4ebea9e40ddd8e7f3dcd67d6118afd21c0217",
+      "bytes": 81991,
+      "width": 420,
+      "height": 750
+    },
+    {
+      "path": "assets/textbook/figures/f39_L39.jpg",
+      "sha256": "053059d37d72d3a6cb1884b774f6b1506b26aac49ba5591370ac9845629f0c4a",
+      "bytes": 69777,
+      "width": 420,
+      "height": 530
+    },
+    {
+      "path": "assets/textbook/figures/f40_L39.jpg",
+      "sha256": "5abc15d8f957202b4bf1fec1b7eafe6a2c66b09de5669d75c930da8b25aeb5d0",
+      "bytes": 44924,
+      "width": 420,
+      "height": 284
+    },
+    {
+      "path": "assets/textbook/figures/f41_L39.jpg",
+      "sha256": "56272b2e84ae37e0e3f98ec225ab5252905cc508353870062b87933dcfeac32e",
+      "bytes": 14723,
+      "width": 420,
+      "height": 101
+    },
+    {
+      "path": "assets/textbook/figures/f42_L39.jpg",
+      "sha256": "ba298c480f4346d4f3ebd96c10dcd880b2a7dc890fd5e2d6c34650cfddaf1d19",
+      "bytes": 35080,
+      "width": 420,
+      "height": 273
+    },
+    {
+      "path": "assets/textbook/figures/f43_L39.jpg",
+      "sha256": "fe37198910af7212d072317de65c41f7f70fda95d41cda2e1e84d7ab46a8b609",
+      "bytes": 61202,
+      "width": 340,
+      "height": 403
+    },
+    {
+      "path": "assets/textbook/figures/f44_L40.jpg",
+      "sha256": "e7bf2098e600da7330db812fee149625ae7659c0de83872bddf39c55160f3430",
+      "bytes": 42091,
+      "width": 420,
+      "height": 227
+    },
+    {
+      "path": "assets/textbook/figures/f45_L40.jpg",
+      "sha256": "428b4c266635bee56cebbb9c72d8ffc1bc20d045abc4e09e4b1a38419ede43a9",
+      "bytes": 46654,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f46_L40.jpg",
+      "sha256": "20f6bb5fce1b70036b3b2bf8882362346eb2dbba6a8ba7b328db45e951a4655c",
+      "bytes": 49789,
+      "width": 420,
+      "height": 305
+    },
+    {
+      "path": "assets/textbook/figures/f47_L40.jpg",
+      "sha256": "bd167a9796a9cfce6209ef4ae5cf6ef7006872ed67cce93794ea528c9b5fc540",
+      "bytes": 47067,
+      "width": 420,
+      "height": 570
+    },
+    {
+      "path": "assets/textbook/figures/f48_L40.jpg",
+      "sha256": "44c3682f21eca8fc97fedd7a234a42c2899b9210683d299d669f53c173494440",
+      "bytes": 79028,
+      "width": 420,
+      "height": 867
+    },
+    {
+      "path": "assets/textbook/figures/f49_L40.jpg",
+      "sha256": "d1d6ea4dbba7f845a6d71f36a388a5e6182cf7aeb4d50a4f8b494517e512938c",
+      "bytes": 34285,
+      "width": 300,
+      "height": 300
+    },
+    {
+      "path": "assets/textbook/figures/f50_L40.jpg",
+      "sha256": "f75f5a9c3382dfa48b4356554a0f865ba23631242781f00f010b9e3e07f96806",
+      "bytes": 46466,
+      "width": 420,
+      "height": 648
+    },
+    {
+      "path": "assets/textbook/figures/f51_L40.jpg",
+      "sha256": "479c3b420841a5652dea65d9877ef928d5edc341dc6d42d28adff2b633892540",
+      "bytes": 53282,
+      "width": 420,
+      "height": 351
+    },
+    {
+      "path": "assets/textbook/figures/f52_L41.jpg",
+      "sha256": "b17a5504741ab1aba0488c29a5133432e9818d70a55a91c32cf7eb4aac9d2ae9",
+      "bytes": 33361,
+      "width": 420,
+      "height": 262
+    },
+    {
+      "path": "assets/textbook/figures/f53_L41.jpg",
+      "sha256": "4a3bcf4f0a414e4d90d6ba1efa623f7cb677a688d689c027568b3bf4f14705ca",
+      "bytes": 86602,
+      "width": 420,
+      "height": 560
+    },
+    {
+      "path": "assets/textbook/figures/f54_L41.jpg",
+      "sha256": "f2d0e974e5d416295e498baf7e6e46d7c1cd4ea67857dc6ab657bd09d2eb2f39",
+      "bytes": 96627,
+      "width": 420,
+      "height": 420
+    },
+    {
+      "path": "assets/textbook/figures/f55_L41.jpg",
+      "sha256": "13fd5fb957c19512025d3c5151b702c1fc26719cc06b74889b2456b5a90b077d",
+      "bytes": 26398,
+      "width": 400,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f56_L41.jpg",
+      "sha256": "16a314ee1d67d13843b747756801d4892cca3f2f90c64d9f385005291ca9281c",
+      "bytes": 33791,
+      "width": 420,
+      "height": 201
+    },
+    {
+      "path": "assets/textbook/figures/f57_L41.jpg",
+      "sha256": "e1c5b76f12f6e13535cf3650d5caf0e648d5083261d96e80b6e68d2c03aff724",
+      "bytes": 19676,
+      "width": 420,
+      "height": 175
+    },
+    {
+      "path": "assets/textbook/figures/f58_L41.jpg",
+      "sha256": "02feb7011921161ef1483f66e892c10a67452095f5ae7ce8d65890f66bae8cc0",
+      "bytes": 58998,
+      "width": 420,
+      "height": 406
+    },
+    {
+      "path": "assets/textbook/figures/f59_L41.jpg",
+      "sha256": "ac65e94d9e183169da758fb31125861212b062e2e97a4b9f259c665872a89658",
+      "bytes": 31529,
+      "width": 420,
+      "height": 238
+    },
+    {
+      "path": "assets/textbook/figures/f60_L41.jpg",
+      "sha256": "41a4d5884548afe2fb43482c03762bfd05d29b1e81367ebf45775649182ca9e7",
+      "bytes": 46400,
+      "width": 420,
+      "height": 279
+    },
+    {
+      "path": "assets/textbook/figures/f61_L41.jpg",
+      "sha256": "de7847a81c037fd2b3af51beb871505937703d0b055a73d641b67386e5739b33",
+      "bytes": 56797,
+      "width": 420,
+      "height": 630
+    },
+    {
+      "path": "assets/textbook/figures/f62_L41.jpg",
+      "sha256": "50bbbf7cfc3afeb27a015b7b2c3a948f0ace8e10d657db4b68cc7ad261ed2e74",
+      "bytes": 29308,
+      "width": 420,
+      "height": 306
+    },
+    {
+      "path": "assets/textbook/figures/f63_L41.jpg",
+      "sha256": "5a008061ab1c9e94eb5f72f50c28e47d373b58ee2e5c60af3700bd7d6588bbbe",
+      "bytes": 28878,
+      "width": 420,
+      "height": 247
+    },
+    {
+      "path": "assets/textbook/figures/f64_L41.jpg",
+      "sha256": "bf740680411352dfa26b755d23576d554de37df56e7335cefc0b5dcde3d136c8",
+      "bytes": 25058,
+      "width": 420,
+      "height": 251
+    },
+    {
+      "path": "assets/textbook/figures/f65_L41.jpg",
+      "sha256": "5e42e2cf30eb2c1d2c46465cfba6212c0a609e87d9e2acd14d8955d041f719a9",
+      "bytes": 40321,
+      "width": 420,
+      "height": 318
+    },
+    {
+      "path": "assets/textbook/figures/f66_L42.jpg",
+      "sha256": "6c92e036547903ff9061de8cc3071e9a6c8844a4d148de3b93a834ddfc64982b",
+      "bytes": 113781,
+      "width": 420,
+      "height": 618
+    },
+    {
+      "path": "assets/textbook/figures/f67_L42.jpg",
+      "sha256": "e37b8ceb96ea67ffd090fe531ef1045be589979ce1052f4551a1b2f4daf65f77",
+      "bytes": 42916,
+      "width": 420,
+      "height": 274
+    },
+    {
+      "path": "assets/textbook/figures/f68_L42.jpg",
+      "sha256": "74969f81a6b8891dc5918d6e1f57865c839f955cd6afd67c3f2fb4fa23318921",
+      "bytes": 23350,
+      "width": 420,
+      "height": 184
+    },
+    {
+      "path": "assets/textbook/figures/f69_L42.jpg",
+      "sha256": "3ddc67ce5ca0a5add4e9f9e7ea72cc0268cb08c9118d0bff6907acce261e65bb",
+      "bytes": 54969,
+      "width": 420,
+      "height": 344
+    },
+    {
+      "path": "assets/textbook/figures/f70_L42.jpg",
+      "sha256": "5358f85da1449666da789d7d2d5ef233ec73131ee180f3f965cf8f01259c8a00",
+      "bytes": 43440,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f71_L43.jpg",
+      "sha256": "af7c3e6c84d92c90cde4855d77a9605456c40cdf867bc8de6c919cfde10e1c4a",
+      "bytes": 62091,
+      "width": 420,
+      "height": 685
+    },
+    {
+      "path": "assets/textbook/figures/f72_L44.jpg",
+      "sha256": "da710c9dcd7a9093c08d81a87b1f10c46b27fed4a0aae22a73fb8e2189efa4bd",
+      "bytes": 37956,
+      "width": 195,
+      "height": 713
+    },
+    {
+      "path": "assets/textbook/figures/f73_L44.jpg",
+      "sha256": "59de469909868409f21ce9ecce741e2bc149e4d99760bbecb46113ee00d04499",
+      "bytes": 42863,
+      "width": 420,
+      "height": 559
+    },
+    {
+      "path": "assets/textbook/figures/f74_L44.jpg",
+      "sha256": "a6101f9fec4b1643a9c08dcd53b39fba622cc960bb3cd58c9c861da896af8d5f",
+      "bytes": 54981,
+      "width": 420,
+      "height": 434
+    },
+    {
+      "path": "assets/textbook/figures/f75_L44.jpg",
+      "sha256": "b08b3f492fbadb270b56d392430b3efc2fa8fb8d1dfa54a86ce292a047c56635",
+      "bytes": 71283,
+      "width": 420,
+      "height": 561
+    },
+    {
+      "path": "assets/textbook/figures/f76_L44.jpg",
+      "sha256": "d0310d3998438a916ed4881ee37dffb727a1e5a703ac35ed194f76e24773bd48",
+      "bytes": 82761,
+      "width": 420,
+      "height": 575
+    },
+    {
+      "path": "assets/textbook/figures/f77_L44.jpg",
+      "sha256": "7b96ff8614acbe902324cfe289bdbca8199ab6970c30fb9e9818b56e49324254",
+      "bytes": 45559,
+      "width": 420,
+      "height": 363
+    },
+    {
+      "path": "assets/textbook/figures/f78_L44.jpg",
+      "sha256": "b3430c318540ad7237409effc1a41954f33eaa1d9aa9e10601de1fdf5b0ff71b",
+      "bytes": 30683,
+      "width": 350,
+      "height": 276
+    },
+    {
+      "path": "assets/textbook/figures/f79_L44.jpg",
+      "sha256": "ace3212bd57c2de45fb0a6f75eb142151fe1bb27135bb18a9a58f64744962f92",
+      "bytes": 50476,
+      "width": 420,
+      "height": 279
+    },
+    {
+      "path": "assets/textbook/figures/f80_L45.jpg",
+      "sha256": "fdf4f650fe70ce41d1c5b52e7aa26676329740d3adcda0b91c3b70a27fff34a5",
+      "bytes": 33707,
+      "width": 420,
+      "height": 818
+    },
+    {
+      "path": "assets/textbook/figures/f81_L45.jpg",
+      "sha256": "7edd00063c42d11b022f2d02c1e261f66cf40ed27d1ac1e2d1f0128a6aacb1e7",
+      "bytes": 68547,
+      "width": 420,
+      "height": 636
+    },
+    {
+      "path": "assets/textbook/figures/f82_L45.jpg",
+      "sha256": "86ba59dd819b5f0c2545c3cfb05e6900711aeedda74a103679d39b2336e01fac",
+      "bytes": 46307,
+      "width": 420,
+      "height": 304
+    },
+    {
+      "path": "assets/textbook/figures/f83_L46.jpg",
+      "sha256": "32f0581bb4c6e71806970abc775fb84b926ca654e54ccced7ceb585358c428be",
+      "bytes": 80025,
+      "width": 420,
+      "height": 791
+    },
+    {
+      "path": "assets/textbook/figures/f84_L46.jpg",
+      "sha256": "e9b82105aa811a84067246c952ce71fb7eebc7b5205a65c884c5a279cb3ae694",
+      "bytes": 96481,
+      "width": 420,
+      "height": 560
+    },
+    {
+      "path": "assets/textbook/figures/f85_L46.jpg",
+      "sha256": "f8b331c01ebb133709d52f71404898baabe7fc544aa257089dc095bbfa5f0061",
+      "bytes": 38481,
+      "width": 420,
+      "height": 240
+    },
+    {
+      "path": "assets/textbook/figures/f86_L46.jpg",
+      "sha256": "d05a4cf5a01e154674286d0dfe3eeae3bf6eb0394f166b4594206c37a73a1447",
+      "bytes": 34248,
+      "width": 420,
+      "height": 525
+    },
+    {
+      "path": "assets/textbook/figures/f87_L46.jpg",
+      "sha256": "0d011626568e104d653ee8995fa17ba9d602812a98dbee1c29ff15d1586aec03",
+      "bytes": 28862,
+      "width": 420,
+      "height": 248
+    },
+    {
+      "path": "assets/textbook/figures/f88_L46.jpg",
+      "sha256": "4e11f68bc5638d4e8bc68ea5d65c4c9089ce89ec84bcd30e64936de4e75c6d39",
+      "bytes": 81296,
+      "width": 420,
+      "height": 609
+    },
+    {
+      "path": "assets/textbook/figures/f90_L47.jpg",
+      "sha256": "74202ba60cde9eabdd533278a1e9d1fef44023a775ef17f1f472f793063d9194",
+      "bytes": 73224,
+      "width": 420,
+      "height": 559
+    },
+    {
+      "path": "assets/textbook/figures/f91_L47.jpg",
+      "sha256": "f691d73e953405be7b304757e3efdac0bb205b753664491f5c31a78eea7d8c37",
+      "bytes": 27200,
+      "width": 420,
+      "height": 246
+    },
+    {
+      "path": "assets/textbook/figures/f92_L47.jpg",
+      "sha256": "f64b938956e3f9fef6bd7e4ff76d832aa5289fd21bcf81b910003ff0077222e1",
+      "bytes": 35791,
+      "width": 420,
+      "height": 201
+    },
+    {
+      "path": "assets/textbook/figures/f93_L47.jpg",
+      "sha256": "4a84436d24a00656d84d0e8c37a3ce3985de90e4060385d1489ebbac320170b1",
+      "bytes": 24570,
+      "width": 420,
+      "height": 193
+    },
+    {
+      "path": "assets/textbook/figures/f94_L47.jpg",
+      "sha256": "69073ff9153a4bfb3127d92caffa748d3c174d757522bc4d769b7468180af20b",
+      "bytes": 29825,
+      "width": 420,
+      "height": 315
+    },
+    {
+      "path": "assets/textbook/figures/f95_L48.jpg",
+      "sha256": "bbb5f805fb31e05334fad2ff505ba9ff57c86dc42960f7c67fdab80f18b4ba8e",
+      "bytes": 40812,
+      "width": 420,
+      "height": 282
+    },
+    {
+      "path": "assets/textbook/figures/f96_L48.jpg",
+      "sha256": "b5365010ff44be15baf4f956c4480c494793f90a644d9a956df9a4f3d41dd0b4",
+      "bytes": 119733,
+      "width": 420,
+      "height": 627
+    },
+    {
+      "path": "assets/textbook/figures/f97_L48.jpg",
+      "sha256": "ccb6fcc5f2ef3dde5743837fd411ab3d8afe8294b00a6bdfcfaba548a8d7d1b0",
+      "bytes": 39136,
+      "width": 420,
+      "height": 210
+    },
+    {
+      "path": "assets/textbook/figures/f98_L48.jpg",
+      "sha256": "e6933226ad648465c65e01fb9db69526841b183eac1b2d3a562c37115a25e187",
+      "bytes": 44450,
+      "width": 420,
+      "height": 245
+    },
+    {
+      "path": "assets/textbook/figures/f99_L49.jpg",
+      "sha256": "7819dca287250643cedb02c5d8eedaa530ae921e26cb51ba74d725766cd83464",
+      "bytes": 71195,
+      "width": 420,
+      "height": 528
+    },
+    {
+      "path": "assets/textbook/figures/f9_L33.jpg",
+      "sha256": "2f7797753c22bc07797ed8cf8760a9f52a3ad893d7b7ad0443d16afb276defbd",
+      "bytes": 34681,
+      "width": 420,
+      "height": 559
+    },
+    {
+      "path": "assets/textbook/sheets/sheet00.jpg",
+      "sha256": "98c4175b97da3342f80c41c658ae49a3a803777048173a07ed3d9224c3ec7337",
+      "bytes": 1703412,
+      "width": 1700,
+      "height": 4697
+    },
+    {
+      "path": "assets/textbook/sheets/sheet01.jpg",
+      "sha256": "9f5295e5cf04fccad7c26c8e797b178ff0a01ab99e6dd478eac7b42715df01b9",
+      "bytes": 1513594,
+      "width": 1700,
+      "height": 4633
+    },
+    {
+      "path": "assets/textbook/sheets/sheet02.jpg",
+      "sha256": "a447380e7af65f1907c215687d3eea0231bfbc208d8b02a2186319784f4d6cdf",
+      "bytes": 1527797,
+      "width": 1700,
+      "height": 4738
+    },
+    {
+      "path": "assets/textbook/sheets/sheet03.jpg",
+      "sha256": "5dd75cba19c90ca294a38a3a49d4774fbef0128eb8396ccac46115b8a2a2c3e7",
+      "bytes": 1604806,
+      "width": 1700,
+      "height": 4626
+    },
+    {
+      "path": "assets/textbook/sheets/sheet04.jpg",
+      "sha256": "b8a2f6f2c25afb91f5363c32fa8d151967e600bf4b137a61c2f0327578836478",
+      "bytes": 1337073,
+      "width": 1700,
+      "height": 4587
+    },
+    {
+      "path": "assets/textbook/sheets/sheet05.jpg",
+      "sha256": "da18d9293a475582193dd57e7e86c76131317dd365de73d0a508931b52400ab5",
+      "bytes": 1482508,
+      "width": 1700,
+      "height": 4403
+    },
+    {
+      "path": "assets/textbook/sheets/sheet06.jpg",
+      "sha256": "d95d37ea02fb28d90702a8ddf3e70a65cf46b585a4245d2178b7804f1f0c75ca",
+      "bytes": 1413071,
+      "width": 1700,
+      "height": 4321
+    },
+    {
+      "path": "assets/textbook/sheets/sheet07.jpg",
+      "sha256": "1fd020e79231d4cb035fac7eaeaec984f3585a0a3380473321359f515581acf8",
+      "bytes": 1254319,
+      "width": 1700,
+      "height": 4078
+    },
+    {
+      "path": "assets/textbook/sheets/sheet08.jpg",
+      "sha256": "2b67afc0ef39422b9fa0241df8e2b40f88dadb7fd6947e70185574aa49e7903c",
+      "bytes": 1200822,
+      "width": 1700,
+      "height": 3929
+    },
+    {
+      "path": "assets/textbook/sheets/sheet09.jpg",
+      "sha256": "daf3a17603f7de7ae4fdf0dbb496aa3e5516121593b0d651b6555ab906bf61b4",
+      "bytes": 490181,
+      "width": 1700,
+      "height": 1591
+    },
+    {
+      "path": "assets/textbook/sheets/sheet10.jpg",
+      "sha256": "67e019cc730bff7390a139e9cdbbc8a8d20ce70412cb848a3a7de7061ab1fd1f",
+      "bytes": 919007,
+      "width": 1700,
+      "height": 3209
+    },
+    {
+      "path": "assets/textbook/sheets/sheet11.jpg",
+      "sha256": "b9356b5b80e93d27e420520492bd10d5f9aa9782900c6f35918e7ab13a92d874",
+      "bytes": 774374,
+      "width": 1700,
+      "height": 2549
+    },
+    {
+      "path": "assets/textbook/sheets/sheet12.jpg",
+      "sha256": "13678c12c9aa83ef0c12ccd245ace3d11a739807c5b0dcddbbbedf36403aaa37",
+      "bytes": 888213,
+      "width": 1700,
+      "height": 2301
+    },
+    {
+      "path": "assets/textbook/sheets/sheet13.jpg",
+      "sha256": "4ae2f57d166483ed98b5d08315dca0ea43a8712fc0173a4810d99841c368fa53",
+      "bytes": 49828,
+      "width": 1700,
+      "height": 495
+    }
+  ],
+  "legacy_image_routes": {
+    "5ba5c0f100b87796962858fd282a2a3e": "assets/sprites/p1.webp",
+    "a16fd2032b545af1b96c78d171eaa90b": "assets/sprites/p2.webp",
+    "e73850a4100b4463207199a01ae801bf": "assets/sprites/p3.webp",
+    "4ca6bbeea2da2f45ebfbe72ff640536e": "assets/sprites/p4.webp",
+    "248bb6e574aeed5677c90615c1bad527": "assets/sprites/p5.webp",
+    "71f3f4fcefaa65cbc304d70e509f5473": "assets/sprites/p6.webp",
+    "1da3f3b40201e84ed3794066f0aa7382": "assets/sprites/p7.webp",
+    "b7d52dfe740312e587a645832711e572": "assets/sprites/icons.webp",
+    "08673c1ca383464973b0197473f3babe": "assets/sprites/frames.webp",
+    "e0ea3bc870f4f0d434b258776508ff04": "assets/sprites/backdrops.webp",
+    "4ca98d888972466be5731c10db9d4fa2": "assets/sprites/patp.webp",
+    "722f8415694babe0a60ae07527dd0adf": "assets/sprites/patc.webp",
+    "a1a3bd95efe60c02ac32e9c2e8246fb1": "assets/sprites/emb.webp",
+    "0bd2ddd4a4ac0261202afff651cbb5c9": "assets/sprites/ui.webp",
+    "fba21ab5004685a80d2275135c1a749f": "assets/sprites/scenes.webp",
+    "92ca016c1dbb47034340c4bc624faace": "assets/sprites/settings.webp",
+    "4cc77adb912c36f7684b2a704bc552f6": "assets/sprites/tryon.webp",
+    "1cf09e81ea8d91a7bddacf53a8b62da8": "assets/sprites/legacy.webp",
+    "4f9427362de70f97ba23b2b71358ccb3": "assets/sprites/mon.webp",
+    "cbc312c9dd1a2ca1cae4288fd1d7bdf4": "assets/sprites/misc.webp",
+    "76ff937372bbf21df8028089e97ddcbe": "assets/sprites/comp.webp",
+    "39cac56ad17106094eaec19f4ea7dc62": "assets/sprites/compi.webp",
+    "46ceeafa0397f9fcd1a21296a48fec63": "assets/sprites/bears.webp",
+    "74989bed9f9490547b2334100cd84e7a": "assets/sprites/wpose.webp",
+    "b8e476399ba0a1d835b61b70ab89d1ea": "assets/sprites/wmask.webp",
+    "06e0c210b9da1966f50878a823ac9bc8": "assets/sprites/wlay.webp",
+    "6cc1c483ccbc263a59319d75f019f51d": "assets/sprites/wemb.webp",
+    "3a1741a7436e22815be17279fdae2494": "assets/textbook/sheets/sheet00.jpg",
+    "06ace348d5b531b82bf1fe98795b41aa": "assets/textbook/sheets/sheet01.jpg",
+    "074cd76e119480c6a0f29d775a970603": "assets/textbook/sheets/sheet02.jpg",
+    "d8d6a93cd46e2d126117e27d3072c799": "assets/textbook/sheets/sheet03.jpg",
+    "4b611b3b5f501cdc47fd94e38bac3eb2": "assets/textbook/sheets/sheet04.jpg",
+    "c2f13493003e42d6ba31d67311994760": "assets/textbook/sheets/sheet05.jpg",
+    "be61ee0ec9ae533d31459a3a6fd669cb": "assets/textbook/sheets/sheet06.jpg",
+    "41a734233b6bd7da46f758f4cb75f5ad": "assets/textbook/sheets/sheet07.jpg",
+    "a3c0e19cbefb831942d7bfedf277f151": "assets/textbook/sheets/sheet08.jpg",
+    "02e14b360f246ada159a8984e29e4f5b": "assets/textbook/sheets/sheet09.jpg",
+    "ae1db00a492ea02842d209ef445b033e": "assets/textbook/sheets/sheet10.jpg",
+    "c9e7c53981e9eb447c6f70301a7d35f0": "assets/textbook/sheets/sheet11.jpg",
+    "7899db7554390f965e11a83f875a34c3": "assets/textbook/sheets/sheet12.jpg",
+    "4b455773c606dcc2bf8393f70a4e6aa2": "assets/textbook/sheets/sheet13.jpg"
+  },
+  "unresolved_worksheet_blob_ids": [],
+  "figure_index": {
+    "path": "assets/textbook/figures-index.csv",
+    "sha256": "370e02bf29603dc011d385df68a9710d71b3ad57103ea5b6ccf994c5dea8a909"
+  },
+  "worksheets": [
+    {
+      "path": "assets/worksheets/lesson-01.pdf",
+      "lesson": 1,
+      "bytes": 303887,
+      "sha256": "bd40360f516d14417bfb6da10cc55f2786d09cf01ffd121dfe818d78d0cca32c",
+      "pages": 9
+    },
+    {
+      "path": "assets/worksheets/lesson-02.pdf",
+      "lesson": 2,
+      "bytes": 235759,
+      "sha256": "94c66d7c021d5a174e9a24603f693b8b107d7da8517326f0000cafc5c3f149b7",
+      "pages": 5
+    },
+    {
+      "path": "assets/worksheets/lesson-03.pdf",
+      "lesson": 3,
+      "bytes": 271432,
+      "sha256": "43e55405d4f26625a4aa905bab7799402acdac598d9ddf4436a3d82cd9db18cc",
+      "pages": 11
+    },
+    {
+      "path": "assets/worksheets/lesson-04.pdf",
+      "lesson": 4,
+      "bytes": 217184,
+      "sha256": "cebf34e710952eb997ac64c5317fe51fe255afaac599cc53ab5ab32db5cab4a6",
+      "pages": 6
+    },
+    {
+      "path": "assets/worksheets/lesson-05.pdf",
+      "lesson": 5,
+      "bytes": 279910,
+      "sha256": "3dcca1756a5157503ca7d97005fe49719592c7674c70f736ff7c835d29fc11ed",
+      "pages": 18
+    },
+    {
+      "path": "assets/worksheets/lesson-06.pdf",
+      "lesson": 6,
+      "bytes": 218036,
+      "sha256": "c663dc849d600860d31ea26e1555c12fe5041e40bc1dddb57dd9e0aa137f4c3f",
+      "pages": 7
+    }
+  ],
+  "legacy_worksheet_routes": {
+    "a102eef8f7c0cf82115847a968b57d71": "assets/worksheets/lesson-01.pdf",
+    "00fb7e7ed82a288ee0da9f6ed5a7f2ba": "assets/worksheets/lesson-02.pdf",
+    "f5c64f9a4499145c3794c238c0e6f764": "assets/worksheets/lesson-03.pdf",
+    "cd8c296173d096ece5aecbb768f4ee33": "assets/worksheets/lesson-04.pdf",
+    "390eb36d4b875e86d1059d618c6a4312": "assets/worksheets/lesson-05.pdf",
+    "4d5990ecf09a61c8b59e6408eb231f99": "assets/worksheets/lesson-06.pdf"
+  }
+}

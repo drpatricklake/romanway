@@ -34,7 +34,7 @@ assert.deepEqual(lab.errors,[]);
 assert.equal(lab.sample.savedTranslation,true);
 const all=lessons(p);
 assert.deepEqual(all.failures,[]);
-assert.ok(all.captures.length>=600);
+assert.equal(new Set(all.captures.map(([lesson])=>lesson)).size,58,'Introduction and every lesson render');
 p.model.state.arena = {w:0};
 const match = games(p);
 assert.equal(match.savedWin,true);

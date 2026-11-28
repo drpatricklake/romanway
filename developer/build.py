@@ -62,3 +62,23 @@ runpy.run_path(str(root/'apply-public-practice.py'),run_name='__main__')
 
 # Hide shared features and close public cloud actions after the common integrations.
 runpy.run_path(str(root/'apply-public-isolation.py'),run_name='__main__')
+
+# Retain verified asset and avatar fixes in regenerated output.
+runpy.run_path(str(repo/'scripts/apply-assets.py'),run_name='__main__')
+runpy.run_path(str(root/'apply-avatar-ux.py'),run_name='__main__')
+runpy.run_path(str(root/'apply-persona-continuity.py'),run_name='__main__')
+
+# Fit shoes to native legs and normalize the musician's head proportions.
+runpy.run_path(str(root/'apply-avatar-fitting.py'),run_name='__main__')
+
+# Frame the original deity art as busts in the chooser and show the current persona at promotion.
+runpy.run_path(str(root/'apply-avatar-card-preview.py'),run_name='__main__')
+
+# Add the checklist using the original completion and reward rules.
+runpy.run_path(str(root/'apply-lesson-checklist.py'),run_name='__main__')
+
+# Render Bibliothēca activities according to the edition and selected work.
+runpy.run_path(str(root/'apply-bibliotheca-options.py'),run_name='__main__')
+
+# Keep worksheet and interactive projects together in the Tablīnum.
+runpy.run_path(str(root/'apply-tablinum-projects.py'),run_name='__main__')

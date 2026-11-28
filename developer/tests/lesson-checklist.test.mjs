@@ -1,0 +1,67 @@
+import assert from 'node:assert/strict';
+import {harness,action} from './harness.mjs';
+const p=harness(process.argv[2]||'index.html',{edition:'public-practice',configure(c){c.URLSearchParams=URLSearchParams}});
+action(p,'local-start');
+const home=p.markup();
+assert.match(home,/<main\b[^>]*><section class="panel avbar cta">/);
+assert.doesNotMatch(home,/data-act="lesson-checklist-go"/);
+assert.equal((home.match(/class="panel avbar cta"/g)||[]).length,1);
+action(p,'open-avatar');
+action(p,'av-pick',{id:'textile'});
+action(p,'av-create');
+assert.equal(p.model.state.av.done,true);
+action(p,'home');
+assert.doesNotMatch(p.markup(),/class="panel avbar cta"/);
+const reopened=harness(process.argv[2]||'index.html',{
+ edition:'public-practice',seedStorage:Object.fromEntries(p.saved),configure(c){c.URLSearchParams=URLSearchParams}
+});
+action(reopened,'local-start');
+assert.equal(reopened.model.state.av.done,true);
+assert.match(reopened.markup(),/Continue: Guided notes/);
+assert.doesNotMatch(reopened.markup(),/class="panel avbar cta"/);
+assert.match(p.markup(),/Continue: Guided notes/);
+const filled=[...p.markup().matchAll(/<button class="(btn(?: [^"]*)?)"[^>]*>/g)].filter(m=>!m[1].split(' ').includes('ghost'));
+assert.equal(filled.length,1);
+assert.match(filled[0][0],/data-act="lesson-checklist-go"/);
+const c=p.context;
+const baseline=process.argv[3]?harness(process.argv[3],{edition:'public-practice',configure(c){c.URLSearchParams=URLSearchParams}}):null;
+if(baseline)action(baseline,'local-start');
+for(let n=1;n<=57;n++){
+ const m=c.__lessonChecklist(n), tile=c.__rinfo(n);
+ if(baseline){const old=baseline.context.__rinfo(n);assert.equal(tile.total,old.total,'original total '+n);assert.equal(tile.done,old.done,'original done '+n);}
+ assert.equal(m.total,tile.total,'total '+n);
+ assert.equal(m.done,tile.done,'done '+n);
+ assert.equal(m.required.length,m.total,'groups '+n);
+ assert.equal(m.required.filter(g=>g.done).length,m.done,'completed groups '+n);
+ for(const g of m.required)assert.ok(g.links.length,'Missing destination '+n+' '+g.title);
+ assert.equal(m.xp.filter(i=>i.done).reduce((sum,i)=>sum+i.xp,0),c.__xpLesson(n),'earned xp '+n);
+}
+let m=c.__lessonChecklist(1);
+let drill=m.required.flatMap(g=>g.links).find(l=>l.circus);
+assert.ok(drill);
+action(p,'lesson-checklist-go',{l:'1',tab:drill.id,circus:'1'});
+assert.equal(p.model.view.screen,'circus');
+action(p,'lesson-checklist-go',{l:'1',tab:'notes'});
+assert.equal(p.model.view.tab,'notes');
+assert.match(p.markup(),/Lesson checklist/);
+assert.match(p.markup(),/XP available/);
+const t=p.model.state.settings.threshold;
+p.model.state.attempts.push({ref:drill.id,kind:'exercise',correct:t-1,total:100,t:1});
+m=c.__lessonChecklist(1);
+assert.match(m.required.flatMap(g=>g.links).find(l=>l.id===drill.id).detail,/Follow-up practice/);
+p.model.state.attempts.push({ref:drill.id,kind:'practice',correct:t,total:100,t:2});
+m=c.__lessonChecklist(1);
+assert.equal(m.required.flatMap(g=>g.links).find(l=>l.id===drill.id).complete,true);
+assert.equal(m.denarii.earned,0);
+assert.ok(m.denarii.pending>0);
+const pending=m.denarii.pending;
+action(p,'home');
+m=c.__lessonChecklist(1);
+assert.equal(m.denarii.earned,pending);
+assert.equal(m.denarii.pending,0);
+const after=p.model.state.forum.coins;
+action(p,'home');
+assert.equal(p.model.state.forum.coins,after,'Reopening home does not pay twice');
+p.model.state.forumMode='off';
+assert.equal(c.__lessonChecklist(1).denarii,null);
+console.log('PASS 57 lessons: checklist and tile agree; links, XP, mastery threshold, practice clearance and disabled denarii');
